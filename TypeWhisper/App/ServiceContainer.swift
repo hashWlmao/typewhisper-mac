@@ -88,6 +88,12 @@ final class ServiceContainer: ObservableObject {
             apiServerViewModel.startServer()
         }
 
+        // Register SpeechAnalyzer model provider on macOS 26+
+        if #available(macOS 26, *) {
+            await SpeechAnalyzerModelProvider.populateCache()
+            ModelInfo._speechAnalyzerModelProvider = { SpeechAnalyzerModelProvider.availableModels() }
+        }
+
         await modelManagerService.loadSelectedModel()
     }
 }

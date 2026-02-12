@@ -52,6 +52,7 @@ final class ProfilesViewModel: ObservableObject {
     init(profileService: ProfileService, settingsViewModel: SettingsViewModel) {
         self.profileService = profileService
         self.settingsViewModel = settingsViewModel
+        self.profiles = profileService.profiles
         setupBindings()
         scanInstalledApps()
     }
@@ -204,7 +205,12 @@ final class ProfilesViewModel: ObservableObject {
 
     private func setupBindings() {
         profileService.$profiles
-            .receive(on: DispatchQueue.main)
-            .assign(to: &$profiles)
+            .dropFirst()
+            .sink { [weak self] profiles in
+                DispatchQueue.main.async {
+                    self?.profiles = profiles
+                }
+            }
+            .store(in: &cancellables)
     }
 }

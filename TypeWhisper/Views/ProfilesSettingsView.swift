@@ -177,7 +177,7 @@ private struct ProfileEditorSheet: View {
                     Picker(String(localized: "Engine"), selection: $viewModel.editorEngineOverride) {
                         Text(String(localized: "Global Setting")).tag(nil as String?)
                         Divider()
-                        ForEach(EngineType.allCases) { engine in
+                        ForEach(EngineType.availableCases) { engine in
                             Text(engine.displayName).tag(engine.rawValue as String?)
                         }
                     }

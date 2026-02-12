@@ -10,8 +10,6 @@ struct ModelManagerView: View {
             Divider()
 
             modelList
-
-            Spacer()
         }
         .padding()
         .frame(minWidth: 500, minHeight: 300)
@@ -27,7 +25,7 @@ struct ModelManagerView: View {
                 get: { viewModel.selectedEngine },
                 set: { viewModel.selectEngine($0) }
             )) {
-                ForEach(EngineType.allCases) { engine in
+                ForEach(EngineType.availableCases) { engine in
                     Text(engine.displayName).tag(engine)
                 }
             }
@@ -46,20 +44,24 @@ struct ModelManagerView: View {
             String(localized: "WhisperKit - 99+ languages, streaming support, translation to English")
         case .parakeet:
             String(localized: "Parakeet - 25 European languages, extremely fast on Apple Silicon")
+        case .speechAnalyzer:
+            String(localized: "Apple Speech - system-managed models, streaming support, ~40 languages")
         }
     }
 
     @ViewBuilder
     private var modelList: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "Models"))
-                .font(.headline)
+        Text(String(localized: "Models"))
+            .font(.headline)
 
-            ForEach(viewModel.models) { model in
-                ModelRow(model: model, status: viewModel.status(for: model)) {
-                    viewModel.downloadModel(model)
-                } onDelete: {
-                    viewModel.deleteModel(model)
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 8) {
+                ForEach(viewModel.models) { model in
+                    ModelRow(model: model, status: viewModel.status(for: model)) {
+                        viewModel.downloadModel(model)
+                    } onDelete: {
+                        viewModel.deleteModel(model)
+                    }
                 }
             }
         }

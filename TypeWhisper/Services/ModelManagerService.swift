@@ -10,11 +10,18 @@ final class ModelManagerService: ObservableObject {
 
     private let whisperEngine = WhisperEngine()
     private let parakeetEngine = ParakeetEngine()
+    private let _speechAnalyzerEngine: (any TranscriptionEngine)?
 
     private let engineKey = "selectedEngine"
     private let modelKey = "selectedModelId"
 
     init() {
+        if #available(macOS 26, *) {
+            _speechAnalyzerEngine = SpeechAnalyzerEngine()
+        } else {
+            _speechAnalyzerEngine = nil
+        }
+
         let savedEngine = UserDefaults.standard.string(forKey: engineKey)
             .flatMap { EngineType(rawValue: $0) } ?? .whisper
         self.selectedEngine = savedEngine
@@ -36,8 +43,9 @@ final class ModelManagerService: ObservableObject {
 
     func engine(for type: EngineType) -> any TranscriptionEngine {
         switch type {
-        case .whisper: whisperEngine
-        case .parakeet: parakeetEngine
+        case .whisper: return whisperEngine
+        case .parakeet: return parakeetEngine
+        case .speechAnalyzer: return _speechAnalyzerEngine ?? whisperEngine
         }
     }
 

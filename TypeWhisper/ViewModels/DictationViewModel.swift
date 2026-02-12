@@ -100,12 +100,22 @@ final class DictationViewModel: ObservableObject {
         }
 
         audioRecordingService.$audioLevel
-            .receive(on: DispatchQueue.main)
-            .assign(to: &$audioLevel)
+            .dropFirst()
+            .sink { [weak self] level in
+                DispatchQueue.main.async {
+                    self?.audioLevel = level
+                }
+            }
+            .store(in: &cancellables)
 
         hotkeyService.$currentMode
-            .receive(on: DispatchQueue.main)
-            .assign(to: &$hotkeyMode)
+            .dropFirst()
+            .sink { [weak self] mode in
+                DispatchQueue.main.async {
+                    self?.hotkeyMode = mode
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func startRecording() {
@@ -377,13 +387,15 @@ final class DictationViewModel: ObservableObject {
         guard hotkeyMode == .toggle else { return }
 
         silenceCancellable = audioRecordingService.$silenceDuration
-            .receive(on: DispatchQueue.main)
+            .dropFirst()
             .sink { [weak self] duration in
-                guard let self, self.state == .recording else { return }
-                if duration >= self.audioRecordingService.silenceAutoStopDuration {
-                    self.audioRecordingService.didAutoStop = true
-                    self.stopDictation()
-                    self.hotkeyService.cancelDictation()
+                DispatchQueue.main.async {
+                    guard let self, self.state == .recording else { return }
+                    if duration >= self.audioRecordingService.silenceAutoStopDuration {
+                        self.audioRecordingService.didAutoStop = true
+                        self.stopDictation()
+                        self.hotkeyService.cancelDictation()
+                    }
                 }
             }
     }

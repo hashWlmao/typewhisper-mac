@@ -24,17 +24,21 @@ final class ModelManagerViewModel: ObservableObject {
         self.models = ModelInfo.models(for: modelManager.selectedEngine)
 
         modelManager.$selectedEngine
-            .receive(on: DispatchQueue.main)
+            .dropFirst()
             .sink { [weak self] engine in
-                self?.selectedEngine = engine
-                self?.models = ModelInfo.models(for: engine)
+                DispatchQueue.main.async {
+                    self?.selectedEngine = engine
+                    self?.models = ModelInfo.models(for: engine)
+                }
             }
             .store(in: &cancellables)
 
         modelManager.$modelStatuses
-            .receive(on: DispatchQueue.main)
+            .dropFirst()
             .sink { [weak self] statuses in
-                self?.modelStatuses = statuses
+                DispatchQueue.main.async {
+                    self?.modelStatuses = statuses
+                }
             }
             .store(in: &cancellables)
     }

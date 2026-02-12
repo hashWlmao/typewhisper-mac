@@ -27,6 +27,7 @@ final class HistoryViewModel: ObservableObject {
     init(historyService: HistoryService, textDiffService: TextDiffService) {
         self.historyService = historyService
         self.textDiffService = textDiffService
+        self.records = historyService.records
         setupBindings()
     }
 
@@ -104,7 +105,12 @@ final class HistoryViewModel: ObservableObject {
 
     private func setupBindings() {
         historyService.$records
-            .receive(on: DispatchQueue.main)
-            .assign(to: &$records)
+            .dropFirst()
+            .sink { [weak self] records in
+                DispatchQueue.main.async {
+                    self?.records = records
+                }
+            }
+            .store(in: &cancellables)
     }
 }

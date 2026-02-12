@@ -52,6 +52,7 @@
 		AA00000000000000000066 /* ProfileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000066 /* ProfileService.swift */; };
 		AA00000000000000000067 /* ProfilesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000067 /* ProfilesViewModel.swift */; };
 		AA00000000000000000068 /* ProfilesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000068 /* ProfilesSettingsView.swift */; };
+		AA00000000000000000069 /* SpeechAnalyzerEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000069 /* SpeechAnalyzerEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +100,7 @@
 		BB00000000000000000066 /* ProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileService.swift; sourceTree = "<group>"; };
 		BB00000000000000000067 /* ProfilesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesViewModel.swift; sourceTree = "<group>"; };
 		BB00000000000000000068 /* ProfilesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesSettingsView.swift; sourceTree = "<group>"; };
+		BB00000000000000000069 /* SpeechAnalyzerEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechAnalyzerEngine.swift; sourceTree = "<group>"; };
 		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypeWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -182,6 +184,7 @@
 				BB00000000000000000006 /* TranscriptionEngine.swift */,
 				BB00000000000000000007 /* WhisperEngine.swift */,
 				BB00000000000000000008 /* ParakeetEngine.swift */,
+				BB00000000000000000069 /* SpeechAnalyzerEngine.swift */,
 			);
 			path = Engine;
 			sourceTree = "<group>";
@@ -368,6 +371,7 @@
 				AA00000000000000000066 /* ProfileService.swift in Sources */,
 				AA00000000000000000067 /* ProfilesViewModel.swift in Sources */,
 				AA00000000000000000068 /* ProfilesSettingsView.swift in Sources */,
+				AA00000000000000000069 /* SpeechAnalyzerEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

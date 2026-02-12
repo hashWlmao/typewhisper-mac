@@ -36,7 +36,7 @@ struct ModelInfo: Identifiable, Hashable {
         switch displayName {
         case "Tiny", "Base":
             return gb < 8
-        case "Small", "Large v3 Turbo", "Parakeet TDT v3":
+        case "Small", "Medium", "Large v3 Turbo", "Parakeet TDT v3":
             return gb >= 8 && gb <= 16
         case "Large v3":
             return gb > 16
@@ -73,6 +73,14 @@ extension ModelInfo {
             languageCount: 99
         ),
         ModelInfo(
+            id: "openai_whisper-medium",
+            engineType: .whisper,
+            displayName: "Medium",
+            sizeDescription: "~1.5 GB",
+            estimatedSizeMB: 1500,
+            languageCount: 99
+        ),
+        ModelInfo(
             id: "openai_whisper-large-v3",
             engineType: .whisper,
             displayName: "Large v3",
@@ -88,6 +96,14 @@ extension ModelInfo {
             estimatedSizeMB: 800,
             languageCount: 99
         ),
+        ModelInfo(
+            id: "distil-whisper_distil-large-v3",
+            engineType: .whisper,
+            displayName: "Distil Large v3",
+            sizeDescription: "~594 MB",
+            estimatedSizeMB: 594,
+            languageCount: 99
+        ),
     ]
 
     static let parakeetModels: [ModelInfo] = [
@@ -101,14 +117,19 @@ extension ModelInfo {
         ),
     ]
 
+    // Provider pattern: allows SpeechAnalyzer models to be injected without importing Speech framework here
+    nonisolated(unsafe) static var _speechAnalyzerModelProvider: (() -> [ModelInfo])?
+    static var speechAnalyzerModels: [ModelInfo] { _speechAnalyzerModelProvider?() ?? [] }
+
     static var allModels: [ModelInfo] {
-        whisperModels + parakeetModels
+        whisperModels + parakeetModels + speechAnalyzerModels
     }
 
     static func models(for engine: EngineType) -> [ModelInfo] {
         switch engine {
         case .whisper: whisperModels
         case .parakeet: parakeetModels
+        case .speechAnalyzer: speechAnalyzerModels
         }
     }
 }

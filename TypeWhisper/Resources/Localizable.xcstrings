@@ -128,6 +128,26 @@
         }
       }
     },
+    "Apple Speech" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Speech"
+          }
+        }
+      }
+    },
+    "Apple Speech - system-managed models, streaming support, ~40 languages" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Speech – systemverwaltete Modelle, Streaming, ca. 40 Sprachen"
+          }
+        }
+      }
+    },
     "API Server" : {
       "localizations" : {
         "de" : {
@@ -605,6 +625,16 @@
         }
       }
     },
+    "Language not supported by Apple Speech" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sprache wird von Apple Speech nicht unterstützt"
+          }
+        }
+      }
+    },
     "Launch at Login" : {
       "localizations" : {
         "de" : {
@@ -1055,6 +1085,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Autostart"
+          }
+        }
+      }
+    },
+    "System-managed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systemverwaltet"
           }
         }
       }
