@@ -6,86 +6,61 @@ struct FileTranscriptionView: View {
 
     @State private var isDragTargeted = false
     @State private var showFilePicker = false
+    @State private var expandedFileId: UUID?
 
     var body: some View {
         VStack(spacing: 16) {
-            dropZone
-
-            if viewModel.selectedFileURL != nil {
-                transcriptionControls
+            if viewModel.files.isEmpty {
+                dropZone
+            } else {
+                fileList
+                controls
             }
-
-            if !viewModel.transcriptionText.isEmpty {
-                resultView
-            }
-
-            Spacer()
         }
         .padding()
         .frame(minWidth: 500, minHeight: 400)
+        .onDrop(of: [.fileURL], isTargeted: $isDragTargeted) { providers in
+            handleDrop(providers)
+        }
         .fileImporter(
             isPresented: $showFilePicker,
             allowedContentTypes: FileTranscriptionViewModel.allowedContentTypes,
-            allowsMultipleSelection: false
+            allowsMultipleSelection: true
         ) { result in
-            if case .success(let urls) = result, let url = urls.first {
-                viewModel.selectFile(url)
+            if case .success(let urls) = result {
+                viewModel.addFiles(urls)
             }
         }
     }
 
+    // MARK: - Drop Zone
+
     @ViewBuilder
     private var dropZone: some View {
-        VStack(spacing: 12) {
-            if let url = viewModel.selectedFileURL {
-                HStack {
-                    Image(systemName: "doc.fill")
-                        .font(.title2)
-                        .foregroundStyle(.blue)
-                    VStack(alignment: .leading) {
-                        Text(url.lastPathComponent)
-                            .font(.body.weight(.medium))
-                        Text(url.deletingLastPathComponent().path)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                    Button {
-                        viewModel.reset()
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .padding()
-            } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "arrow.down.doc")
-                        .font(.largeTitle)
-                        .foregroundStyle(isDragTargeted ? .blue : .secondary)
+        VStack(spacing: 8) {
+            Spacer()
+            Image(systemName: "arrow.down.doc")
+                .font(.largeTitle)
+                .foregroundStyle(isDragTargeted ? .blue : .secondary)
 
-                    Text(String(localized: "Drop audio or video file here"))
-                        .font(.headline)
+            Text(String(localized: "Drop audio or video files here"))
+                .font(.headline)
 
-                    Text(String(localized: "or"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            Text(String(localized: "or"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
-                    Button(String(localized: "Choose File...")) {
-                        showFilePicker = true
-                    }
-                    .buttonStyle(.bordered)
-
-                    Text("WAV, MP3, M4A, FLAC, MP4, MOV")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(32)
+            Button(String(localized: "Choose Files...")) {
+                showFilePicker = true
             }
+            .buttonStyle(.bordered)
+
+            Text("WAV, MP3, M4A, FLAC, MP4, MOV")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            Spacer()
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 12)
                 .fill(isDragTargeted ? Color.blue.opacity(0.1) : Color.clear)
@@ -97,92 +72,214 @@ struct FileTranscriptionView: View {
                         )
                 )
         )
-        .onDrop(of: [.fileURL], isTargeted: $isDragTargeted) { providers in
-            handleDrop(providers)
+    }
+
+    // MARK: - File List
+
+    @ViewBuilder
+    private var fileList: some View {
+        ScrollView {
+            LazyVStack(spacing: 8) {
+                ForEach(viewModel.files) { item in
+                    fileRow(item)
+                }
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func fileRow(_ item: FileTranscriptionViewModel.FileItem) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 8) {
+                fileStatusIcon(item.state)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.fileName)
+                        .font(.body.weight(.medium))
+                        .lineLimit(1)
+
+                    if let error = item.errorMessage {
+                        Text(error)
+                            .font(.caption2)
+                            .foregroundStyle(.red)
+                            .lineLimit(1)
+                    } else if let result = item.result {
+                        Text(String(localized: "\(String(format: "%.1f", result.duration))s - \(String(format: "%.1f", result.processingTime))s processing"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if item.state == .done {
+                    fileActionButtons(item)
+                }
+
+                if viewModel.batchState != .processing {
+                    Button {
+                        viewModel.removeFile(item)
+                    } label: {
+                        Image(systemName: "xmark")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(10)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if item.state == .done {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        expandedFileId = expandedFileId == item.id ? nil : item.id
+                    }
+                }
+            }
+
+            if expandedFileId == item.id, let result = item.result {
+                Text(result.text)
+                    .font(.body)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 10)
+            }
+        }
+        .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
+    }
+
+    @ViewBuilder
+    private func fileStatusIcon(_ state: FileTranscriptionViewModel.FileItemState) -> some View {
+        switch state {
+        case .pending:
+            Image(systemName: "circle")
+                .foregroundStyle(.secondary)
+        case .loading:
+            ProgressView()
+                .controlSize(.small)
+        case .transcribing:
+            ProgressView()
+                .controlSize(.small)
+        case .done:
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .error:
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
         }
     }
 
     @ViewBuilder
-    private var transcriptionControls: some View {
+    private func fileActionButtons(_ item: FileTranscriptionViewModel.FileItem) -> some View {
+        HStack(spacing: 4) {
+            Button {
+                viewModel.copyText(for: item)
+            } label: {
+                Image(systemName: "doc.on.doc")
+            }
+            .buttonStyle(.plain)
+            .help(String(localized: "Copy"))
+
+            if let result = item.result, !result.segments.isEmpty {
+                Menu {
+                    Button("SRT") { viewModel.exportSubtitles(for: item, format: .srt) }
+                    Button("VTT") { viewModel.exportSubtitles(for: item, format: .vtt) }
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .buttonStyle(.plain)
+                .menuStyle(.borderlessButton)
+                .frame(width: 20)
+                .help(String(localized: "Export Subtitles"))
+            }
+        }
+    }
+
+    // MARK: - Controls
+
+    @ViewBuilder
+    private var controls: some View {
         HStack {
+            Button(String(localized: "Add Files...")) {
+                showFilePicker = true
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(viewModel.batchState == .processing)
+
             if viewModel.supportsTranslation {
                 Picker(String(localized: "Task"), selection: $viewModel.selectedTask) {
                     ForEach(TranscriptionTask.allCases) { task in
                         Text(task.displayName).tag(task)
                     }
                 }
-                .frame(width: 200)
+                .frame(width: 180)
+                .controlSize(.small)
             }
 
             Spacer()
 
-            if !viewModel.processingInfo.isEmpty {
-                Text(viewModel.processingInfo)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                viewModel.transcribe()
-            } label: {
-                switch viewModel.state {
-                case .loading, .transcribing:
-                    HStack(spacing: 6) {
-                        ProgressView()
-                            .controlSize(.small)
-                        Text(String(localized: "Transcribing..."))
-                    }
-                default:
-                    Label(String(localized: "Transcribe"), systemImage: "waveform")
+            if viewModel.hasResults {
+                Menu(String(localized: "Export All")) {
+                    Button(String(localized: "Copy All Text")) { viewModel.copyAllText() }
+                    Divider()
+                    Button(String(localized: "Export All as SRT")) { viewModel.exportAllSubtitles(format: .srt) }
+                    Button(String(localized: "Export All as VTT")) { viewModel.exportAllSubtitles(format: .vtt) }
                 }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!viewModel.canTranscribe)
-        }
-    }
-
-    @ViewBuilder
-    private var resultView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(String(localized: "Result"))
-                    .font(.headline)
-                Spacer()
-                Button {
-                    viewModel.copyToClipboard()
-                } label: {
-                    Label(String(localized: "Copy"), systemImage: "doc.on.doc")
-                }
-                .buttonStyle(.bordered)
                 .controlSize(.small)
             }
 
-            ScrollView {
-                Text(viewModel.transcriptionText)
-                    .font(.body)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
+            if viewModel.batchState == .processing {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(String(localized: "\(viewModel.completedFiles)/\(viewModel.totalFiles)"))
+                        .font(.caption)
+                        .monospacedDigit()
+                }
+            } else {
+                Button {
+                    viewModel.transcribeAll()
+                } label: {
+                    Label(String(localized: "Transcribe All"), systemImage: "waveform")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(!viewModel.canTranscribe)
             }
-            .frame(maxHeight: .infinity)
-            .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
+
+            Button {
+                viewModel.reset()
+            } label: {
+                Image(systemName: "trash")
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.batchState == .processing)
+            .help(String(localized: "Clear All"))
         }
     }
 
+    // MARK: - Drop Handling
+
     private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
-        guard let provider = providers.first else { return false }
+        var handled = false
+        for provider in providers {
+            provider.loadItem(forTypeIdentifier: "public.file-url") { data, _ in
+                guard let data = data as? Data,
+                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
 
-        provider.loadItem(forTypeIdentifier: "public.file-url") { data, _ in
-            guard let data = data as? Data,
-                  let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                let ext = url.pathExtension.lowercased()
+                guard AudioFileService.supportedExtensions.contains(ext) else { return }
 
-            let ext = url.pathExtension.lowercased()
-            guard AudioFileService.supportedExtensions.contains(ext) else { return }
-
-            Task { @MainActor in
-                viewModel.selectFile(url)
+                Task { @MainActor in
+                    viewModel.addFiles([url])
+                }
             }
+            handled = true
         }
-        return true
+        return handled
     }
 }

@@ -13,20 +13,35 @@ final class FileTranscriptionViewModel: ObservableObject {
         return instance
     }
 
-    enum State: Equatable {
-        case idle
+    struct FileItem: Identifiable {
+        let id = UUID()
+        let url: URL
+        var state: FileItemState = .pending
+        var result: TranscriptionResult?
+        var errorMessage: String?
+
+        var fileName: String { url.lastPathComponent }
+    }
+
+    enum FileItemState: Equatable {
+        case pending
         case loading
         case transcribing
         case done
-        case error(String)
+        case error
     }
 
-    @Published var state: State = .idle
-    @Published var transcriptionText: String = ""
-    @Published var selectedFileURL: URL?
+    enum BatchState: Equatable {
+        case idle
+        case processing
+        case done
+    }
+
+    @Published var files: [FileItem] = []
+    @Published var batchState: BatchState = .idle
+    @Published var currentIndex: Int = 0
     @Published var selectedLanguage: String? = nil
     @Published var selectedTask: TranscriptionTask = .transcribe
-    @Published var processingInfo: String = ""
 
     private let modelManager: ModelManagerService
     private let audioFileService: AudioFileService
@@ -42,60 +57,157 @@ final class FileTranscriptionViewModel: ObservableObject {
     }
 
     var canTranscribe: Bool {
-        selectedFileURL != nil && modelManager.activeEngine?.isModelLoaded == true && state != .transcribing
+        !files.isEmpty && modelManager.activeEngine?.isModelLoaded == true && batchState != .processing
     }
 
     var supportsTranslation: Bool {
         modelManager.selectedEngine.supportsTranslation
     }
 
-    func selectFile(_ url: URL) {
-        selectedFileURL = url
-        transcriptionText = ""
-        state = .idle
-        processingInfo = ""
+    var hasResults: Bool {
+        files.contains { $0.state == .done }
     }
 
-    func transcribe() {
-        guard let url = selectedFileURL else { return }
+    var totalFiles: Int { files.count }
 
-        Task {
-            state = .loading
-            processingInfo = String(localized: "Loading audio file...")
+    var completedFiles: Int {
+        files.filter { $0.state == .done }.count
+    }
 
-            do {
-                let samples = try await audioFileService.loadAudioSamples(from: url)
-                let audioDuration = Double(samples.count) / 16000.0
-                processingInfo = String(localized: "Transcribing \(String(format: "%.1f", audioDuration))s of audio...")
-                state = .transcribing
+    func addFiles(_ urls: [URL]) {
+        let validExtensions = AudioFileService.supportedExtensions
+        let existingURLs = Set(files.map(\.url))
 
-                let result = try await modelManager.transcribe(
-                    audioSamples: samples,
-                    language: selectedLanguage,
-                    task: selectedTask
-                )
+        let newFiles = urls
+            .filter { validExtensions.contains($0.pathExtension.lowercased()) }
+            .filter { !existingURLs.contains($0) }
+            .map { FileItem(url: $0) }
 
-                transcriptionText = result.text
-                processingInfo = String(
-                    localized: "Done in \(String(format: "%.1f", result.processingTime))s (\(String(format: "%.0f", result.realTimeFactor))x realtime) - \(result.engineUsed.displayName)"
-                )
-                state = .done
-            } catch {
-                state = .error(error.localizedDescription)
-                processingInfo = ""
-            }
+        files.append(contentsOf: newFiles)
+    }
+
+    func removeFile(_ item: FileItem) {
+        files.removeAll { $0.id == item.id }
+        if files.isEmpty {
+            batchState = .idle
         }
     }
 
-    func copyToClipboard() {
+    func transcribeAll() {
+        guard canTranscribe else { return }
+
+        batchState = .processing
+        currentIndex = 0
+
+        // Reset pending/error items
+        for i in files.indices {
+            if files[i].state != .done {
+                files[i].state = .pending
+                files[i].result = nil
+                files[i].errorMessage = nil
+            }
+        }
+
+        Task {
+            for i in files.indices {
+                guard batchState == .processing else { break }
+                guard files[i].state != .done else { continue }
+
+                currentIndex = i
+                await transcribeFile(at: i)
+            }
+            batchState = .done
+        }
+    }
+
+    private func transcribeFile(at index: Int) async {
+        files[index].state = .loading
+
+        do {
+            let samples = try await audioFileService.loadAudioSamples(from: files[index].url)
+
+            files[index].state = .transcribing
+
+            let result = try await modelManager.transcribe(
+                audioSamples: samples,
+                language: selectedLanguage,
+                task: selectedTask
+            )
+
+            files[index].result = result
+            files[index].state = .done
+        } catch {
+            files[index].state = .error
+            files[index].errorMessage = error.localizedDescription
+        }
+    }
+
+    func exportSubtitles(for item: FileItem, format: SubtitleFormat) {
+        guard let result = item.result, !result.segments.isEmpty else { return }
+
+        let content: String
+        switch format {
+        case .srt: content = SubtitleExporter.exportSRT(segments: result.segments)
+        case .vtt: content = SubtitleExporter.exportVTT(segments: result.segments)
+        }
+
+        let name = item.url.deletingPathExtension().lastPathComponent
+        SubtitleExporter.saveToFile(content: content, format: format, suggestedName: name)
+    }
+
+    func exportAllSubtitles(format: SubtitleFormat) {
+        let completedFiles = files.filter { $0.state == .done && $0.result != nil }
+        guard !completedFiles.isEmpty else { return }
+
+        // For single file, use save panel directly
+        if completedFiles.count == 1, let item = completedFiles.first {
+            exportSubtitles(for: item, format: format)
+            return
+        }
+
+        // For multiple files, choose a folder
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.prompt = String(localized: "Export Here")
+
+        guard panel.runModal() == .OK, let folder = panel.url else { return }
+
+        for item in completedFiles {
+            guard let result = item.result, !result.segments.isEmpty else { continue }
+
+            let content: String
+            switch format {
+            case .srt: content = SubtitleExporter.exportSRT(segments: result.segments)
+            case .vtt: content = SubtitleExporter.exportVTT(segments: result.segments)
+            }
+
+            let name = item.url.deletingPathExtension().lastPathComponent
+            let fileURL = folder.appendingPathComponent("\(name).\(format.fileExtension)")
+            try? content.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
+    }
+
+    func copyAllText() {
+        let allText = files
+            .compactMap { $0.result?.text }
+            .joined(separator: "\n\n")
+
+        guard !allText.isEmpty else { return }
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(transcriptionText, forType: .string)
+        NSPasteboard.general.setString(allText, forType: .string)
+    }
+
+    func copyText(for item: FileItem) {
+        guard let text = item.result?.text, !text.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 
     func reset() {
-        selectedFileURL = nil
-        transcriptionText = ""
-        state = .idle
-        processingInfo = ""
+        files = []
+        batchState = .idle
+        currentIndex = 0
     }
 }

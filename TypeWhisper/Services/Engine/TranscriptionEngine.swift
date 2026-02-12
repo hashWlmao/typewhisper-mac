@@ -7,7 +7,8 @@ protocol TranscriptionEngine {
     var supportsStreaming: Bool { get }
     var supportsTranslation: Bool { get }
 
-    func loadModel(_ model: ModelInfo, progress: @escaping (Double) -> Void) async throws
+    /// Load (and optionally download) a model. Progress callback receives (fraction, bytesPerSecond?).
+    func loadModel(_ model: ModelInfo, progress: @escaping (Double, Double?) -> Void) async throws
     func unloadModel()
 
     func transcribe(

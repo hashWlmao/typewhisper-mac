@@ -1,0 +1,263 @@
+import SwiftUI
+
+struct HistoryView: View {
+    @ObservedObject private var viewModel = HistoryViewModel.shared
+
+    var body: some View {
+        HSplitView {
+            // MARK: - Left Panel: Search + List
+            VStack(spacing: 0) {
+                // Search
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField(String(localized: "Search..."), text: $viewModel.searchQuery)
+                        .textFieldStyle(.plain)
+                    if !viewModel.searchQuery.isEmpty {
+                        Button {
+                            viewModel.searchQuery = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(8)
+                .background(.bar)
+
+                Divider()
+
+                // List
+                if viewModel.filteredRecords.isEmpty {
+                    ContentUnavailableView {
+                        Label(String(localized: "No Entries"), systemImage: "clock")
+                    } description: {
+                        if viewModel.searchQuery.isEmpty {
+                            Text(String(localized: "Dictated text will appear here."))
+                        } else {
+                            Text(String(localized: "No results for this search."))
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
+                } else {
+                    List(viewModel.filteredRecords, id: \.id, selection: Binding(
+                        get: { viewModel.selectedRecord?.id },
+                        set: { newId in
+                            viewModel.selectRecord(viewModel.filteredRecords.first { $0.id == newId })
+                        }
+                    )) { record in
+                        RecordRow(record: record)
+                            .tag(record.id)
+                            .contextMenu {
+                                Button(String(localized: "Copy")) {
+                                    viewModel.copyToClipboard(record.finalText)
+                                }
+                                Divider()
+                                Button(String(localized: "Delete"), role: .destructive) {
+                                    viewModel.deleteRecord(record)
+                                }
+                            }
+                    }
+                    .listStyle(.sidebar)
+                }
+
+                Divider()
+
+                // Footer stats
+                HStack {
+                    Text("\(viewModel.totalRecords) \(String(localized: "entries"))")
+                    Spacer()
+                    Text("\(viewModel.totalWords) \(String(localized: "words"))")
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.bar)
+            }
+            .frame(minWidth: 260, idealWidth: 300, maxWidth: 320)
+
+            // MARK: - Right Panel: Detail
+            if let record = viewModel.selectedRecord {
+                RecordDetailView(record: record, viewModel: viewModel)
+            } else {
+                ContentUnavailableView {
+                    Label(String(localized: "No Selection"), systemImage: "text.document")
+                } description: {
+                    Text(String(localized: "Select a transcription to view details."))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(minWidth: 600, minHeight: 400)
+    }
+}
+
+// MARK: - Record Row
+
+private struct RecordRow: View {
+    let record: TranscriptionRecord
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(record.preview)
+                .lineLimit(2)
+                .font(.body)
+
+            HStack {
+                Text(record.timestamp, style: .relative)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if let appName = record.appName {
+                    Text("- \(appName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(formatDuration(record.durationSeconds))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func formatDuration(_ seconds: Double) -> String {
+        let s = Int(seconds)
+        if s < 60 { return "\(s)s" }
+        return "\(s / 60)m \(s % 60)s"
+    }
+}
+
+// MARK: - Record Detail
+
+private struct RecordDetailView: View {
+    let record: TranscriptionRecord
+    @ObservedObject var viewModel: HistoryViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(record.timestamp, format: .dateTime)
+                        .font(.headline)
+                    Spacer()
+                    // Actions
+                    Button {
+                        viewModel.copyToClipboard(record.finalText)
+                    } label: {
+                        Image(systemName: "doc.on.doc")
+                    }
+                    .help(String(localized: "Copy"))
+
+                    if viewModel.isEditing {
+                        Button(String(localized: "Cancel")) {
+                            viewModel.cancelEditing()
+                        }
+                        Button(String(localized: "Save")) {
+                            viewModel.saveEditing()
+                        }
+                        .buttonStyle(.borderedProminent)
+                    } else {
+                        Button {
+                            viewModel.startEditing()
+                        } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .help(String(localized: "Edit"))
+                    }
+
+                    Button(role: .destructive) {
+                        viewModel.deleteRecord(record)
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .help(String(localized: "Delete"))
+                }
+
+                HStack(spacing: 12) {
+                    Label(formatDuration(record.durationSeconds), systemImage: "waveform")
+                    Label("\(record.wordsCount) \(String(localized: "words"))", systemImage: "text.word.spacing")
+                    if let lang = record.language {
+                        Label(lang.uppercased(), systemImage: "globe")
+                    }
+                    Label(record.engineUsed, systemImage: "cpu")
+                    if let appName = record.appName {
+                        Label(appName, systemImage: "app")
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+            .padding()
+            .background(.bar)
+
+            Divider()
+
+            // Correction Banner
+            if viewModel.showCorrectionBanner, !viewModel.correctionSuggestions.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Image(systemName: "text.badge.checkmark")
+                        Text(String(localized: "Corrections detected"))
+                            .font(.subheadline.bold())
+                        Spacer()
+                        Button {
+                            viewModel.dismissCorrectionBanner()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    ForEach(viewModel.correctionSuggestions) { suggestion in
+                        HStack(spacing: 4) {
+                            Text(suggestion.original)
+                                .strikethrough()
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "arrow.right")
+                                .font(.caption2)
+                            Text(suggestion.replacement)
+                                .bold()
+                        }
+                        .font(.caption)
+                    }
+                }
+                .padding(10)
+                .background(.orange.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
+            // Content
+            if viewModel.isEditing {
+                TextEditor(text: $viewModel.editedText)
+                    .font(.body)
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ScrollView {
+                    Text(record.finalText)
+                        .textSelection(.enabled)
+                        .font(.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(minWidth: 320)
+    }
+
+    private func formatDuration(_ seconds: Double) -> String {
+        let s = Int(seconds)
+        if s < 60 { return "\(s)s" }
+        return "\(s / 60)m \(s % 60)s"
+    }
+}

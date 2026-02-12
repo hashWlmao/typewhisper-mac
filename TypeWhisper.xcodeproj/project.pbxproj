@@ -40,6 +40,14 @@
 		AA00000000000000000044 /* APIHandlers.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000044 /* APIHandlers.swift */; };
 		AA00000000000000000045 /* APIServerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000045 /* APIServerViewModel.swift */; };
 		AA00000000000000000046 /* APISettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000046 /* APISettingsView.swift */; };
+		AA00000000000000000050 /* SubtitleExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000050 /* SubtitleExporter.swift */; };
+		AA00000000000000000051 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000051 /* GeneralSettingsView.swift */; };
+		AA00000000000000000052 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000052 /* Localizable.xcstrings */; };
+		AA00000000000000000060 /* TranscriptionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000060 /* TranscriptionRecord.swift */; };
+		AA00000000000000000061 /* HistoryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000061 /* HistoryService.swift */; };
+		AA00000000000000000062 /* TextDiffService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000062 /* TextDiffService.swift */; };
+		AA00000000000000000063 /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000063 /* HistoryViewModel.swift */; };
+		AA00000000000000000064 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000064 /* HistoryView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,7 +83,15 @@
 		BB00000000000000000044 /* APIHandlers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIHandlers.swift; sourceTree = "<group>"; };
 		BB00000000000000000045 /* APIServerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIServerViewModel.swift; sourceTree = "<group>"; };
 		BB00000000000000000046 /* APISettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APISettingsView.swift; sourceTree = "<group>"; };
-		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TypeWhisper.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB00000000000000000050 /* SubtitleExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubtitleExporter.swift; sourceTree = "<group>"; };
+		BB00000000000000000051 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		BB00000000000000000052 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		BB00000000000000000060 /* TranscriptionRecord.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptionRecord.swift; sourceTree = "<group>"; };
+		BB00000000000000000061 /* HistoryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryService.swift; sourceTree = "<group>"; };
+		BB00000000000000000062 /* TextDiffService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextDiffService.swift; sourceTree = "<group>"; };
+		BB00000000000000000063 /* HistoryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000064 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypeWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -92,7 +108,7 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		CC00000000000000000001 /* Root */ = {
+		CC00000000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				CC00000000000000000002 /* TypeWhisper */,
@@ -128,6 +144,7 @@
 				BB00000000000000000003 /* EngineType.swift */,
 				BB00000000000000000004 /* ModelInfo.swift */,
 				BB00000000000000000005 /* TranscriptionResult.swift */,
+				BB00000000000000000060 /* TranscriptionRecord.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -142,20 +159,11 @@
 				BB00000000000000000030 /* AudioRecordingService.swift */,
 				BB00000000000000000031 /* HotkeyService.swift */,
 				BB00000000000000000032 /* TextInsertionService.swift */,
+				BB00000000000000000050 /* SubtitleExporter.swift */,
+				BB00000000000000000061 /* HistoryService.swift */,
+				BB00000000000000000062 /* TextDiffService.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		CC00000000000000000010 /* HTTPServer */ = {
-			isa = PBXGroup;
-			children = (
-				BB00000000000000000040 /* HTTPResponse.swift */,
-				BB00000000000000000041 /* HTTPRequestParser.swift */,
-				BB00000000000000000042 /* APIRouter.swift */,
-				BB00000000000000000043 /* HTTPServer.swift */,
-				BB00000000000000000044 /* APIHandlers.swift */,
-			);
-			path = HTTPServer;
 			sourceTree = "<group>";
 		};
 		CC00000000000000000006 /* Engine */ = {
@@ -176,6 +184,7 @@
 				BB00000000000000000013 /* SettingsViewModel.swift */,
 				BB00000000000000000033 /* DictationViewModel.swift */,
 				BB00000000000000000045 /* APIServerViewModel.swift */,
+				BB00000000000000000063 /* HistoryViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -190,6 +199,8 @@
 				BB00000000000000000034 /* DictationOverlayPanel.swift */,
 				BB00000000000000000035 /* DictationOverlayView.swift */,
 				BB00000000000000000046 /* APISettingsView.swift */,
+				BB00000000000000000051 /* GeneralSettingsView.swift */,
+				BB00000000000000000064 /* HistoryView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -199,8 +210,21 @@
 			children = (
 				BB00000000000000000018 /* Info.plist */,
 				BB00000000000000000019 /* TypeWhisper.entitlements */,
+				BB00000000000000000052 /* Localizable.xcstrings */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		CC00000000000000000010 /* HTTPServer */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000000000000000040 /* HTTPResponse.swift */,
+				BB00000000000000000041 /* HTTPRequestParser.swift */,
+				BB00000000000000000042 /* APIRouter.swift */,
+				BB00000000000000000043 /* HTTPServer.swift */,
+				BB00000000000000000044 /* APIHandlers.swift */,
+			);
+			path = HTTPServer;
 			sourceTree = "<group>";
 		};
 		CC00000000000000000090 /* Products */ = {
@@ -244,7 +268,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					DD00000000000000000001 = {
 						CreatedOnToolsVersion = 16.0;
@@ -260,7 +284,7 @@
 				de,
 				Base,
 			);
-			mainGroup = CC00000000000000000001 /* Root */;
+			mainGroup = CC00000000000000000001;
 			packageReferences = (
 				RR00000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				RR00000000000000000002 /* XCRemoteSwiftPackageReference "FluidAudio" */,
@@ -280,6 +304,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA00000000000000000052 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -320,6 +345,13 @@
 				AA00000000000000000044 /* APIHandlers.swift in Sources */,
 				AA00000000000000000045 /* APIServerViewModel.swift in Sources */,
 				AA00000000000000000046 /* APISettingsView.swift in Sources */,
+				AA00000000000000000050 /* SubtitleExporter.swift in Sources */,
+				AA00000000000000000051 /* GeneralSettingsView.swift in Sources */,
+				AA00000000000000000060 /* TranscriptionRecord.swift in Sources */,
+				AA00000000000000000061 /* HistoryService.swift in Sources */,
+				AA00000000000000000062 /* TextDiffService.swift in Sources */,
+				AA00000000000000000063 /* HistoryViewModel.swift in Sources */,
+				AA00000000000000000064 /* HistoryView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -331,6 +363,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -360,6 +393,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -383,6 +417,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -394,6 +429,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -423,6 +459,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -439,6 +476,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_VERSION = 5.0;
 			};
@@ -448,10 +486,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = TypeWhisper/Resources/TypeWhisper.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TypeWhisper/Resources/Info.plist;
@@ -474,10 +515,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = TypeWhisper/Resources/TypeWhisper.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TypeWhisper/Resources/Info.plist;
@@ -563,7 +607,6 @@
 			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
-
 	};
 	rootObject = EE00000000000000000001 /* Project object */;
 }

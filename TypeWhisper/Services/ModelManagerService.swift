@@ -52,10 +52,23 @@ final class ModelManagerService: ObservableObject {
 
         modelStatuses[model.id] = .downloading(progress: 0)
 
-        do {
-            try await engine.loadModel(model) { [weak self] progress in
+        // Listen for phase changes from WhisperKit (loading → prewarming)
+        if let whisperEngine = engine as? WhisperEngine {
+            whisperEngine.onPhaseChange = { [weak self] phase in
                 Task { @MainActor [weak self] in
-                    self?.modelStatuses[model.id] = .downloading(progress: progress)
+                    self?.modelStatuses[model.id] = .loading(phase: phase)
+                }
+            }
+        }
+
+        do {
+            try await engine.loadModel(model) { [weak self] progress, speed in
+                Task { @MainActor [weak self] in
+                    if progress >= 0.80 {
+                        self?.modelStatuses[model.id] = .loading()
+                    } else {
+                        self?.modelStatuses[model.id] = .downloading(progress: progress, bytesPerSecond: speed)
+                    }
                 }
             }
 

@@ -20,10 +20,10 @@ struct ModelManagerView: View {
     @ViewBuilder
     private var enginePicker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Engine")
+            Text(String(localized: "Engine"))
                 .font(.headline)
 
-            Picker("Engine", selection: Binding(
+            Picker(String(localized: "Engine"), selection: Binding(
                 get: { viewModel.selectedEngine },
                 set: { viewModel.selectEngine($0) }
             )) {
@@ -52,7 +52,7 @@ struct ModelManagerView: View {
     @ViewBuilder
     private var modelList: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Models")
+            Text(String(localized: "Models"))
                 .font(.headline)
 
             ForEach(viewModel.models) { model in
@@ -75,11 +75,21 @@ struct ModelRow: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(model.displayName)
-                    .font(.body.weight(.medium))
+                HStack(spacing: 6) {
+                    Text(model.displayName)
+                        .font(.body.weight(.medium))
+                    if model.isRecommended {
+                        Text(String(localized: "Recommended"))
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.blue.opacity(0.15), in: Capsule())
+                            .foregroundStyle(.blue)
+                    }
+                }
                 HStack(spacing: 8) {
                     Text(model.sizeDescription)
-                    Text("\(model.languageCount) languages")
+                    Text(String(localized: "\(model.languageCount) languages"))
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -103,20 +113,26 @@ struct ModelRow: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
 
-        case .downloading(let progress):
+        case .downloading(let progress, let bytesPerSecond):
             HStack(spacing: 8) {
                 ProgressView(value: progress)
                     .frame(width: 80)
                 Text("\(Int(progress * 100))%")
                     .font(.caption)
                     .monospacedDigit()
+                if let speed = bytesPerSecond, speed > 0 {
+                    Text(Self.formatSpeed(speed))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
             }
 
-        case .loading:
+        case .loading(let phase):
             HStack(spacing: 8) {
                 ProgressView()
                     .controlSize(.small)
-                Text(String(localized: "Loading..."))
+                Text(Self.phaseText(phase))
                     .font(.caption)
             }
 
@@ -155,6 +171,26 @@ struct ModelRow: View {
                 .buttonStyle(.bordered)
                 .controlSize(.mini)
             }
+        }
+    }
+
+    private static func phaseText(_ phase: String?) -> String {
+        switch phase {
+        case "prewarming":
+            String(localized: "Optimizing for Neural Engine...")
+        case "loading":
+            String(localized: "Loading model...")
+        default:
+            String(localized: "Loading...")
+        }
+    }
+
+    private static func formatSpeed(_ bytesPerSecond: Double) -> String {
+        let mbps = bytesPerSecond / (1024 * 1024)
+        if mbps >= 1 {
+            return String(format: "%.1f MB/s", mbps)
+        } else {
+            return String(format: "%.0f KB/s", bytesPerSecond / 1024)
         }
     }
 }

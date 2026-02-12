@@ -53,9 +53,7 @@ struct MenuBarView: View {
 
         Divider()
 
-        Button {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } label: {
+        SettingsLink {
             Label(String(localized: "Settings..."), systemImage: "gear")
         }
         .keyboardShortcut(",")

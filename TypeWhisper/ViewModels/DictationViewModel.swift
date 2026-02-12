@@ -30,11 +30,21 @@ final class DictationViewModel: ObservableObject {
         didSet { UserDefaults.standard.set(whisperModeEnabled, forKey: "whisperModeEnabled") }
     }
 
+    enum OverlayPosition: String, CaseIterable {
+        case top
+        case bottom
+    }
+
+    @Published var overlayPosition: OverlayPosition {
+        didSet { UserDefaults.standard.set(overlayPosition.rawValue, forKey: "overlayPosition") }
+    }
+
     private let audioRecordingService: AudioRecordingService
     private let textInsertionService: TextInsertionService
     private let hotkeyService: HotkeyService
     private let modelManager: ModelManagerService
     private let settingsViewModel: SettingsViewModel
+    private let historyService: HistoryService
 
     private var cancellables = Set<AnyCancellable>()
     private var recordingTimer: Timer?
@@ -47,14 +57,18 @@ final class DictationViewModel: ObservableObject {
         textInsertionService: TextInsertionService,
         hotkeyService: HotkeyService,
         modelManager: ModelManagerService,
-        settingsViewModel: SettingsViewModel
+        settingsViewModel: SettingsViewModel,
+        historyService: HistoryService
     ) {
         self.audioRecordingService = audioRecordingService
         self.textInsertionService = textInsertionService
         self.hotkeyService = hotkeyService
         self.modelManager = modelManager
         self.settingsViewModel = settingsViewModel
+        self.historyService = historyService
         self.whisperModeEnabled = UserDefaults.standard.bool(forKey: "whisperModeEnabled")
+        self.overlayPosition = UserDefaults.standard.string(forKey: "overlayPosition")
+            .flatMap { OverlayPosition(rawValue: $0) } ?? .top
 
         setupBindings()
     }
@@ -139,6 +153,9 @@ final class DictationViewModel: ObservableObject {
             return
         }
 
+        // Capture active app BEFORE we start processing (the frontmost app is the target)
+        let activeApp = textInsertionService.captureActiveApp()
+
         state = .processing
 
         Task {
@@ -159,6 +176,17 @@ final class DictationViewModel: ObservableObject {
                 partialText = ""
                 state = .inserting
                 try await textInsertionService.insertText(text)
+
+                historyService.addRecord(
+                    rawText: text,
+                    finalText: text,
+                    appName: activeApp.name,
+                    appBundleIdentifier: activeApp.bundleId,
+                    durationSeconds: audioDuration,
+                    language: settingsViewModel.selectedLanguage,
+                    engineUsed: result.engineUsed.rawValue
+                )
+
                 state = .idle
             } catch {
                 showError(error.localizedDescription)
@@ -169,11 +197,28 @@ final class DictationViewModel: ObservableObject {
     func requestMicPermission() {
         Task {
             _ = await audioRecordingService.requestMicrophonePermission()
+            objectWillChange.send()
         }
     }
 
     func requestAccessibilityPermission() {
         textInsertionService.requestAccessibilityPermission()
+        pollPermissionStatus()
+    }
+
+    private var permissionPollTask: Task<Void, Never>?
+
+    /// Polls permission status periodically until granted or timeout.
+    private func pollPermissionStatus() {
+        permissionPollTask?.cancel()
+        permissionPollTask = Task {
+            for _ in 0..<30 {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                objectWillChange.send()
+                if !needsMicPermission, !needsAccessibilityPermission { return }
+            }
+        }
     }
 
     private func showError(_ message: String) {
@@ -188,10 +233,14 @@ final class DictationViewModel: ObservableObject {
 
     // MARK: - Streaming
 
+    /// Text confirmed from previous streaming passes — never changes once set.
+    private var confirmedStreamingText = ""
+
     private func startStreamingIfSupported() {
         guard let engine = modelManager.activeEngine, engine.supportsStreaming else { return }
 
         isStreaming = true
+        confirmedStreamingText = ""
         streamingTask = Task { [weak self] in
             guard let self else { return }
             // Initial delay before first streaming attempt
@@ -203,21 +252,25 @@ final class DictationViewModel: ObservableObject {
 
                 if bufferDuration > 0.5 {
                     do {
+                        let confirmed = self.confirmedStreamingText
                         let result = try await self.modelManager.transcribe(
                             audioSamples: buffer,
                             language: self.settingsViewModel.selectedLanguage,
                             task: self.settingsViewModel.selectedTask,
                             onProgress: { [weak self] text in
                                 guard let self, self.state == .recording else { return false }
+                                let stable = Self.stabilizeText(confirmed: confirmed, new: text)
                                 DispatchQueue.main.async {
-                                    self.partialText = text
+                                    self.partialText = stable
                                 }
                                 return true
                             }
                         )
                         let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !text.isEmpty {
-                            self.partialText = text
+                            let stable = Self.stabilizeText(confirmed: confirmed, new: text)
+                            self.partialText = stable
+                            self.confirmedStreamingText = stable
                         }
                     } catch {
                         // Streaming errors are non-fatal; final transcription will still run
@@ -233,6 +286,38 @@ final class DictationViewModel: ObservableObject {
         streamingTask?.cancel()
         streamingTask = nil
         isStreaming = false
+        confirmedStreamingText = ""
+    }
+
+    /// Keeps confirmed text stable and only appends new content.
+    private static func stabilizeText(confirmed: String, new: String) -> String {
+        let new = new.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !confirmed.isEmpty else { return new }
+        guard !new.isEmpty else { return confirmed }
+
+        // Best case: new text starts with confirmed text
+        if new.hasPrefix(confirmed) { return new }
+
+        // Find how far the texts match from the start
+        let confirmedChars = Array(confirmed.unicodeScalars)
+        let newChars = Array(new.unicodeScalars)
+        var matchEnd = 0
+        for i in 0..<min(confirmedChars.count, newChars.count) {
+            if confirmedChars[i] == newChars[i] {
+                matchEnd = i + 1
+            } else {
+                break
+            }
+        }
+
+        // If more than half matches, keep confirmed and append the new tail
+        if matchEnd > confirmed.count / 2 {
+            let newContent = String(new.unicodeScalars.dropFirst(matchEnd))
+            return confirmed + newContent
+        }
+
+        // Very different result — keep confirmed, ignore this pass
+        return confirmed
     }
 
     // MARK: - Silence Detection

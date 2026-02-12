@@ -11,6 +11,8 @@ final class ServiceContainer: ObservableObject {
     let audioRecordingService: AudioRecordingService
     let hotkeyService: HotkeyService
     let textInsertionService: TextInsertionService
+    let historyService: HistoryService
+    let textDiffService: TextDiffService
 
     // HTTP API
     let httpServer: HTTPServer
@@ -21,6 +23,7 @@ final class ServiceContainer: ObservableObject {
     let fileTranscriptionViewModel: FileTranscriptionViewModel
     let settingsViewModel: SettingsViewModel
     let dictationViewModel: DictationViewModel
+    let historyViewModel: HistoryViewModel
 
     private init() {
         // Services
@@ -29,6 +32,8 @@ final class ServiceContainer: ObservableObject {
         audioRecordingService = AudioRecordingService()
         hotkeyService = HotkeyService()
         textInsertionService = TextInsertionService()
+        historyService = HistoryService()
+        textDiffService = TextDiffService()
 
         // HTTP API
         let router = APIRouter()
@@ -49,7 +54,12 @@ final class ServiceContainer: ObservableObject {
             textInsertionService: textInsertionService,
             hotkeyService: hotkeyService,
             modelManager: modelManagerService,
-            settingsViewModel: settingsViewModel
+            settingsViewModel: settingsViewModel,
+            historyService: historyService
+        )
+        historyViewModel = HistoryViewModel(
+            historyService: historyService,
+            textDiffService: textDiffService
         )
 
         // Set shared references
@@ -58,10 +68,12 @@ final class ServiceContainer: ObservableObject {
         SettingsViewModel._shared = settingsViewModel
         DictationViewModel._shared = dictationViewModel
         APIServerViewModel._shared = apiServerViewModel
+        HistoryViewModel._shared = historyViewModel
     }
 
     func initialize() async {
         hotkeyService.setup()
+        historyService.purgeOldRecords()
 
         if apiServerViewModel.isEnabled {
             apiServerViewModel.startServer()

@@ -34,5 +34,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let panel = DictationOverlayPanel()
         panel.startObserving()
         overlayPanel = panel
+
+        // Keep settings window always on top
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidBecomeKey(_:)),
+            name: NSWindow.didBecomeKeyNotification,
+            object: nil
+        )
+    }
+
+    @objc private func windowDidBecomeKey(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              window.identifier?.rawValue.contains("settings") == true
+                || window.title.contains("Settings")
+                || window.title.contains("Einstellungen")
+        else { return }
+        window.level = .floating
     }
 }

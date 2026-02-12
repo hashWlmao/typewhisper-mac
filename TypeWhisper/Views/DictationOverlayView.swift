@@ -8,6 +8,10 @@ struct DictationOverlayView: View {
         !viewModel.partialText.isEmpty && viewModel.state == .recording
     }
 
+    private var isTop: Bool {
+        viewModel.overlayPosition == .top
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             // Status pill
@@ -45,6 +49,7 @@ struct DictationOverlayView: View {
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: hasPartialText ? 16 : 26))
         .overlay(RoundedRectangle(cornerRadius: hasPartialText ? 16 : 26).strokeBorder(.quaternary, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isTop ? .top : .bottom)
         .animation(.easeInOut(duration: 0.2), value: viewModel.state)
         .animation(.easeInOut(duration: 0.2), value: hasPartialText)
     }
@@ -87,7 +92,7 @@ struct DictationOverlayView: View {
         switch viewModel.state {
         case .recording:
             HStack(spacing: 4) {
-                Text("Recording")
+                Text(String(localized: "Recording"))
                     .font(.system(size: 12, weight: .medium))
                 if let mode = viewModel.hotkeyMode {
                     Text(mode == .pushToTalk ? "PTT" : "TOG")
@@ -99,11 +104,11 @@ struct DictationOverlayView: View {
             }
 
         case .processing:
-            Text("Transcribing...")
+            Text(String(localized: "Transcribing..."))
                 .font(.system(size: 12, weight: .medium))
 
         case .inserting:
-            Text("Done")
+            Text(String(localized: "Done"))
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.green)
 

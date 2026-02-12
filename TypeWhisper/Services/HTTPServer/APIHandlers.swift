@@ -152,7 +152,7 @@ final class APIHandlers: Sendable {
             switch status {
             case .notDownloaded: statusStr = "not_downloaded"
             case .downloading: statusStr = "downloading"
-            case .loading: statusStr = "loading"
+            case .loading(_): statusStr = "loading"
             case .ready: statusStr = "ready"
             case .error: statusStr = "error"
             }

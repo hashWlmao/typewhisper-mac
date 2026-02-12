@@ -1,11 +1,18 @@
 import Foundation
 
+struct TranscriptionSegment {
+    let text: String
+    let start: TimeInterval
+    let end: TimeInterval
+}
+
 struct TranscriptionResult {
     let text: String
     let detectedLanguage: String?
     let duration: TimeInterval
     let processingTime: TimeInterval
     let engineUsed: EngineType
+    let segments: [TranscriptionSegment]
 
     var realTimeFactor: Double {
         guard duration > 0 else { return 0 }

@@ -25,8 +25,19 @@ final class TextInsertionService {
     }
 
     func requestAccessibilityPermission() {
+        // Try the prompt first
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
         AXIsProcessTrustedWithOptions(options)
+
+        // Also open System Settings directly (prompt alone may not work in sandbox)
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    func captureActiveApp() -> (name: String?, bundleId: String?) {
+        let app = NSWorkspace.shared.frontmostApplication
+        return (app?.localizedName, app?.bundleIdentifier)
     }
 
     func insertText(_ text: String) async throws {

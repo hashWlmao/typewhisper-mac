@@ -2,8 +2,8 @@ import Foundation
 
 enum ModelStatus: Equatable {
     case notDownloaded
-    case downloading(progress: Double)
-    case loading
+    case downloading(progress: Double, bytesPerSecond: Double? = nil)
+    case loading(phase: String? = nil)
     case ready
     case error(String)
 
@@ -27,6 +27,22 @@ struct ModelInfo: Identifiable, Hashable {
 
     static func == (lhs: ModelInfo, rhs: ModelInfo) -> Bool {
         lhs.id == rhs.id
+    }
+
+    var isRecommended: Bool {
+        let ram = ProcessInfo.processInfo.physicalMemory
+        let gb = ram / (1024 * 1024 * 1024)
+
+        switch displayName {
+        case "Tiny", "Base":
+            return gb < 8
+        case "Small", "Large v3 Turbo", "Parakeet TDT v3":
+            return gb >= 8 && gb <= 16
+        case "Large v3":
+            return gb > 16
+        default:
+            return false
+        }
     }
 }
 

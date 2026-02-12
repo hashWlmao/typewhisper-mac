@@ -67,14 +67,14 @@ final class HotkeyService: ObservableObject {
         let holdDuration = Date().timeIntervalSince(downTime)
 
         if holdDuration < Self.toggleThreshold {
-            // Short press → push-to-talk, stop on release
+            // Short press → toggle mode, recording continues
+            currentMode = .toggle
+        } else {
+            // Long hold → push-to-talk, stop on release
             isActive = false
             currentMode = nil
             keyDownTime = nil
             onDictationStop?()
-        } else {
-            // Long hold → switch to toggle mode, keyUp is ignored
-            currentMode = .toggle
         }
     }
 }

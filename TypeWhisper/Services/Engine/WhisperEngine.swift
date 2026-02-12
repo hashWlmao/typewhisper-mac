@@ -15,7 +15,10 @@ final class WhisperEngine: TranscriptionEngine {
         ["de", "en", "fr", "es", "it", "pt", "nl", "pl", "ru", "zh", "ja", "ko", "ar", "hi", "tr", "cs", "sv", "da", "fi", "el", "hu", "ro", "bg", "uk", "hr", "sk", "sl", "et", "lv", "lt"]
     }
 
-    func loadModel(_ model: ModelInfo, progress: @escaping (Double) -> Void) async throws {
+    /// Callback to report loading phase changes (loading, prewarming, etc.)
+    var onPhaseChange: ((String?) -> Void)?
+
+    func loadModel(_ model: ModelInfo, progress: @escaping (Double, Double?) -> Void) async throws {
         guard model.engineType == .whisper else {
             throw TranscriptionEngineError.modelLoadFailed("Not a Whisper model")
         }
@@ -26,20 +29,49 @@ final class WhisperEngine: TranscriptionEngine {
         }
 
         do {
-            progress(0.1)
+            progress(0.05, nil)
 
+            // Step 1: Download model with granular progress (0.05 → 0.80)
+            var lastReportedProgress = 0.0
+            let modelFolder = try await WhisperKit.download(variant: model.id) { downloadProgress in
+                let fraction = downloadProgress.fractionCompleted
+                let mapped = 0.05 + fraction * 0.75
+                guard mapped - lastReportedProgress >= 0.01 else { return }
+                lastReportedProgress = mapped
+                let speed = downloadProgress.userInfo[.throughputKey] as? Double
+                progress(mapped, speed)
+            }
+
+            // Step 2: Create WhisperKit without auto-load, then load manually with phase reporting
+            progress(0.80, nil)
             let config = WhisperKitConfig(
-                model: model.id,
+                modelFolder: modelFolder.path,
                 verbose: false,
                 logLevel: .error,
-                prewarm: true,
-                load: true,
-                download: true
+                prewarm: false,
+                load: false,
+                download: false
             )
 
-            progress(0.3)
-            whisperKit = try await WhisperKit(config)
-            progress(1.0)
+            let kit = try await WhisperKit(config)
+
+            kit.modelStateCallback = { [weak self] _, newState in
+                switch newState {
+                case .loading:
+                    self?.onPhaseChange?("loading")
+                case .prewarming:
+                    self?.onPhaseChange?("prewarming")
+                default:
+                    break
+                }
+            }
+
+            try await kit.loadModels()
+            progress(0.90, nil)
+            try await kit.prewarmModels()
+
+            whisperKit = kit
+            progress(1.0, nil)
 
             currentModelId = model.id
             isModelLoaded = true
@@ -94,12 +126,22 @@ final class WhisperEngine: TranscriptionEngine {
         let fullText = results.map(\.text).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
         let detectedLanguage = results.first?.language
 
+        var segments: [TranscriptionSegment] = []
+        for wkResult in results {
+            for seg in wkResult.segments {
+                let segText = seg.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !segText.isEmpty else { continue }
+                segments.append(TranscriptionSegment(text: segText, start: TimeInterval(seg.start), end: TimeInterval(seg.end)))
+            }
+        }
+
         return TranscriptionResult(
             text: fullText,
             detectedLanguage: detectedLanguage,
             duration: audioDuration,
             processingTime: processingTime,
-            engineUsed: .whisper
+            engineUsed: .whisper,
+            segments: segments
         )
     }
 
@@ -145,12 +187,22 @@ final class WhisperEngine: TranscriptionEngine {
         let fullText = results.map(\.text).joined(separator: " ").trimmingCharacters(in: .whitespacesAndNewlines)
         let detectedLanguage = results.first?.language
 
+        var segments: [TranscriptionSegment] = []
+        for wkResult in results {
+            for seg in wkResult.segments {
+                let segText = seg.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !segText.isEmpty else { continue }
+                segments.append(TranscriptionSegment(text: segText, start: TimeInterval(seg.start), end: TimeInterval(seg.end)))
+            }
+        }
+
         return TranscriptionResult(
             text: fullText,
             detectedLanguage: detectedLanguage,
             duration: audioDuration,
             processingTime: processingTime,
-            engineUsed: .whisper
+            engineUsed: .whisper,
+            segments: segments
         )
     }
 }
