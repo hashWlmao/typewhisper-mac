@@ -33,7 +33,7 @@ Local speech-to-text for macOS. Transcribe audio using on-device AI models — n
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/user/typewhisper-mac.git
+   git clone https://github.com/TypeWhisper/typewhisper-mac.git
    cd typewhisper-mac
    ```
 
@@ -119,4 +119,4 @@ TypeWhisper/
 
 ## License
 
-MIT
+GPLv3 — see [LICENSE](LICENSE) for details. Commercial licensing available — see [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md).
