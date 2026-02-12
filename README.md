@@ -4,7 +4,7 @@
 [![macOS](https://img.shields.io/badge/macOS-15.0%2B-black.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5-orange.svg)](https://swift.org)
 
-Local speech-to-text for macOS. Transcribe audio using on-device AI models — no cloud, no subscriptions, fully private.
+Local speech-to-text for macOS. Transcribe audio using on-device AI models — no cloud, no API keys, no subscriptions. Your voice data never leaves your Mac.
 
 ## Features
 
@@ -15,6 +15,7 @@ Local speech-to-text for macOS. Transcribe audio using on-device AI models — n
 - **File transcription** — Batch-process multiple audio/video files with drag & drop
 - **Subtitle export** — Export transcriptions as SRT or WebVTT with timestamps
 - **Local HTTP API** — REST API for integration with external tools and scripts
+- **App-specific profiles** — Per-app overrides for language, task, engine, and whisper mode. Automatically activates when dictating in a matched application
 - **Whisper mode** — Boosted microphone gain for quiet speech
 - **Launch at Login** — Start automatically with macOS
 - **Multilingual UI** — English and German
@@ -99,12 +100,24 @@ Optional parameters:
 curl http://localhost:8787/v1/models
 ```
 
+## Profiles
+
+Profiles let you configure transcription settings per application. For example:
+
+- **Mail** — German language, Whisper Large v3
+- **Slack** — English language, Parakeet TDT v3
+- **Terminal** — Whisper mode always on
+
+Create profiles in Settings > Profiles. Assign apps, set language/task/engine overrides, and adjust priority. When you start dictating, TypeWhisper matches the active app's bundle ID against your profiles and applies the overrides automatically. The active profile name is shown as a badge in the recording overlay.
+
+Both engines (WhisperKit and Parakeet) can be loaded simultaneously for instant switching between profiles. Note that loading both models increases memory usage.
+
 ## Architecture
 
 ```
 TypeWhisper/
 ├── App/                    # App entry point, dependency injection
-├── Models/                 # Data models (ModelInfo, TranscriptionResult, EngineType)
+├── Models/                 # Data models (ModelInfo, TranscriptionResult, EngineType, Profile)
 ├── Services/
 │   ├── Engine/             # WhisperEngine, ParakeetEngine, TranscriptionEngine protocol
 │   ├── HTTPServer/         # Local REST API (HTTPServer, APIRouter, APIHandlers)
@@ -113,7 +126,8 @@ TypeWhisper/
 │   ├── AudioFileService    # Audio/video → 16kHz PCM conversion
 │   ├── AudioRecordingService
 │   ├── HotkeyService
-│   └── TextInsertionService
+│   ├── TextInsertionService
+│   └── ProfileService      # Per-app profile matching and persistence
 ├── ViewModels/             # MVVM view models with Combine
 ├── Views/                  # SwiftUI views
 └── Resources/              # Info.plist, entitlements, localization
