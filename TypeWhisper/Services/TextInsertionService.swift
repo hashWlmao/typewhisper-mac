@@ -1,6 +1,9 @@
 import Foundation
 import AppKit
 import ApplicationServices
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "TextInsertionService")
 
 /// Inserts transcribed text into the active application via clipboard + simulated Cmd+V.
 @MainActor
@@ -35,9 +38,125 @@ final class TextInsertionService {
         }
     }
 
-    func captureActiveApp() -> (name: String?, bundleId: String?) {
+    func captureActiveApp() -> (name: String?, bundleId: String?, url: String?) {
         let app = NSWorkspace.shared.frontmostApplication
-        return (app?.localizedName, app?.bundleIdentifier)
+        let bundleId = app?.bundleIdentifier
+        let url = bundleId.flatMap { getBrowserURL(bundleId: $0) }
+        return (app?.localizedName, bundleId, url)
+    }
+
+    // MARK: - Browser URL Detection
+
+    private enum BrowserType: String {
+        case safari, arc, chromiumBased, firefox, notABrowser
+    }
+
+    private func identifyBrowser(_ bundleId: String) -> BrowserType {
+        switch bundleId {
+        case "com.apple.Safari":
+            return .safari
+        case "company.thebrowser.Browser":
+            return .arc
+        case "com.google.Chrome",
+             "com.google.Chrome.canary",
+             "com.brave.Browser",
+             "com.microsoft.edgemac",
+             "com.operasoftware.Opera",
+             "com.vivaldi.Vivaldi",
+             "org.chromium.Chromium":
+            return .chromiumBased
+        case "org.mozilla.firefox":
+            return .firefox
+        default:
+            return .notABrowser
+        }
+    }
+
+    private func getBrowserURL(bundleId: String) -> String? {
+        let browserType = identifyBrowser(bundleId)
+        guard browserType != .notABrowser else { return nil }
+
+        // Firefox doesn't support AppleScript for URL access
+        guard browserType != .firefox else { return nil }
+
+        let script: String
+        switch browserType {
+        case .safari:
+            script = """
+            tell application id "\(bundleId)"
+                if (count of windows) > 0 then
+                    return URL of current tab of front window
+                end if
+            end tell
+            return ""
+            """
+        case .arc:
+            script = """
+            tell application id "\(bundleId)"
+                if (count of windows) > 0 then
+                    return URL of active tab of front window
+                end if
+            end tell
+            return ""
+            """
+        case .chromiumBased:
+            script = """
+            tell application id "\(bundleId)"
+                if (count of windows) > 0 then
+                    return URL of active tab of front window
+                end if
+            end tell
+            return ""
+            """
+        default:
+            return nil
+        }
+
+        return executeAppleScript(script, timeout: 2.5)
+    }
+
+    private func executeAppleScript(_ source: String, timeout: TimeInterval) -> String? {
+        let process = Process()
+        let outputPipe = Pipe()
+        let errorPipe = Pipe()
+
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+        process.arguments = ["-e", source]
+        process.standardOutput = outputPipe
+        process.standardError = errorPipe
+
+        do {
+            try process.run()
+        } catch {
+            logger.warning("osascript process start failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.01)
+        }
+
+        if process.isRunning {
+            process.terminate()
+            logger.warning("osascript timed out after \(timeout, privacy: .public)s")
+            return nil
+        }
+
+        guard process.terminationStatus == 0 else { return nil }
+
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        let result = String(data: outputData, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let result, !result.isEmpty, isValidURL(result) else { return nil }
+        return result
+    }
+
+    private func isValidURL(_ string: String) -> Bool {
+        let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count > 3, trimmed.count < 2048 else { return false }
+        return trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") || trimmed.hasPrefix("file://")
     }
 
     func insertText(_ text: String) async throws {

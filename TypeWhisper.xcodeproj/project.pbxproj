@@ -58,6 +58,17 @@
 		AA00000000000000000072 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000072 /* Assets.xcassets */; };
 		AA00000000000000000073 /* TranslationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000073 /* TranslationService.swift */; };
 		AA00000000000000000074 /* AudioDuckingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000074 /* AudioDuckingService.swift */; };
+		AA00000000000000000075 /* TranslationHostWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000075 /* TranslationHostWindow.swift */; };
+		AA00000000000000000076 /* MediaPlaybackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000076 /* MediaPlaybackService.swift */; };
+		AA00000000000000000077 /* DictionaryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000077 /* DictionaryEntry.swift */; };
+		AA00000000000000000078 /* TermPack.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000078 /* TermPack.swift */; };
+		AA00000000000000000079 /* DictionaryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000079 /* DictionaryService.swift */; };
+		AA00000000000000000080 /* Snippet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000080 /* Snippet.swift */; };
+		AA00000000000000000081 /* SnippetService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000081 /* SnippetService.swift */; };
+		AA00000000000000000082 /* DictionaryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000082 /* DictionaryViewModel.swift */; };
+		AA00000000000000000083 /* DictionarySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000083 /* DictionarySettingsView.swift */; };
+		AA00000000000000000084 /* SnippetsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000084 /* SnippetsViewModel.swift */; };
+		AA00000000000000000085 /* SnippetsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000085 /* SnippetsSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -110,6 +121,17 @@
 		BB00000000000000000072 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BB00000000000000000073 /* TranslationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationService.swift; sourceTree = "<group>"; };
 		BB00000000000000000074 /* AudioDuckingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDuckingService.swift; sourceTree = "<group>"; };
+		BB00000000000000000075 /* TranslationHostWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationHostWindow.swift; sourceTree = "<group>"; };
+		BB00000000000000000076 /* MediaPlaybackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlaybackService.swift; sourceTree = "<group>"; };
+		BB00000000000000000077 /* DictionaryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryEntry.swift; sourceTree = "<group>"; };
+		BB00000000000000000078 /* TermPack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TermPack.swift; sourceTree = "<group>"; };
+		BB00000000000000000079 /* DictionaryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryService.swift; sourceTree = "<group>"; };
+		BB00000000000000000080 /* Snippet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snippet.swift; sourceTree = "<group>"; };
+		BB00000000000000000081 /* SnippetService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetService.swift; sourceTree = "<group>"; };
+		BB00000000000000000082 /* DictionaryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryViewModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000083 /* DictionarySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionarySettingsView.swift; sourceTree = "<group>"; };
+		BB00000000000000000084 /* SnippetsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsViewModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000085 /* SnippetsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsSettingsView.swift; sourceTree = "<group>"; };
 		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypeWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -167,6 +189,9 @@
 				BB00000000000000000005 /* TranscriptionResult.swift */,
 				BB00000000000000000060 /* TranscriptionRecord.swift */,
 				BB00000000000000000065 /* Profile.swift */,
+				BB00000000000000000077 /* DictionaryEntry.swift */,
+				BB00000000000000000078 /* TermPack.swift */,
+				BB00000000000000000080 /* Snippet.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -187,6 +212,9 @@
 				BB00000000000000000066 /* ProfileService.swift */,
 				BB00000000000000000073 /* TranslationService.swift */,
 				BB00000000000000000074 /* AudioDuckingService.swift */,
+				BB00000000000000000076 /* MediaPlaybackService.swift */,
+				BB00000000000000000079 /* DictionaryService.swift */,
+				BB00000000000000000081 /* SnippetService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -212,6 +240,8 @@
 				BB00000000000000000045 /* APIServerViewModel.swift */,
 				BB00000000000000000063 /* HistoryViewModel.swift */,
 				BB00000000000000000067 /* ProfilesViewModel.swift */,
+				BB00000000000000000082 /* DictionaryViewModel.swift */,
+				BB00000000000000000084 /* SnippetsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -229,6 +259,9 @@
 				BB00000000000000000051 /* GeneralSettingsView.swift */,
 				BB00000000000000000064 /* HistoryView.swift */,
 				BB00000000000000000068 /* ProfilesSettingsView.swift */,
+				BB00000000000000000075 /* TranslationHostWindow.swift */,
+				BB00000000000000000083 /* DictionarySettingsView.swift */,
+				BB00000000000000000085 /* SnippetsSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -392,6 +425,17 @@
 				AA00000000000000000070 /* UpdateChecker.swift in Sources */,
 				AA00000000000000000073 /* TranslationService.swift in Sources */,
 				AA00000000000000000074 /* AudioDuckingService.swift in Sources */,
+				AA00000000000000000075 /* TranslationHostWindow.swift in Sources */,
+				AA00000000000000000076 /* MediaPlaybackService.swift in Sources */,
+				AA00000000000000000077 /* DictionaryEntry.swift in Sources */,
+				AA00000000000000000078 /* TermPack.swift in Sources */,
+				AA00000000000000000079 /* DictionaryService.swift in Sources */,
+				AA00000000000000000080 /* Snippet.swift in Sources */,
+				AA00000000000000000081 /* SnippetService.swift in Sources */,
+				AA00000000000000000082 /* DictionaryViewModel.swift in Sources */,
+				AA00000000000000000083 /* DictionarySettingsView.swift in Sources */,
+				AA00000000000000000084 /* SnippetsViewModel.swift in Sources */,
+				AA00000000000000000085 /* SnippetsSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

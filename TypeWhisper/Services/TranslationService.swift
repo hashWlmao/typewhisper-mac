@@ -1,4 +1,5 @@
 import Foundation
+import os
 import Translation
 
 @MainActor
@@ -7,21 +8,49 @@ final class TranslationService: ObservableObject {
 
     private var sourceText = ""
     private var continuation: CheckedContinuation<String, Error>?
+    private static let logger = Logger(subsystem: "com.typewhisper.mac", category: "Translation")
 
     func translate(text: String, to target: Locale.Language) async throws -> String {
-        try await withCheckedThrowingContinuation { cont in
-            sourceText = text
+        // Cancel any pending translation — resume with original text
+        if let pending = continuation {
+            Self.logger.warning("Cancelling pending translation")
+            pending.resume(returning: sourceText)
+            continuation = nil
+        }
+
+        // Reset configuration so SwiftUI sees a nil → non-nil transition
+        configuration = nil
+        try await Task.sleep(for: .milliseconds(50))
+
+        sourceText = text
+
+        return try await withCheckedThrowingContinuation { cont in
             continuation = cont
             configuration = .init(source: nil, target: target)
+            Self.logger.info("Translation requested to \(target.minimalIdentifier)")
+
+            // Timeout watchdog — 15 seconds
+            Task { [weak self] in
+                try await Task.sleep(for: .seconds(15))
+                guard let self else { return }
+                if let pending = self.continuation {
+                    Self.logger.error("Translation timed out after 15s, returning original text")
+                    pending.resume(returning: self.sourceText)
+                    self.continuation = nil
+                    self.configuration = nil
+                }
+            }
         }
     }
 
     func handleSession(_ session: sending TranslationSession) async {
         do {
             let result = try await session.translate(sourceText)
+            Self.logger.info("Translation completed successfully")
             continuation?.resume(returning: result.targetText)
         } catch {
-            continuation?.resume(throwing: error)
+            Self.logger.error("Translation failed: \(error.localizedDescription), returning original text")
+            continuation?.resume(returning: sourceText)
         }
         continuation = nil
     }

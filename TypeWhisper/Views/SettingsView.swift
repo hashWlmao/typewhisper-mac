@@ -22,6 +22,12 @@ struct SettingsView: View {
             Tab(String(localized: "History"), systemImage: "clock.arrow.circlepath") {
                 HistoryView()
             }
+            Tab(String(localized: "Dictionary"), systemImage: "book.closed") {
+                DictionarySettingsView()
+            }
+            Tab(String(localized: "Snippets"), systemImage: "text.badge.plus") {
+                SnippetsSettingsView()
+            }
             Tab(String(localized: "Profiles"), systemImage: "person.crop.rectangle.stack") {
                 ProfilesSettingsView()
             }

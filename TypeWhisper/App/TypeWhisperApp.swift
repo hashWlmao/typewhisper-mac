@@ -30,6 +30,7 @@ struct TypeWhisperApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayPanel: DictationOverlayPanel?
+    private var translationHostWindow: TranslationHostWindow?
     private lazy var updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
     var updateChecker: UpdateChecker {
@@ -41,6 +42,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let panel = DictationOverlayPanel()
         panel.startObserving()
         overlayPanel = panel
+
+        translationHostWindow = TranslationHostWindow(
+            translationService: ServiceContainer.shared.translationService
+        )
 
         // Keep settings window always on top
         NotificationCenter.default.addObserver(
