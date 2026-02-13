@@ -1,10 +1,17 @@
 import SwiftUI
 import KeyboardShortcuts
 
+enum SettingsTab: Hashable {
+    case home, general, models, transcription, dictation
+    case fileTranscription, history, dictionary, snippets, profiles, apiServer
+}
+
 struct SettingsView: View {
+    @State private var selectedTab: SettingsTab = .home
+
     var body: some View {
-        TabView {
-            SettingsMainTabs()
+        TabView(selection: $selectedTab) {
+            SettingsMainTabs(selectedTab: $selectedTab)
         }
         .tabViewStyle(.sidebarAdaptable)
         .frame(minWidth: 700, idealWidth: 750, minHeight: 550, idealHeight: 600)
@@ -12,44 +19,58 @@ struct SettingsView: View {
 }
 
 private struct SettingsMainTabs: TabContent {
-    var body: some TabContent<Never> {
-        Tab(String(localized: "Home"), systemImage: "house") {
-            HomeSettingsView()
+    @Binding var selectedTab: SettingsTab
+
+    var body: some TabContent<SettingsTab> {
+        Tab(String(localized: "Home"), systemImage: "house", value: SettingsTab.home) {
+            HomeSettingsView(selectedTab: $selectedTab)
         }
-        Tab(String(localized: "General"), systemImage: "gear") {
+        Tab(String(localized: "General"), systemImage: "gear", value: SettingsTab.general) {
             GeneralSettingsView()
         }
-        Tab(String(localized: "Models"), systemImage: "square.and.arrow.down") {
+        Tab(String(localized: "Models"), systemImage: "square.and.arrow.down", value: SettingsTab.models) {
             ModelManagerView()
         }
-        Tab(String(localized: "Transcription"), systemImage: "text.bubble") {
+        Tab(String(localized: "Transcription"), systemImage: "text.bubble", value: SettingsTab.transcription) {
             TranscriptionSettingsView()
         }
-        Tab(String(localized: "Dictation"), systemImage: "mic.fill") {
+        Tab(String(localized: "Dictation"), systemImage: "mic.fill", value: SettingsTab.dictation) {
             DictationSettingsView()
+                .onAppear {
+                    if !UserDefaults.standard.bool(forKey: "hotkeyCustomized") {
+                        UserDefaults.standard.set(true, forKey: "hotkeyCustomized")
+                        HomeViewModel.shared.refresh()
+                    }
+                }
         }
-        Tab(String(localized: "File Transcription"), systemImage: "doc.text") {
+        Tab(String(localized: "File Transcription"), systemImage: "doc.text", value: SettingsTab.fileTranscription) {
             FileTranscriptionView()
         }
-        Tab(String(localized: "History"), systemImage: "clock.arrow.circlepath") {
+        Tab(String(localized: "History"), systemImage: "clock.arrow.circlepath", value: SettingsTab.history) {
             HistoryView()
+                .onAppear {
+                    if !UserDefaults.standard.bool(forKey: "historyTabVisited") {
+                        UserDefaults.standard.set(true, forKey: "historyTabVisited")
+                        HomeViewModel.shared.refresh()
+                    }
+                }
         }
         SettingsExtraTabs()
     }
 }
 
 private struct SettingsExtraTabs: TabContent {
-    var body: some TabContent<Never> {
-        Tab(String(localized: "Dictionary"), systemImage: "book.closed") {
+    var body: some TabContent<SettingsTab> {
+        Tab(String(localized: "Dictionary"), systemImage: "book.closed", value: SettingsTab.dictionary) {
             DictionarySettingsView()
         }
-        Tab(String(localized: "Snippets"), systemImage: "text.badge.plus") {
+        Tab(String(localized: "Snippets"), systemImage: "text.badge.plus", value: SettingsTab.snippets) {
             SnippetsSettingsView()
         }
-        Tab(String(localized: "Profiles"), systemImage: "person.crop.rectangle.stack") {
+        Tab(String(localized: "Profiles"), systemImage: "person.crop.rectangle.stack", value: SettingsTab.profiles) {
             ProfilesSettingsView()
         }
-        Tab(String(localized: "API Server"), systemImage: "network") {
+        Tab(String(localized: "API Server"), systemImage: "network", value: SettingsTab.apiServer) {
             APISettingsView()
         }
     }

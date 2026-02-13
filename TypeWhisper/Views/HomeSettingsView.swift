@@ -3,6 +3,7 @@ import Charts
 
 struct HomeSettingsView: View {
     @ObservedObject private var viewModel = HomeViewModel.shared
+    @Binding var selectedTab: SettingsTab
 
     var body: some View {
         ScrollView {
@@ -123,26 +124,53 @@ struct HomeSettingsView: View {
             }
 
             ForEach(viewModel.tutorialSteps) { step in
-                HStack(spacing: 12) {
-                    Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(step.isCompleted ? .green : .secondary)
-                        .font(.title3)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(step.title)
-                            .fontWeight(.medium)
-                            .strikethrough(step.isCompleted)
-                            .foregroundStyle(step.isCompleted ? .secondary : .primary)
-                        Text(step.description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                if let tab = step.targetTab {
+                    Button {
+                        selectedTab = tab
+                    } label: {
+                        tutorialStepRow(step)
                     }
+                    .buttonStyle(.plain)
+                    .onHover { hovering in
+                        if hovering {
+                            NSCursor.pointingHand.push()
+                        } else {
+                            NSCursor.pop()
+                        }
+                    }
+                } else {
+                    tutorialStepRow(step)
                 }
             }
         }
         .padding()
         .background(.quaternary.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func tutorialStepRow(_ step: TutorialStep) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(step.isCompleted ? .green : .secondary)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(step.title)
+                    .fontWeight(.medium)
+                    .strikethrough(step.isCompleted)
+                    .foregroundStyle(step.isCompleted ? .secondary : .primary)
+                Text(step.description)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if step.targetTab != nil {
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 }
 

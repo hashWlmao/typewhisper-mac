@@ -14,6 +14,7 @@ final class ModelManagerService: ObservableObject {
 
     private let engineKey = "selectedEngine"
     private let modelKey = "selectedModelId"
+    private let loadedModelsKey = "loadedModelIds"
 
     init() {
         if #available(macOS 26, *) {
@@ -88,38 +89,123 @@ final class ModelManagerService: ObservableObject {
             activeEngine = engine
             selectEngine(model.engineType)
             selectModel(model.id)
+            addToLoadedModels(model.id, engineType: model.engineType)
         } catch {
             modelStatuses[model.id] = .error(error.localizedDescription)
         }
     }
 
-    func loadSelectedModel() async {
-        guard let modelId = selectedModelId,
-              let model = ModelInfo.allModels.first(where: { $0.id == modelId }) else {
-            return
+    func loadAllSavedModels() async {
+        var modelIds = UserDefaults.standard.stringArray(forKey: loadedModelsKey) ?? []
+
+        // Migration: if loadedModelIds is empty but selectedModelId exists, seed from it
+        if modelIds.isEmpty, let selectedId = selectedModelId {
+            modelIds = [selectedId]
+            UserDefaults.standard.set(modelIds, forKey: loadedModelsKey)
         }
 
-        // Only load if not already loaded
+        let modelsToLoad = modelIds.compactMap { id in
+            ModelInfo.allModels.first(where: { $0.id == id })
+        }
+
+        guard !modelsToLoad.isEmpty else { return }
+
+        await withTaskGroup(of: Void.self) { group in
+            for model in modelsToLoad {
+                group.addTask {
+                    await self.loadSingleModel(model)
+                }
+            }
+        }
+
+        // Set activeEngine to the selected engine
+        if let selectedId = selectedModelId,
+           let selectedModel = ModelInfo.allModels.first(where: { $0.id == selectedId }) {
+            let eng = engine(for: selectedModel.engineType)
+            if eng.isModelLoaded {
+                activeEngine = eng
+            }
+        }
+    }
+
+    private func loadSingleModel(_ model: ModelInfo) async {
         let engine = engine(for: model.engineType)
+
+        // Already loaded
         if engine.isModelLoaded {
-            activeEngine = engine
             modelStatuses[model.id] = .ready
             return
         }
 
-        await downloadAndLoadModel(model)
+        modelStatuses[model.id] = .downloading(progress: 0)
+
+        if let whisperEngine = engine as? WhisperEngine {
+            whisperEngine.onPhaseChange = { [weak self] phase in
+                Task { @MainActor [weak self] in
+                    self?.modelStatuses[model.id] = .loading(phase: phase)
+                }
+            }
+        }
+
+        do {
+            try await engine.loadModel(model) { [weak self] progress, speed in
+                Task { @MainActor [weak self] in
+                    if progress >= 0.80 {
+                        self?.modelStatuses[model.id] = .loading()
+                    } else {
+                        self?.modelStatuses[model.id] = .downloading(progress: progress, bytesPerSecond: speed)
+                    }
+                }
+            }
+            modelStatuses[model.id] = .ready
+        } catch {
+            modelStatuses[model.id] = .error(error.localizedDescription)
+            removeFromLoadedModels(model.id)
+        }
     }
 
     func deleteModel(_ model: ModelInfo) {
         let engine = engine(for: model.engineType)
         engine.unloadModel()
         modelStatuses[model.id] = .notDownloaded
+        removeFromLoadedModels(model.id)
 
         if selectedModelId == model.id {
-            selectedModelId = nil
-            UserDefaults.standard.removeObject(forKey: modelKey)
-            activeEngine = nil
+            // Fall back to another loaded engine
+            if let fallback = findLoadedFallback(excluding: model.engineType) {
+                selectEngine(fallback.engineType)
+                selectModel(fallback.id)
+                activeEngine = self.engine(for: fallback.engineType)
+            } else {
+                selectedModelId = nil
+                UserDefaults.standard.removeObject(forKey: modelKey)
+                activeEngine = nil
+            }
         }
+    }
+
+    private func findLoadedFallback(excluding: EngineType) -> ModelInfo? {
+        let remainingIds = UserDefaults.standard.stringArray(forKey: loadedModelsKey) ?? []
+        return remainingIds.compactMap { id in
+            ModelInfo.allModels.first(where: { $0.id == id })
+        }.first { $0.engineType != excluding && engine(for: $0.engineType).isModelLoaded }
+    }
+
+    private func addToLoadedModels(_ modelId: String, engineType: EngineType) {
+        var ids = UserDefaults.standard.stringArray(forKey: loadedModelsKey) ?? []
+        // Remove any existing model of the same engine type (only 1 per engine)
+        let sameEngineIds = ModelInfo.allModels
+            .filter { $0.engineType == engineType }
+            .map(\.id)
+        ids.removeAll { sameEngineIds.contains($0) }
+        ids.append(modelId)
+        UserDefaults.standard.set(ids, forKey: loadedModelsKey)
+    }
+
+    private func removeFromLoadedModels(_ modelId: String) {
+        var ids = UserDefaults.standard.stringArray(forKey: loadedModelsKey) ?? []
+        ids.removeAll { $0 == modelId }
+        UserDefaults.standard.set(ids, forKey: loadedModelsKey)
     }
 
     func status(for model: ModelInfo) -> ModelStatus {

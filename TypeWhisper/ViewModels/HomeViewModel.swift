@@ -32,6 +32,7 @@ struct TutorialStep: Identifiable {
     let description: String
     let systemImage: String
     let isCompleted: Bool
+    let targetTab: SettingsTab?
 }
 
 @MainActor
@@ -181,35 +182,40 @@ final class HomeViewModel: ObservableObject {
                 title: String(localized: "Make your first recording"),
                 description: String(localized: "Press your hotkey and start dictating."),
                 systemImage: "mic.fill",
-                isCompleted: hasRecordings
+                isCompleted: hasRecordings,
+                targetTab: nil
             ),
             TutorialStep(
                 id: 2,
                 title: String(localized: "Customize your hotkey"),
                 description: String(localized: "Go to Dictation settings and set your preferred shortcut."),
                 systemImage: "keyboard",
-                isCompleted: UserDefaults.standard.bool(forKey: "hotkeyCustomized")
+                isCompleted: UserDefaults.standard.bool(forKey: "hotkeyCustomized"),
+                targetTab: .dictation
             ),
             TutorialStep(
                 id: 3,
                 title: String(localized: "Add vocabulary"),
                 description: String(localized: "Add terms and corrections to the Dictionary."),
                 systemImage: "book.closed",
-                isCompleted: hasDictionary
+                isCompleted: hasDictionary,
+                targetTab: .dictionary
             ),
             TutorialStep(
                 id: 4,
                 title: String(localized: "Create a profile"),
                 description: String(localized: "Set up app-specific settings in Profiles."),
                 systemImage: "person.crop.rectangle.stack",
-                isCompleted: hasProfiles
+                isCompleted: hasProfiles,
+                targetTab: .profiles
             ),
             TutorialStep(
                 id: 5,
                 title: String(localized: "Review your history"),
                 description: String(localized: "Check and edit past transcriptions in History."),
                 systemImage: "clock.arrow.circlepath",
-                isCompleted: historyVisited
+                isCompleted: historyVisited,
+                targetTab: .history
             )
         ]
 

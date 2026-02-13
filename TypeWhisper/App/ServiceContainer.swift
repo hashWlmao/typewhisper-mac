@@ -123,8 +123,10 @@ final class ServiceContainer: ObservableObject {
         if #available(macOS 26, *) {
             await SpeechAnalyzerModelProvider.populateCache()
             ModelInfo._speechAnalyzerModelProvider = { SpeechAnalyzerModelProvider.availableModels() }
+            // Refresh model list now that provider is available
+            modelManagerViewModel.models = ModelInfo.models(for: modelManagerViewModel.selectedEngine)
         }
 
-        await modelManagerService.loadSelectedModel()
+        await modelManagerService.loadAllSavedModels()
     }
 }
