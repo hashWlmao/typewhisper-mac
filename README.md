@@ -6,6 +6,21 @@
 
 Local speech-to-text for macOS. Transcribe audio using on-device AI models — no cloud, no API keys, no subscriptions. Your voice data never leaves your Mac.
 
+## Screenshots
+
+<p align="center">
+  <img src=".github/screenshots/home.png" width="700" alt="Home Dashboard">
+</p>
+
+<p align="center">
+  <img src=".github/screenshots/models.png" width="340" alt="Model Manager">
+  <img src=".github/screenshots/history.png" width="340" alt="Transcription History">
+</p>
+
+<p align="center">
+  <img src=".github/screenshots/profiles.png" width="340" alt="App Profiles">
+</p>
+
 ## Features
 
 - **On-device transcription** — All processing happens locally on your Mac
