@@ -9,14 +9,22 @@ Local speech-to-text for macOS. Transcribe audio using on-device AI models — n
 ## Features
 
 - **On-device transcription** — All processing happens locally on your Mac
-- **Two AI engines** — WhisperKit (99+ languages, streaming, translation) and Parakeet TDT v3 (25 European languages, extremely fast)
+- **Three AI engines** — WhisperKit (99+ languages, streaming, translation), Parakeet TDT v3 (25 European languages, extremely fast), and Apple SpeechAnalyzer (macOS 26+, no model download needed)
 - **System-wide dictation** — Push-to-talk or toggle mode via global hotkey, auto-pastes into any app
 - **Streaming preview** — See partial transcription in real-time while speaking (WhisperKit)
+- **Translation** — Translate transcriptions on-device using Apple Translate
 - **File transcription** — Batch-process multiple audio/video files with drag & drop
 - **Subtitle export** — Export transcriptions as SRT or WebVTT with timestamps
 - **Local HTTP API** — REST API for integration with external tools and scripts
 - **App-specific profiles** — Per-app overrides for language, task, engine, and whisper mode. Automatically activates when dictating in a matched application
+- **Dictionary** — Custom term corrections applied after transcription (e.g., fix names, jargon, or recurring misrecognitions). Includes importable term packs
+- **Snippets** — Text shortcuts with trigger→replacement. Supports placeholders like `{{DATE}}`, `{{TIME}}`, and `{{CLIPBOARD}}`
+- **History** — Searchable transcription history with inline editing, correction detection, and app context tracking
+- **Home dashboard** — Usage statistics (words, WPM, apps used, time saved), activity chart, and onboarding tutorial
+- **Sound feedback** — Audio cues for recording start, transcription success, and errors
+- **Media pause** — Automatically pauses media playback during recording
 - **Whisper mode** — Boosted microphone gain for quiet speech
+- **Auto-update** — Built-in updates via Sparkle
 - **Launch at Login** — Start automatically with macOS
 - **Multilingual UI** — English and German
 
@@ -117,9 +125,9 @@ Both engines (WhisperKit and Parakeet) can be loaded simultaneously for instant 
 ```
 TypeWhisper/
 ├── App/                    # App entry point, dependency injection
-├── Models/                 # Data models (ModelInfo, TranscriptionResult, EngineType, Profile)
+├── Models/                 # Data models (ModelInfo, TranscriptionResult, EngineType, Profile, etc.)
 ├── Services/
-│   ├── Engine/             # WhisperEngine, ParakeetEngine, TranscriptionEngine protocol
+│   ├── Engine/             # WhisperEngine, ParakeetEngine, SpeechAnalyzerEngine, TranscriptionEngine protocol
 │   ├── HTTPServer/         # Local REST API (HTTPServer, APIRouter, APIHandlers)
 │   ├── SubtitleExporter    # SRT/VTT export
 │   ├── ModelManagerService # Model download, loading, transcription dispatch
@@ -127,10 +135,16 @@ TypeWhisper/
 │   ├── AudioRecordingService
 │   ├── HotkeyService
 │   ├── TextInsertionService
-│   └── ProfileService      # Per-app profile matching and persistence
+│   ├── ProfileService      # Per-app profile matching and persistence
+│   ├── HistoryService      # Transcription history persistence (SwiftData)
+│   ├── DictionaryService   # Custom term corrections
+│   ├── SnippetService      # Text snippets with placeholders
+│   ├── TranslationService  # On-device translation via Apple Translate
+│   ├── MediaPlaybackService # Pause/resume media during recording
+│   └── SoundService        # Audio feedback for recording events
 ├── ViewModels/             # MVVM view models with Combine
 ├── Views/                  # SwiftUI views
-└── Resources/              # Info.plist, entitlements, localization
+└── Resources/              # Info.plist, entitlements, localization, sounds
 ```
 
 **Patterns:** MVVM with `ServiceContainer` singleton for dependency injection. ViewModels use a static `_shared` pattern. Localization via `String(localized:)` with `Localizable.xcstrings`.
