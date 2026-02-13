@@ -124,30 +124,9 @@ struct DictationSettingsView: View {
 struct TranscriptionSettingsView: View {
     @ObservedObject private var viewModel = SettingsViewModel.shared
 
-    /// Output language binding that maps to the underlying selectedTask
-    private var outputLanguage: Binding<String> {
-        Binding(
-            get: {
-                viewModel.selectedTask == .translate ? "en" : (viewModel.selectedLanguage ?? "auto")
-            },
-            set: { newValue in
-                if newValue == "en" && viewModel.selectedLanguage != "en" {
-                    viewModel.selectedTask = .translate
-                } else {
-                    viewModel.selectedTask = .transcribe
-                    if newValue == "auto" {
-                        viewModel.selectedLanguage = nil
-                    } else {
-                        viewModel.selectedLanguage = newValue
-                    }
-                }
-            }
-        )
-    }
-
     var body: some View {
         Form {
-            Section(String(localized: "Input Language")) {
+            Section(String(localized: "Language")) {
                 Picker(String(localized: "Spoken language"), selection: $viewModel.selectedLanguage) {
                     Text(String(localized: "Auto-detect")).tag(nil as String?)
                     Divider()
@@ -161,32 +140,24 @@ struct TranscriptionSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section(String(localized: "Output Language")) {
-                Picker(String(localized: "Text output"), selection: outputLanguage) {
-                    Text(String(localized: "Same as input")).tag("auto")
-                    if let lang = viewModel.selectedLanguage, lang != "en" {
-                        Text(inputLanguageName).tag(lang)
-                    }
-                    if viewModel.supportsTranslation {
-                        Divider()
-                        Text(String(localized: "English (translation)")).tag("en")
+            Section(String(localized: "Translation")) {
+                Toggle(String(localized: "Enable translation"), isOn: $viewModel.translationEnabled)
+
+                if viewModel.translationEnabled {
+                    Picker(String(localized: "Target language"), selection: $viewModel.translationTargetLanguage) {
+                        ForEach(TranslationService.availableTargetLanguages, id: \.code) { lang in
+                            Text(lang.name).tag(lang.code)
+                        }
                     }
                 }
 
-                if viewModel.selectedTask == .translate {
-                    Text(String(localized: "Audio will be translated to English regardless of source language."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(String(localized: "Uses Apple Translate (on-device)"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
         .padding()
         .frame(minWidth: 500, minHeight: 300)
-    }
-
-    private var inputLanguageName: String {
-        guard let code = viewModel.selectedLanguage else { return "" }
-        return Locale.current.localizedString(forLanguageCode: code) ?? code
     }
 }

@@ -34,7 +34,8 @@ final class ProfilesViewModel: ObservableObject {
     @Published var editorName = ""
     @Published var editorBundleIdentifiers: [String] = []
     @Published var editorUrlPatterns: [String] = []
-    @Published var editorOutputLanguage: String?
+    @Published var editorInputLanguage: String?
+    @Published var editorTranslationTargetLanguage: String?
     @Published var editorSelectedTask: String?
     @Published var editorWhisperModeOverride: Bool?
     @Published var editorEngineOverride: String?
@@ -72,7 +73,8 @@ final class ProfilesViewModel: ObservableObject {
             name: editorName,
             bundleIdentifiers: editorBundleIdentifiers,
             urlPatterns: editorUrlPatterns,
-            outputLanguage: editorOutputLanguage,
+            inputLanguage: editorInputLanguage,
+            translationTargetLanguage: editorTranslationTargetLanguage,
             selectedTask: editorSelectedTask,
             whisperModeOverride: editorWhisperModeOverride,
             engineOverride: editorEngineOverride,
@@ -85,7 +87,8 @@ final class ProfilesViewModel: ObservableObject {
             profile.name = editorName
             profile.bundleIdentifiers = editorBundleIdentifiers
             profile.urlPatterns = editorUrlPatterns
-            profile.outputLanguage = editorOutputLanguage
+            profile.inputLanguage = editorInputLanguage
+            profile.translationTargetLanguage = editorTranslationTargetLanguage
             profile.selectedTask = editorSelectedTask
             profile.whisperModeOverride = editorWhisperModeOverride
             profile.engineOverride = editorEngineOverride
@@ -112,7 +115,8 @@ final class ProfilesViewModel: ObservableObject {
         editorName = ""
         editorBundleIdentifiers = []
         editorUrlPatterns = []
-        editorOutputLanguage = nil
+        editorInputLanguage = nil
+        editorTranslationTargetLanguage = nil
         editorSelectedTask = nil
         editorWhisperModeOverride = nil
         editorEngineOverride = nil
@@ -125,7 +129,8 @@ final class ProfilesViewModel: ObservableObject {
         editorName = profile.name
         editorBundleIdentifiers = profile.bundleIdentifiers
         editorUrlPatterns = profile.urlPatterns
-        editorOutputLanguage = profile.outputLanguage
+        editorInputLanguage = profile.inputLanguage
+        editorTranslationTargetLanguage = profile.translationTargetLanguage
         editorSelectedTask = profile.selectedTask
         editorWhisperModeOverride = profile.whisperModeOverride
         editorEngineOverride = profile.engineOverride
@@ -193,9 +198,13 @@ final class ProfilesViewModel: ObservableObject {
                 parts[parts.count - 1] += " +\(profile.bundleIdentifiers.count - 3)"
             }
         }
-        if let lang = profile.outputLanguage {
+        if let lang = profile.inputLanguage {
             let name = Locale.current.localizedString(forLanguageCode: lang) ?? lang
             parts.append(name)
+        }
+        if let lang = profile.translationTargetLanguage {
+            let name = Locale.current.localizedString(forLanguageCode: lang) ?? lang
+            parts.append("→ " + name)
         }
         if let engine = profile.engineOverride, let type = EngineType(rawValue: engine) {
             parts.append(type.displayName)

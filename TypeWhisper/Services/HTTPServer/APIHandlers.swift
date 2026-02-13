@@ -3,10 +3,12 @@ import Foundation
 final class APIHandlers: @unchecked Sendable {
     private let modelManager: ModelManagerService
     private let audioFileService: AudioFileService
+    private let translationService: TranslationService
 
-    init(modelManager: ModelManagerService, audioFileService: AudioFileService) {
+    init(modelManager: ModelManagerService, audioFileService: AudioFileService, translationService: TranslationService) {
         self.modelManager = modelManager
         self.audioFileService = audioFileService
+        self.translationService = translationService
     }
 
     func register(on router: APIRouter) {
@@ -27,6 +29,7 @@ final class APIHandlers: @unchecked Sendable {
         var fileExtension = "wav"
         var language: String?
         var task: TranscriptionTask = .transcribe
+        var targetLanguage: String?
 
         let contentType = request.headers["content-type"] ?? ""
 
@@ -57,6 +60,12 @@ final class APIHandlers: @unchecked Sendable {
                let parsed = TranscriptionTask(rawValue: val) {
                 task = parsed
             }
+
+            if let targetPart = parts.first(where: { $0.name == "target_language" }),
+               let val = String(data: targetPart.data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !val.isEmpty {
+                targetLanguage = val
+            }
         } else if !request.body.isEmpty {
             audioData = request.body
             fileExtension = extensionFromMIME(contentType)
@@ -64,6 +73,7 @@ final class APIHandlers: @unchecked Sendable {
             if let taskStr = request.headers["x-task"], let parsed = TranscriptionTask(rawValue: taskStr) {
                 task = parsed
             }
+            targetLanguage = request.headers["x-target-language"]
         } else {
             return .error(status: 400, message: "No audio data provided")
         }
@@ -81,6 +91,12 @@ final class APIHandlers: @unchecked Sendable {
             let samples = try await audioFileService.loadAudioSamples(from: tempURL)
             let result = try await modelManager.transcribe(audioSamples: samples, language: language, task: task)
 
+            var finalText = result.text
+            if let targetCode = targetLanguage {
+                let target = Locale.Language(identifier: targetCode)
+                finalText = try await translationService.translate(text: finalText, to: target)
+            }
+
             struct TranscribeResponse: Encodable {
                 let text: String
                 let language: String?
@@ -92,7 +108,7 @@ final class APIHandlers: @unchecked Sendable {
 
             let modelId = await modelManager.selectedModelId
             let response = TranscribeResponse(
-                text: result.text,
+                text: finalText,
                 language: result.detectedLanguage,
                 duration: result.duration,
                 processing_time: result.processingTime,

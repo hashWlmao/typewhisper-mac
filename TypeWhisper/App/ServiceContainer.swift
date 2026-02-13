@@ -14,6 +14,7 @@ final class ServiceContainer: ObservableObject {
     let historyService: HistoryService
     let textDiffService: TextDiffService
     let profileService: ProfileService
+    let translationService: TranslationService
 
     // HTTP API
     let httpServer: HTTPServer
@@ -37,10 +38,11 @@ final class ServiceContainer: ObservableObject {
         historyService = HistoryService()
         textDiffService = TextDiffService()
         profileService = ProfileService()
+        translationService = TranslationService()
 
         // HTTP API
         let router = APIRouter()
-        let handlers = APIHandlers(modelManager: modelManagerService, audioFileService: audioFileService)
+        let handlers = APIHandlers(modelManager: modelManagerService, audioFileService: audioFileService, translationService: translationService)
         handlers.register(on: router)
         httpServer = HTTPServer(router: router)
         apiServerViewModel = APIServerViewModel(httpServer: httpServer)
@@ -59,7 +61,8 @@ final class ServiceContainer: ObservableObject {
             modelManager: modelManagerService,
             settingsViewModel: settingsViewModel,
             historyService: historyService,
-            profileService: profileService
+            profileService: profileService,
+            translationService: translationService
         )
         historyViewModel = HistoryViewModel(
             historyService: historyService,

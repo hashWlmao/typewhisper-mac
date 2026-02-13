@@ -43,10 +43,13 @@ final class SpeechAnalyzerEngine: TranscriptionEngine, @unchecked Sendable {
     private var currentLocale: Locale?
 
     var supportedLanguages: [String] {
-        if let code = currentLocale?.language.languageCode?.identifier {
-            return [code]
-        }
-        return []
+        // Return all languages from cached SpeechAnalyzer models
+        let models = SpeechAnalyzerModelProvider.availableModels()
+        let codes = Set(models.compactMap { model -> String? in
+            let localeId = String(model.id.dropFirst("speechanalyzer-".count))
+            return Locale(identifier: localeId).language.languageCode?.identifier
+        })
+        return Array(codes)
     }
 
     func loadModel(_ model: ModelInfo, progress: @Sendable @escaping (Double, Double?) -> Void) async throws {

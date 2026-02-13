@@ -9,7 +9,8 @@ final class Profile {
     var priority: Int
     var bundleIdentifiers: [String]
     var urlPatterns: [String]
-    var outputLanguage: String?
+    var inputLanguage: String?
+    var translationTargetLanguage: String?
     var selectedTask: String?
     var whisperModeOverride: Bool?
     var engineOverride: String?
@@ -23,7 +24,8 @@ final class Profile {
         priority: Int = 0,
         bundleIdentifiers: [String] = [],
         urlPatterns: [String] = [],
-        outputLanguage: String? = nil,
+        inputLanguage: String? = nil,
+        translationTargetLanguage: String? = nil,
         selectedTask: String? = nil,
         whisperModeOverride: Bool? = nil,
         engineOverride: String? = nil,
@@ -36,7 +38,8 @@ final class Profile {
         self.priority = priority
         self.bundleIdentifiers = bundleIdentifiers
         self.urlPatterns = urlPatterns
-        self.outputLanguage = outputLanguage
+        self.inputLanguage = inputLanguage
+        self.translationTargetLanguage = translationTargetLanguage
         self.selectedTask = selectedTask
         self.whisperModeOverride = whisperModeOverride
         self.engineOverride = engineOverride

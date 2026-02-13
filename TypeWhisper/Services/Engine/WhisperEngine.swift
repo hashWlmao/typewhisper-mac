@@ -11,8 +11,20 @@ final class WhisperEngine: TranscriptionEngine, @unchecked Sendable {
     private var currentModelId: String?
 
     var supportedLanguages: [String] {
-        // Whisper supports 99+ languages
-        ["de", "en", "fr", "es", "it", "pt", "nl", "pl", "ru", "zh", "ja", "ko", "ar", "hi", "tr", "cs", "sv", "da", "fi", "el", "hu", "ro", "bg", "uk", "hr", "sk", "sl", "et", "lv", "lt"]
+        // All 99+ languages supported by Whisper
+        [
+            "af", "am", "ar", "as", "az", "ba", "be", "bg", "bn", "bo",
+            "br", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "es",
+            "et", "eu", "fa", "fi", "fo", "fr", "gl", "gu", "ha", "haw",
+            "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "it", "ja",
+            "jw", "ka", "kk", "km", "kn", "ko", "la", "lb", "ln", "lo",
+            "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt",
+            "my", "ne", "nl", "nn", "no", "oc", "pa", "pl", "ps", "pt",
+            "ro", "ru", "sa", "sd", "si", "sk", "sl", "sn", "so", "sq",
+            "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl",
+            "tr", "tt", "uk", "ur", "uz", "vi", "vo", "yi", "yo", "yue",
+            "zh",
+        ]
     }
 
     /// Callback to report loading phase changes (loading, prewarming, etc.)

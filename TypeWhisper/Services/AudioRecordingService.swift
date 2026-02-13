@@ -1,5 +1,6 @@
 import Foundation
 @preconcurrency import AVFoundation
+import AppKit
 import Combine
 
 /// Captures microphone audio via AVAudioEngine and converts to 16kHz mono Float32 samples.
@@ -43,15 +44,25 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
     static let targetSampleRate: Double = 16000
 
     var hasMicrophonePermission: Bool {
-        AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+        AVAudioApplication.shared.recordPermission == .granted
     }
 
     func requestMicrophonePermission() async -> Bool {
-        await withCheckedContinuation { continuation in
-            AVCaptureDevice.requestAccess(for: .audio) { granted in
-                continuation.resume(returning: granted)
+        let permission = AVAudioApplication.shared.recordPermission
+        if permission == .granted { return true }
+        if permission == .undetermined {
+            // Request permission via the official AVAudioApplication API
+            return await withCheckedContinuation { continuation in
+                AVAudioApplication.requestRecordPermission { granted in
+                    continuation.resume(returning: granted)
+                }
             }
         }
+        // .denied — open System Settings so user can grant manually
+        DispatchQueue.main.async {
+            NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!)
+        }
+        return false
     }
 
     /// Thread-safe snapshot of the current recording buffer for streaming transcription.

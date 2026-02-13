@@ -47,6 +47,7 @@ final class DictationViewModel: ObservableObject {
     private let settingsViewModel: SettingsViewModel
     private let historyService: HistoryService
     private let profileService: ProfileService
+    private let translationService: TranslationService
     private var matchedProfile: Profile?
 
     private var cancellables = Set<AnyCancellable>()
@@ -62,7 +63,8 @@ final class DictationViewModel: ObservableObject {
         modelManager: ModelManagerService,
         settingsViewModel: SettingsViewModel,
         historyService: HistoryService,
-        profileService: ProfileService
+        profileService: ProfileService,
+        translationService: TranslationService
     ) {
         self.audioRecordingService = audioRecordingService
         self.textInsertionService = textInsertionService
@@ -71,6 +73,7 @@ final class DictationViewModel: ObservableObject {
         self.settingsViewModel = settingsViewModel
         self.historyService = historyService
         self.profileService = profileService
+        self.translationService = translationService
         self.whisperModeEnabled = UserDefaults.standard.bool(forKey: "whisperModeEnabled")
         self.overlayPosition = UserDefaults.standard.string(forKey: "overlayPosition")
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
@@ -153,8 +156,8 @@ final class DictationViewModel: ObservableObject {
     }
 
     private var effectiveLanguage: String? {
-        if let profileLang = matchedProfile?.outputLanguage {
-            return profileLang
+        if let profileLang = matchedProfile?.inputLanguage {
+            return profileLang == "auto" ? nil : profileLang
         }
         return settingsViewModel.selectedLanguage
     }
@@ -165,6 +168,16 @@ final class DictationViewModel: ObservableObject {
             return task
         }
         return settingsViewModel.selectedTask
+    }
+
+    private var effectiveTranslationTarget: String? {
+        if let profileTarget = matchedProfile?.translationTargetLanguage {
+            return profileTarget
+        }
+        if settingsViewModel.translationEnabled {
+            return settingsViewModel.translationTargetLanguage
+        }
+        return nil
     }
 
     private var effectiveEngineOverride: EngineType? {
@@ -203,6 +216,7 @@ final class DictationViewModel: ObservableObject {
         let language = effectiveLanguage
         let task = effectiveTask
         let engineOverride = effectiveEngineOverride
+        let translationTarget = effectiveTranslationTarget
 
         state = .processing
 
@@ -215,7 +229,7 @@ final class DictationViewModel: ObservableObject {
                     engineOverride: engineOverride
                 )
 
-                let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                var text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !text.isEmpty else {
                     state = .idle
                     partialText = ""
@@ -224,12 +238,17 @@ final class DictationViewModel: ObservableObject {
                     return
                 }
 
+                if let targetCode = translationTarget {
+                    let target = Locale.Language(identifier: targetCode)
+                    text = try await translationService.translate(text: text, to: target)
+                }
+
                 partialText = ""
                 state = .inserting
                 try await textInsertionService.insertText(text)
 
                 historyService.addRecord(
-                    rawText: text,
+                    rawText: result.text,
                     finalText: text,
                     appName: activeApp.name,
                     appBundleIdentifier: activeApp.bundleId,
@@ -253,6 +272,7 @@ final class DictationViewModel: ObservableObject {
         Task {
             _ = await audioRecordingService.requestMicrophonePermission()
             objectWillChange.send()
+            pollPermissionStatus()
         }
     }
 

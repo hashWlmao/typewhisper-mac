@@ -1,8 +1,10 @@
 import SwiftUI
+import Translation
 
 /// Compact pill overlay showing dictation state (recording, processing, done, error).
 struct DictationOverlayView: View {
     @ObservedObject private var viewModel = DictationViewModel.shared
+    @ObservedObject private var translationService = ServiceContainer.shared.translationService
 
     private var hasPartialText: Bool {
         !viewModel.partialText.isEmpty && viewModel.state == .recording
@@ -61,6 +63,9 @@ struct DictationOverlayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isTop ? .top : .bottom)
         .animation(.easeInOut(duration: 0.2), value: viewModel.state)
         .animation(.easeInOut(duration: 0.2), value: hasPartialText)
+        .translationTask(translationService.configuration) { session in
+            await translationService.handleSession(session)
+        }
     }
 
     @ViewBuilder

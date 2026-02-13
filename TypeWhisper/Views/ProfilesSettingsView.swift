@@ -156,21 +156,24 @@ private struct ProfileEditorSheet: View {
                 }
 
                 Section(String(localized: "Overrides")) {
-                    // Language override
-                    Picker(String(localized: "Language"), selection: $viewModel.editorOutputLanguage) {
+                    // Input language override
+                    Picker(String(localized: "Spoken language"), selection: $viewModel.editorInputLanguage) {
                         Text(String(localized: "Global Setting")).tag(nil as String?)
+                        Divider()
+                        Text(String(localized: "Auto-detect")).tag("auto" as String?)
                         Divider()
                         ForEach(viewModel.settingsViewModel.availableLanguages, id: \.code) { lang in
                             Text(lang.name).tag(lang.code as String?)
                         }
                     }
 
-                    // Task override
-                    Picker(String(localized: "Task"), selection: $viewModel.editorSelectedTask) {
+                    // Translation target language override
+                    Picker(String(localized: "Target language"), selection: $viewModel.editorTranslationTargetLanguage) {
                         Text(String(localized: "Global Setting")).tag(nil as String?)
                         Divider()
-                        Text(String(localized: "Transcribe")).tag("transcribe" as String?)
-                        Text(String(localized: "Translate to English")).tag("translate" as String?)
+                        ForEach(TranslationService.availableTargetLanguages, id: \.code) { lang in
+                            Text(lang.name).tag(lang.code as String?)
+                        }
                     }
 
                     // Engine override
