@@ -82,7 +82,31 @@ struct DictationSettingsView: View {
     var body: some View {
         Form {
             Section(String(localized: "Hotkey")) {
-                KeyboardShortcuts.Recorder(String(localized: "Dictation shortcut"), name: .toggleDictation)
+                Picker(String(localized: "Mode"), selection: Binding(
+                    get: { dictation.singleKeyMode },
+                    set: { newValue in
+                        if !newValue {
+                            dictation.disableSingleKey()
+                        } else {
+                            dictation.singleKeyMode = true
+                        }
+                    }
+                )) {
+                    Text(String(localized: "Key Combination")).tag(false)
+                    Text(String(localized: "Single Key")).tag(true)
+                }
+                .pickerStyle(.segmented)
+
+                if dictation.singleKeyMode {
+                    SingleKeyRecorderView(
+                        label: dictation.singleKeyLabel,
+                        onRecord: { code, isFn in
+                            dictation.setSingleKey(code: code, isFn: isFn)
+                        }
+                    )
+                } else {
+                    KeyboardShortcuts.Recorder(String(localized: "Dictation shortcut"), name: .toggleDictation)
+                }
 
                 Text(String(localized: "Quick press: toggle mode (press again to stop). Hold 1+ seconds: push-to-talk (release to stop)."))
                     .font(.caption)
@@ -192,5 +216,70 @@ struct TranscriptionSettingsView: View {
         .formStyle(.grouped)
         .padding()
         .frame(minWidth: 500, minHeight: 300)
+    }
+}
+
+// MARK: - Single Key Recorder
+
+struct SingleKeyRecorderView: View {
+    let label: String
+    let onRecord: (UInt16, Bool) -> Void
+
+    @State private var isRecording = false
+    @State private var eventMonitor: Any?
+
+    var body: some View {
+        HStack {
+            Text(String(localized: "Dictation key"))
+            Spacer()
+            Button {
+                startRecording()
+            } label: {
+                if isRecording {
+                    Text(String(localized: "Press a key…"))
+                        .foregroundStyle(.orange)
+                } else if label.isEmpty {
+                    Text(String(localized: "Record Key"))
+                } else {
+                    HStack(spacing: 4) {
+                        Text(label)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                            .onTapGesture {
+                                onRecord(0, false)
+                            }
+                    }
+                }
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+    }
+
+    private func startRecording() {
+        isRecording = true
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
+            if event.type == .flagsChanged, event.modifierFlags.contains(.function) {
+                finishRecording(code: 0, isFn: true)
+                return nil
+            }
+            if event.type == .keyDown {
+                finishRecording(code: event.keyCode, isFn: false)
+                return nil
+            }
+            return event
+        }
+    }
+
+    private func finishRecording(code: UInt16, isFn: Bool) {
+        isRecording = false
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+        onRecord(code, isFn)
     }
 }

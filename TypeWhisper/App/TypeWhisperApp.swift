@@ -49,21 +49,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             translationService: ServiceContainer.shared.translationService
         )
 
-        // Keep settings window always on top
+        // Observe settings window lifecycle
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(windowDidBecomeKey(_:)),
             name: NSWindow.didBecomeKeyNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowWillClose(_:)),
+            name: NSWindow.willCloseNotification,
+            object: nil
+        )
+    }
+
+    @MainActor private func isSettingsWindow(_ window: NSWindow) -> Bool {
+        window.identifier?.rawValue.localizedCaseInsensitiveContains("settings") == true
     }
 
     @MainActor @objc private func windowDidBecomeKey(_ notification: Notification) {
         guard let window = notification.object as? NSWindow,
-              window.identifier?.rawValue.localizedCaseInsensitiveContains("settings") == true
+              isSettingsWindow(window)
         else { return }
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window.level = .floating
         window.orderFrontRegardless()
+    }
+
+    @MainActor @objc private func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              isSettingsWindow(window)
+        else { return }
+        window.level = .normal
+        NSApp.setActivationPolicy(.accessory)
     }
 }

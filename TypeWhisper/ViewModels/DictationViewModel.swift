@@ -42,6 +42,10 @@ final class DictationViewModel: ObservableObject {
     @Published var soundFeedbackEnabled: Bool {
         didSet { UserDefaults.standard.set(soundFeedbackEnabled, forKey: "soundFeedbackEnabled") }
     }
+    @Published var singleKeyMode: Bool {
+        didSet { UserDefaults.standard.set(singleKeyMode, forKey: "hotkeyUseSingleKey") }
+    }
+    @Published var singleKeyLabel: String
     @Published var activeProfileName: String?
 
     enum OverlayPosition: String, CaseIterable {
@@ -107,6 +111,13 @@ final class DictationViewModel: ObservableObject {
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: "audioDuckingLevel") as? Double ?? 0.2
         self.mediaPauseEnabled = UserDefaults.standard.bool(forKey: "mediaPauseEnabled")
         self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: "soundFeedbackEnabled") as? Bool ?? true
+        let useSingleKey = UserDefaults.standard.bool(forKey: "hotkeyUseSingleKey")
+        self.singleKeyMode = useSingleKey
+        let isFn = UserDefaults.standard.bool(forKey: "singleKeyIsFn")
+        let code = UInt16(UserDefaults.standard.integer(forKey: "singleKeyCode"))
+        self.singleKeyLabel = useSingleKey
+            ? HotkeyService.keyName(for: code, isFn: isFn)
+            : ""
         self.overlayPosition = UserDefaults.standard.string(forKey: "overlayPosition")
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
 
@@ -340,6 +351,19 @@ final class DictationViewModel: ObservableObject {
     func requestAccessibilityPermission() {
         textInsertionService.requestAccessibilityPermission()
         pollPermissionStatus()
+    }
+
+    func setSingleKey(code: UInt16, isFn: Bool) {
+        let label = HotkeyService.keyName(for: code, isFn: isFn)
+        singleKeyLabel = label
+        singleKeyMode = true
+        hotkeyService.updateSingleKey(code: code, isFn: isFn)
+    }
+
+    func disableSingleKey() {
+        singleKeyMode = false
+        singleKeyLabel = ""
+        hotkeyService.disableSingleKey()
     }
 
     private var permissionPollTask: Task<Void, Never>?
