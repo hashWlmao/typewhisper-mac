@@ -3,10 +3,30 @@ import ServiceManagement
 
 struct GeneralSettingsView: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var appLanguage: String = {
+        if let lang = UserDefaults.standard.string(forKey: "preferredAppLanguage") {
+            return lang
+        }
+        return Locale.preferredLanguages.first?.hasPrefix("de") == true ? "de" : "en"
+    }()
+    @State private var showRestartAlert = false
     @ObservedObject private var dictation = DictationViewModel.shared
 
     var body: some View {
         Form {
+            Section(String(localized: "Language")) {
+                Picker(String(localized: "App Language"), selection: $appLanguage) {
+                    Text("English").tag("en")
+                    Text("Deutsch").tag("de")
+                }
+                .onChange(of: appLanguage) {
+                    UserDefaults.standard.set(appLanguage, forKey: "preferredAppLanguage")
+                    UserDefaults.standard.set([appLanguage], forKey: "AppleLanguages")
+                    UserDefaults.standard.synchronize()
+                    showRestartAlert = true
+                }
+            }
+
             Section(String(localized: "Startup")) {
                 Toggle(String(localized: "Launch at Login"), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, newValue in
@@ -82,6 +102,25 @@ struct GeneralSettingsView: View {
         .formStyle(.grouped)
         .padding()
         .frame(minWidth: 500, minHeight: 300)
+        .alert(String(localized: "Restart Required"), isPresented: $showRestartAlert) {
+            Button(String(localized: "Restart Now")) {
+                restartApp()
+            }
+            Button(String(localized: "Later"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "The language change will take effect after restarting TypeWhisper."))
+        }
+    }
+
+    private func restartApp() {
+        let bundlePath = Bundle.main.bundlePath
+        let task = Process()
+        task.launchPath = "/usr/bin/open"
+        task.arguments = ["-n", bundlePath]
+        task.launch()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            NSApplication.shared.terminate(nil)
+        }
     }
 
     private func toggleLaunchAtLogin(_ enable: Bool) {

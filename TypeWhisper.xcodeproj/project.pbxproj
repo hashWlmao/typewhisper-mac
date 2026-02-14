@@ -76,6 +76,7 @@
 		AA00000000000000000090 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000090 /* HomeViewModel.swift */; };
 		AA00000000000000000091 /* HomeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000091 /* HomeSettingsView.swift */; };
 		AA00000000000000000092 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000092 /* SetupWizardView.swift */; };
+		AA00000000000000000093 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000093 /* main.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -146,6 +147,7 @@
 		BB00000000000000000090 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		BB00000000000000000091 /* HomeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSettingsView.swift; sourceTree = "<group>"; };
 		BB00000000000000000092 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWizardView.swift; sourceTree = "<group>"; };
+		BB00000000000000000093 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypeWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -188,6 +190,7 @@
 		CC00000000000000000003 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				BB00000000000000000093 /* main.swift */,
 				BB00000000000000000001 /* TypeWhisperApp.swift */,
 				BB00000000000000000002 /* ServiceContainer.swift */,
 				BB00000000000000000070 /* UpdateChecker.swift */,
@@ -472,6 +475,7 @@
 				AA00000000000000000090 /* HomeViewModel.swift in Sources */,
 				AA00000000000000000091 /* HomeSettingsView.swift in Sources */,
 				AA00000000000000000092 /* SetupWizardView.swift in Sources */,
+				AA00000000000000000093 /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

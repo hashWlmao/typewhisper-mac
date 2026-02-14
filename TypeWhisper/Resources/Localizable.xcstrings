@@ -327,6 +327,16 @@
         }
       }
     },
+    "App Language" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App-Sprache"
+          }
+        }
+      }
+    },
     "Audio Ducking" : {
       "localizations" : {
         "de" : {
@@ -1100,6 +1110,16 @@
         }
       }
     },
+    "Later" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Später"
+          }
+        }
+      }
+    },
     "Language not supported by Apple Speech" : {
       "localizations" : {
         "de" : {
@@ -1630,6 +1650,26 @@
         }
       }
     },
+    "Restart Now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jetzt neustarten"
+          }
+        }
+      }
+    },
+    "Restart Required" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neustart erforderlich"
+          }
+        }
+      }
+    },
     "Recording..." : {
       "localizations" : {
         "de" : {
@@ -2029,6 +2069,16 @@
     },
     "The language being spoken. Setting this explicitly improves accuracy." : {
 
+    },
+    "The language change will take effect after restarting TypeWhisper." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Sprachänderung wird nach einem Neustart von TypeWhisper wirksam."
+          }
+        }
+      }
     },
     "The overlay appears centered at the top or bottom of the active screen." : {
       "comment" : "A description of the overlay's vertical alignment.",

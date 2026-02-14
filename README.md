@@ -18,7 +18,7 @@ Local speech-to-text for macOS. Transcribe audio using on-device AI models — n
 </p>
 
 <p align="center">
-  <img src=".github/screenshots/profiles.png" width="340" alt="App Profiles">
+  <img src=".github/screenshots/profiles.png" width="700" alt="Profiles with URL Patterns">
 </p>
 
 ## Features

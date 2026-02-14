@@ -2,7 +2,6 @@ import SwiftUI
 import Combine
 @preconcurrency import Sparkle
 
-@main
 struct TypeWhisperApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var serviceContainer = ServiceContainer.shared
