@@ -5,6 +5,7 @@ import Translation
 @MainActor
 final class TranslationService: ObservableObject {
     @Published var configuration: TranslationSession.Configuration?
+    @Published var viewId = UUID()
 
     private var sourceText = ""
     private var continuation: CheckedContinuation<String, Error>?
@@ -18,9 +19,12 @@ final class TranslationService: ObservableObject {
             continuation = nil
         }
 
-        // Reset configuration so SwiftUI sees a nil → non-nil transition
+        // Force SwiftUI to recreate the .translationTask by changing the view identity.
+        // Without this, subsequent translations with the same target language may not
+        // re-trigger the task even with a nil reset.
         configuration = nil
-        try await Task.sleep(for: .milliseconds(50))
+        viewId = UUID()
+        try await Task.sleep(for: .milliseconds(100))
 
         sourceText = text
 

@@ -46,12 +46,19 @@ final class ProfilesViewModel: ObservableObject {
     @Published var appSearchQuery = ""
     @Published var installedApps: [InstalledApp] = []
 
+    // Domain autocomplete
+    @Published var urlPatternInput = ""
+    @Published var domainSuggestions: [String] = []
+    var availableDomains: [String] = []
+
     private let profileService: ProfileService
+    private let historyService: HistoryService
     let settingsViewModel: SettingsViewModel
     private var cancellables = Set<AnyCancellable>()
 
-    init(profileService: ProfileService, settingsViewModel: SettingsViewModel) {
+    init(profileService: ProfileService, historyService: HistoryService, settingsViewModel: SettingsViewModel) {
         self.profileService = profileService
+        self.historyService = historyService
         self.settingsViewModel = settingsViewModel
         self.profiles = profileService.profiles
         setupBindings()
@@ -121,6 +128,9 @@ final class ProfilesViewModel: ObservableObject {
         editorWhisperModeOverride = nil
         editorEngineOverride = nil
         editorPriority = 0
+        urlPatternInput = ""
+        domainSuggestions = []
+        loadAvailableDomains()
         showingEditor = true
     }
 
@@ -135,6 +145,9 @@ final class ProfilesViewModel: ObservableObject {
         editorWhisperModeOverride = profile.whisperModeOverride
         editorEngineOverride = profile.engineOverride
         editorPriority = profile.priority
+        urlPatternInput = ""
+        domainSuggestions = []
+        loadAvailableDomains()
         showingEditor = true
     }
 
@@ -183,6 +196,52 @@ final class ProfilesViewModel: ObservableObject {
         installedApps = apps.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
+    // MARK: - Domain Autocomplete
+
+    func loadAvailableDomains() {
+        availableDomains = historyService.uniqueDomains()
+    }
+
+    func filterDomainSuggestions() {
+        let query = urlPatternInput.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !query.isEmpty else {
+            domainSuggestions = []
+            return
+        }
+        domainSuggestions = availableDomains
+            .filter { $0.lowercased().contains(query) && !editorUrlPatterns.contains($0) }
+            .prefix(8)
+            .map { $0 }
+    }
+
+    func addUrlPattern() {
+        var input = urlPatternInput.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !input.isEmpty else { return }
+
+        // Strip protocol and path
+        if input.hasPrefix("https://") { input = String(input.dropFirst(8)) }
+        if input.hasPrefix("http://") { input = String(input.dropFirst(7)) }
+        if let slashIndex = input.firstIndex(of: "/") { input = String(input[..<slashIndex]) }
+        if input.hasPrefix("www.") { input = String(input.dropFirst(4)) }
+
+        guard !input.isEmpty, !editorUrlPatterns.contains(input) else {
+            urlPatternInput = ""
+            domainSuggestions = []
+            return
+        }
+
+        editorUrlPatterns.append(input)
+        urlPatternInput = ""
+        domainSuggestions = []
+    }
+
+    func selectDomainSuggestion(_ domain: String) {
+        guard !editorUrlPatterns.contains(domain) else { return }
+        editorUrlPatterns.append(domain)
+        urlPatternInput = ""
+        domainSuggestions = []
+    }
+
     // MARK: - Helpers
 
     func appName(for bundleId: String) -> String {
@@ -197,6 +256,11 @@ final class ProfilesViewModel: ObservableObject {
             if profile.bundleIdentifiers.count > 3 {
                 parts[parts.count - 1] += " +\(profile.bundleIdentifiers.count - 3)"
             }
+        }
+        if !profile.urlPatterns.isEmpty {
+            let domains = profile.urlPatterns.prefix(2).joined(separator: ", ")
+            let suffix = profile.urlPatterns.count > 2 ? " +\(profile.urlPatterns.count - 2)" : ""
+            parts.append(domains + suffix)
         }
         if let lang = profile.inputLanguage {
             let name = Locale.current.localizedString(forLanguageCode: lang) ?? lang

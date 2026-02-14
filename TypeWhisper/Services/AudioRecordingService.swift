@@ -75,6 +75,22 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
         return copy
     }
 
+    /// Returns at most the last `maxDuration` seconds of audio for streaming.
+    func getRecentBuffer(maxDuration: TimeInterval) -> [Float] {
+        bufferLock.lock()
+        defer { bufferLock.unlock() }
+        let maxSamples = Int(maxDuration * Self.targetSampleRate)
+        if sampleBuffer.count <= maxSamples { return sampleBuffer }
+        return Array(sampleBuffer.suffix(maxSamples))
+    }
+
+    /// Total duration of the recorded audio in seconds.
+    var totalBufferDuration: TimeInterval {
+        bufferLock.lock()
+        defer { bufferLock.unlock() }
+        return Double(sampleBuffer.count) / Self.targetSampleRate
+    }
+
     func startRecording() throws {
         guard hasMicrophonePermission else {
             throw AudioRecordingError.microphonePermissionDenied

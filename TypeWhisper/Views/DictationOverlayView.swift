@@ -3,10 +3,8 @@ import SwiftUI
 /// Compact pill overlay showing dictation state (recording, processing, done, error).
 struct DictationOverlayView: View {
     @ObservedObject private var viewModel = DictationViewModel.shared
-
-    private var hasPartialText: Bool {
-        !viewModel.partialText.isEmpty && viewModel.state == .recording
-    }
+    /// Latches to true once first partial text arrives; prevents height toggling.
+    @State private var textAreaExpanded = false
 
     private var isTop: Bool {
         viewModel.overlayPosition == .top
@@ -35,32 +33,46 @@ struct DictationOverlayView: View {
             .padding(.vertical, 10)
 
             // Partial transcription text
-            if hasPartialText {
+            if viewModel.state == .recording {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
                         Text(viewModel.partialText)
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
+                            .contentTransition(.identity)
+                            .animation(nil, value: viewModel.partialText)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 14)
                             .padding(.bottom, 8)
                             .id("partialTextBottom")
                     }
-                    .frame(maxHeight: 80)
+                    .frame(height: textAreaExpanded ? 200 : 0)
+                    .clipped()
+                    .scrollContentBackground(.hidden)
                     .onChange(of: viewModel.partialText) {
+                        if !viewModel.partialText.isEmpty, !textAreaExpanded {
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                textAreaExpanded = true
+                            }
+                        }
                         proxy.scrollTo("partialTextBottom", anchor: .bottom)
                     }
                 }
+                .transaction { $0.disablesAnimations = true }
             }
         }
-        .frame(minWidth: hasPartialText ? 320 : 240)
-        .fixedSize(horizontal: true, vertical: false)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: hasPartialText ? 16 : 26))
-        .overlay(RoundedRectangle(cornerRadius: hasPartialText ? 16 : 26).strokeBorder(.quaternary, lineWidth: 0.5))
+        .frame(width: 280)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: textAreaExpanded ? 16 : 26))
+        .overlay(RoundedRectangle(cornerRadius: textAreaExpanded ? 16 : 26).strokeBorder(.quaternary, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: isTop ? .top : .bottom)
         .animation(.easeInOut(duration: 0.2), value: viewModel.state)
-        .animation(.easeInOut(duration: 0.2), value: hasPartialText)
+        .onChange(of: viewModel.state) {
+            if viewModel.state != .recording {
+                textAreaExpanded = false
+            }
+        }
     }
 
     @ViewBuilder

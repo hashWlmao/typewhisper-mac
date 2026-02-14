@@ -104,6 +104,17 @@ final class HistoryService: ObservableObject {
         }
     }
 
+    func uniqueDomains(limit: Int = 50) -> [String] {
+        var counts: [String: Int] = [:]
+        for record in records {
+            guard let domain = record.appDomain else { continue }
+            let cleaned = domain.hasPrefix("www.") ? String(domain.dropFirst(4)) : domain
+            guard !cleaned.isEmpty else { continue }
+            counts[cleaned, default: 0] += 1
+        }
+        return counts.sorted { $0.value > $1.value }.prefix(limit).map(\.key)
+    }
+
     func purgeOldRecords(retentionDays: Int = 90) {
         let cutoff = Calendar.current.date(byAdding: .day, value: -retentionDays, to: Date()) ?? Date()
         let old = records.filter { $0.timestamp < cutoff }

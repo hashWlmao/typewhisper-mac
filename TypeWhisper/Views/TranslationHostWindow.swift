@@ -43,5 +43,6 @@ private struct TranslationHostView: View {
             .translationTask(translationService.configuration) { session in
                 await translationService.handleSession(session)
             }
+            .id(translationService.viewId)
     }
 }

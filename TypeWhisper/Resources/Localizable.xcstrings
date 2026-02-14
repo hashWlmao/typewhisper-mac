@@ -171,6 +171,16 @@
         }
       }
     },
+    "Add" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen"
+          }
+        }
+      }
+    },
     "Add Correction" : {
       "localizations" : {
         "de" : {
@@ -796,6 +806,16 @@
         }
       }
     },
+    "e.g. github.com" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "z.B. github.com"
+          }
+        }
+      }
+    },
     "Edit" : {
       "localizations" : {
         "de" : {
@@ -1304,6 +1324,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Keine Profile"
+          }
+        }
+      }
+    },
+    "No URL patterns" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine URL-Muster"
           }
         }
       }
@@ -1835,6 +1865,16 @@
         }
       }
     },
+    "Subdomains are included automatically. E.g. \"google.com\" also matches \"docs.google.com\"." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subdomains werden automatisch eingeschlossen. Z.B. \"google.com\" matcht auch \"docs.google.com\"."
+          }
+        }
+      }
+    },
     "System-managed" : {
       "localizations" : {
         "de" : {
@@ -2152,6 +2192,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Updates"
+          }
+        }
+      }
+    },
+    "URL Patterns" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL-Muster"
           }
         }
       }

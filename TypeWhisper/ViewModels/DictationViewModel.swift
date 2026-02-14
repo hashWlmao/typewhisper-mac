@@ -71,6 +71,7 @@ final class DictationViewModel: ObservableObject {
     private let snippetService: SnippetService
     private let soundService: SoundService
     private var matchedProfile: Profile?
+    private var capturedActiveApp: (name: String?, bundleId: String?, url: String?)?
 
     private var cancellables = Set<AnyCancellable>()
     private var recordingTimer: Timer?
@@ -175,9 +176,10 @@ final class DictationViewModel: ObservableObject {
             return
         }
 
-        // Match profile based on active app
+        // Match profile based on active app — store for reuse in stopDictation
         let activeApp = textInsertionService.captureActiveApp()
-        matchedProfile = profileService.matchProfile(bundleIdentifier: activeApp.bundleId)
+        capturedActiveApp = activeApp
+        matchedProfile = profileService.matchProfile(bundleIdentifier: activeApp.bundleId, url: activeApp.url)
         activeProfileName = matchedProfile?.name
 
         // Apply gain boost: profile override ?? global setting
@@ -252,6 +254,7 @@ final class DictationViewModel: ObservableObject {
             state = .idle
             partialText = ""
             matchedProfile = nil
+            capturedActiveApp = nil
             activeProfileName = nil
             return
         }
@@ -262,12 +265,14 @@ final class DictationViewModel: ObservableObject {
             state = .idle
             partialText = ""
             matchedProfile = nil
+            capturedActiveApp = nil
             activeProfileName = nil
             return
         }
 
-        // Use the active app captured at recording start (via profile matching)
-        let activeApp = textInsertionService.captureActiveApp()
+        // Reuse the active app captured at recording start — avoids blocking
+        // the main thread with a second AppleScript call (up to 2.5s for browsers)
+        let activeApp = capturedActiveApp ?? textInsertionService.captureActiveApp()
         let language = effectiveLanguage
         let task = effectiveTask
         let engineOverride = effectiveEngineOverride
@@ -289,6 +294,7 @@ final class DictationViewModel: ObservableObject {
                     state = .idle
                     partialText = ""
                     matchedProfile = nil
+                    capturedActiveApp = nil
                     activeProfileName = nil
                     return
                 }
@@ -328,11 +334,13 @@ final class DictationViewModel: ObservableObject {
                 try? await Task.sleep(for: .seconds(1.5))
                 state = .idle
                 matchedProfile = nil
+                capturedActiveApp = nil
                 activeProfileName = nil
             } catch {
                 soundService.play(.error, enabled: soundFeedbackEnabled)
                 showError(error.localizedDescription)
                 matchedProfile = nil
+                capturedActiveApp = nil
                 activeProfileName = nil
             }
         }
@@ -397,6 +405,7 @@ final class DictationViewModel: ObservableObject {
 
     /// Text confirmed from previous streaming passes — never changes once set.
     private var confirmedStreamingText = ""
+    private var streamingWindowActive = false
 
     private func startStreamingIfSupported() {
         let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverride)
@@ -404,6 +413,7 @@ final class DictationViewModel: ObservableObject {
 
         isStreaming = true
         confirmedStreamingText = ""
+        streamingWindowActive = false
         let streamLanguage = effectiveLanguage
         let streamTask = effectiveTask
         let streamEngineOverride = effectiveEngineOverride
@@ -413,8 +423,17 @@ final class DictationViewModel: ObservableObject {
             try? await Task.sleep(for: .seconds(1.5))
 
             while !Task.isCancelled, self.state == .recording {
-                let buffer = self.audioRecordingService.getCurrentBuffer()
+                let maxStreamSeconds: TimeInterval = 28
+                let buffer = self.audioRecordingService.getRecentBuffer(maxDuration: maxStreamSeconds)
                 let bufferDuration = Double(buffer.count) / 16000.0
+
+                // When buffer exceeds window, reset confirmed text so stabilization
+                // works against the windowed transcript instead of the full one.
+                let totalDuration = self.audioRecordingService.totalBufferDuration
+                if totalDuration > maxStreamSeconds, !self.streamingWindowActive {
+                    self.streamingWindowActive = true
+                    self.confirmedStreamingText = ""
+                }
 
                 if bufferDuration > 0.5 {
                     do {
@@ -428,7 +447,9 @@ final class DictationViewModel: ObservableObject {
                                 guard let self, !Task.isCancelled else { return false }
                                 let stable = Self.stabilizeText(confirmed: confirmed, new: text)
                                 DispatchQueue.main.async {
-                                    self.partialText = stable
+                                    if self.partialText != stable {
+                                        self.partialText = stable
+                                    }
                                 }
                                 return true
                             }
@@ -436,7 +457,9 @@ final class DictationViewModel: ObservableObject {
                         let text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !text.isEmpty {
                             let stable = Self.stabilizeText(confirmed: confirmed, new: text)
-                            self.partialText = stable
+                            if self.partialText != stable {
+                                self.partialText = stable
+                            }
                             self.confirmedStreamingText = stable
                         }
                     } catch {
@@ -454,6 +477,7 @@ final class DictationViewModel: ObservableObject {
         streamingTask = nil
         isStreaming = false
         confirmedStreamingText = ""
+        streamingWindowActive = false
     }
 
     /// Keeps confirmed text stable and only appends new content.
@@ -483,8 +507,22 @@ final class DictationViewModel: ObservableObject {
             return confirmed + newContent
         }
 
-        // Very different result — keep confirmed, ignore this pass
-        return confirmed
+        // Suffix-prefix overlap: new text starts with a suffix of confirmed
+        // (happens when the streaming window has shifted forward)
+        let minOverlap = min(20, confirmedChars.count / 4)
+        let maxShift = min(confirmedChars.count - minOverlap, 150)
+        if maxShift > 0 {
+            for dropCount in 1...maxShift {
+                let suffix = String(confirmed.unicodeScalars.dropFirst(dropCount))
+                if new.hasPrefix(suffix) {
+                    let newTail = String(new.unicodeScalars.dropFirst(confirmed.unicodeScalars.count - dropCount))
+                    return newTail.isEmpty ? confirmed : confirmed + newTail
+                }
+            }
+        }
+
+        // Very different result — accept the new text to avoid freezing the preview
+        return new
     }
 
     // MARK: - Silence Detection

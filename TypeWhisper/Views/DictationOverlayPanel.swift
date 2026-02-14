@@ -5,8 +5,8 @@ import Combine
 /// Floating non-activating panel that shows dictation status.
 /// Uses a fixed frame size — all layout changes happen inside SwiftUI.
 class DictationOverlayPanel: NSPanel {
-    private static let panelWidth: CGFloat = 340
-    private static let panelHeight: CGFloat = 160
+    private static let panelWidth: CGFloat = 280
+    private static let panelHeight: CGFloat = 280
 
     private var stateObservation: AnyCancellable?
 

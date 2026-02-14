@@ -217,9 +217,16 @@ final class TextInsertionService {
         var roleValue: AnyObject?
         let roleResult = AXUIElementCopyAttributeValue(axElement, kAXRoleAttribute as CFString, &roleValue)
         if roleResult == .success, let role = roleValue as? String {
-            let textInputRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField", "AXWebArea"]
+            let textInputRoles: Set<String> = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField"]
             if textInputRoles.contains(role) {
                 return true
+            }
+
+            // AXWebArea is the browser's content area — supports text selection
+            // but is not an editable text input. Contenteditable fields typically
+            // appear as AXTextArea in modern browsers.
+            if role == "AXWebArea" {
+                return false
             }
         }
 

@@ -31,7 +31,7 @@ Local speech-to-text for macOS. Transcribe audio using on-device AI models — n
 - **File transcription** — Batch-process multiple audio/video files with drag & drop
 - **Subtitle export** — Export transcriptions as SRT or WebVTT with timestamps
 - **Local HTTP API** — REST API for integration with external tools and scripts
-- **App-specific profiles** — Per-app overrides for language, task, engine, and whisper mode. Automatically activates when dictating in a matched application
+- **App-specific profiles** — Per-app and per-website overrides for language, task, engine, and whisper mode. Match by app (bundle ID) and/or domain (with subdomain support). Automatically activates when dictating in a matched application or website
 - **Dictionary** — Custom term corrections applied after transcription (e.g., fix names, jargon, or recurring misrecognitions). Includes importable term packs
 - **Snippets** — Text shortcuts with trigger→replacement. Supports placeholders like `{{DATE}}`, `{{TIME}}`, and `{{CLIPBOARD}}`
 - **History** — Searchable transcription history with inline editing, correction detection, and app context tracking
@@ -125,13 +125,22 @@ curl http://localhost:8787/v1/models
 
 ## Profiles
 
-Profiles let you configure transcription settings per application. For example:
+Profiles let you configure transcription settings per application or website. For example:
 
 - **Mail** — German language, Whisper Large v3
 - **Slack** — English language, Parakeet TDT v3
 - **Terminal** — Whisper mode always on
+- **github.com** — English language (matches in any browser)
+- **docs.google.com** — German language, translate to English
 
-Create profiles in Settings > Profiles. Assign apps, set language/task/engine overrides, and adjust priority. When you start dictating, TypeWhisper matches the active app's bundle ID against your profiles and applies the overrides automatically. The active profile name is shown as a badge in the recording overlay.
+Create profiles in Settings > Profiles. Assign apps and/or URL patterns, set language/task/engine overrides, and adjust priority. URL patterns support subdomain matching — e.g. `google.com` also matches `docs.google.com`. The domain autocomplete suggests domains from your transcription history.
+
+When you start dictating, TypeWhisper matches the active app and browser URL against your profiles with the following priority:
+1. **App + URL match** — highest specificity (e.g. Chrome + github.com)
+2. **URL-only match** — cross-browser profiles (e.g. github.com in any browser)
+3. **App-only match** — generic app profiles (e.g. all of Chrome)
+
+The active profile name is shown as a badge in the recording overlay.
 
 Both engines (WhisperKit and Parakeet) can be loaded simultaneously for instant switching between profiles. Note that loading both models increases memory usage.
 

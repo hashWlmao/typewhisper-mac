@@ -155,6 +155,74 @@ private struct ProfileEditorSheet: View {
                     }
                 }
 
+                Section(String(localized: "URL Patterns")) {
+                    if viewModel.editorUrlPatterns.isEmpty {
+                        Text(String(localized: "No URL patterns"))
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    } else {
+                        ForEach(viewModel.editorUrlPatterns, id: \.self) { pattern in
+                            HStack {
+                                Image(systemName: "globe")
+                                    .foregroundStyle(.secondary)
+                                Text(pattern)
+                                Spacer()
+                                Button {
+                                    viewModel.editorUrlPatterns.removeAll { $0 == pattern }
+                                } label: {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.borderless)
+                            }
+                        }
+                    }
+
+                    HStack {
+                        TextField(String(localized: "e.g. github.com"), text: $viewModel.urlPatternInput)
+                            .textFieldStyle(.roundedBorder)
+                            .onSubmit {
+                                viewModel.addUrlPattern()
+                            }
+                            .onChange(of: viewModel.urlPatternInput) {
+                                viewModel.filterDomainSuggestions()
+                            }
+
+                        Button(String(localized: "Add")) {
+                            viewModel.addUrlPattern()
+                        }
+                        .disabled(viewModel.urlPatternInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+
+                    if !viewModel.domainSuggestions.isEmpty {
+                        VStack(alignment: .leading, spacing: 2) {
+                            ForEach(viewModel.domainSuggestions, id: \.self) { domain in
+                                Button {
+                                    viewModel.selectDomainSuggestion(domain)
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "globe")
+                                            .font(.caption)
+                                        Text(domain)
+                                            .font(.caption)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.vertical, 2)
+                                .padding(.horizontal, 4)
+                            }
+                        }
+                        .padding(4)
+                        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 6))
+                    }
+
+                    Text(String(localized: "Subdomains are included automatically. E.g. \"google.com\" also matches \"docs.google.com\"."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section(String(localized: "Overrides")) {
                     // Input language override
                     Picker(String(localized: "Spoken language"), selection: $viewModel.editorInputLanguage) {
@@ -237,7 +305,7 @@ private struct ProfileEditorSheet: View {
             }
             .padding()
         }
-        .frame(width: 480, height: 580)
+        .frame(width: 480, height: 680)
         .sheet(isPresented: $viewModel.showingAppPicker) {
             AppPickerSheet(viewModel: viewModel)
         }

@@ -84,12 +84,58 @@ final class ProfileService: ObservableObject {
         fetchProfiles()
     }
 
-    func matchProfile(bundleIdentifier: String?) -> Profile? {
-        guard let bundleId = bundleIdentifier, !bundleId.isEmpty else { return nil }
-        return profiles
-            .filter { $0.isEnabled && $0.bundleIdentifiers.contains(bundleId) }
-            .sorted { $0.priority > $1.priority }
-            .first
+    func matchProfile(bundleIdentifier: String?, url: String? = nil) -> Profile? {
+        let bundleId = bundleIdentifier ?? ""
+        let domain = extractDomain(from: url)
+        let enabled = profiles.filter { $0.isEnabled }
+
+        // Tier 1: bundleId + URL match (highest specificity)
+        if !bundleId.isEmpty, let domain {
+            let matches = enabled.filter { profile in
+                profile.bundleIdentifiers.contains(bundleId) &&
+                profile.urlPatterns.contains { domainMatches(domain, pattern: $0) }
+            }
+            if let best = matches.sorted(by: { $0.priority > $1.priority }).first {
+                return best
+            }
+        }
+
+        // Tier 2: URL-only match (cross-browser)
+        if let domain {
+            let matches = enabled.filter { profile in
+                !profile.urlPatterns.isEmpty &&
+                profile.urlPatterns.contains { domainMatches(domain, pattern: $0) }
+            }
+            if let best = matches.sorted(by: { $0.priority > $1.priority }).first {
+                return best
+            }
+        }
+
+        // Tier 3: bundleId-only match
+        if !bundleId.isEmpty {
+            let matches = enabled.filter { $0.bundleIdentifiers.contains(bundleId) }
+            if let best = matches.sorted(by: { $0.priority > $1.priority }).first {
+                return best
+            }
+        }
+
+        return nil
+    }
+
+    /// Extracts a clean domain from a URL string, stripping "www." prefix.
+    private func extractDomain(from urlString: String?) -> String? {
+        guard let urlString, !urlString.isEmpty,
+              let url = URL(string: urlString),
+              let host = url.host() else { return nil }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    /// Checks if a domain matches a pattern. Supports exact match and subdomain match.
+    /// e.g. pattern "google.com" matches "google.com" and "docs.google.com"
+    private func domainMatches(_ domain: String, pattern: String) -> Bool {
+        let d = domain.lowercased()
+        let p = pattern.lowercased()
+        return d == p || d.hasSuffix("." + p)
     }
 
     private func fetchProfiles() {
