@@ -162,14 +162,18 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
         ) else { return }
 
         var error: NSError?
-        let hasData = OSAllocatedUnfairLock(initialState: false)
+        let consumed = OSAllocatedUnfairLock(initialState: false)
 
         converter.convert(to: convertedBuffer, error: &error) { _, outStatus in
-            if hasData.withLock({ $0 }) {
+            let wasConsumed = consumed.withLock { flag in
+                let prev = flag
+                flag = true
+                return prev
+            }
+            if wasConsumed {
                 outStatus.pointee = .noDataNow
                 return nil
             }
-            hasData.withLock { $0 = true }
             outStatus.pointee = .haveData
             return buffer
         }

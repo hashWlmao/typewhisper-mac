@@ -40,7 +40,8 @@ final class AudioFileService: Sendable {
     private func extractSamples(from url: URL) async throws -> [Float] {
         let asset = AVURLAsset(url: url)
 
-        guard let audioTrack = try await asset.loadTracks(withMediaType: .audio).first else {
+        let tracks = try await asset.load(.tracks)
+        guard let audioTrack = tracks.first(where: { $0.mediaType == .audio }) else {
             throw AudioFileError.conversionFailed("No audio track found")
         }
 
@@ -75,8 +76,8 @@ final class AudioFileService: Sendable {
             let sampleCount = length / MemoryLayout<Float>.size
 
             var data = Data(count: length)
-            _ = data.withUnsafeMutableBytes { rawBuffer in
-                CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length, destination: rawBuffer.baseAddress!)
+            data.withUnsafeMutableBytes { rawBuffer in
+                _ = CMBlockBufferCopyDataBytes(blockBuffer, atOffset: 0, dataLength: length, destination: rawBuffer.baseAddress!)
             }
 
             let floats = data.withUnsafeBytes { rawBuffer in
