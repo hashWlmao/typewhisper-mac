@@ -30,6 +30,10 @@ struct ModelInfo: Identifiable, Hashable {
     }
 
     var isRecommended: Bool {
+        if engineType == .speechAnalyzer {
+            return matchesSelectedLanguage
+        }
+
         let ram = ProcessInfo.processInfo.physicalMemory
         let gb = ram / (1024 * 1024 * 1024)
 
@@ -43,6 +47,20 @@ struct ModelInfo: Identifiable, Hashable {
         default:
             return false
         }
+    }
+
+    private var matchesSelectedLanguage: Bool {
+        guard engineType == .speechAnalyzer else { return false }
+        let localeId = String(id.dropFirst("speechanalyzer-".count))
+        let modelLangCode = Locale(identifier: localeId).language.languageCode?.identifier
+
+        // Match against user's selected language, or system language if auto-detect
+        if let selected = UserDefaults.standard.string(forKey: "selectedLanguage") {
+            return modelLangCode == selected
+        }
+        // Auto-detect: recommend system language
+        let systemLang = Locale.current.language.languageCode?.identifier
+        return modelLangCode == systemLang
     }
 }
 

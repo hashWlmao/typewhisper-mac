@@ -131,11 +131,16 @@ struct ModelRow: View {
             }
 
         case .loading(let phase):
-            HStack(spacing: 8) {
-                ProgressView()
-                    .controlSize(.small)
-                Text(Self.phaseText(phase))
-                    .font(.caption)
+            VStack(alignment: .trailing, spacing: 4) {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(Self.phaseText(phase))
+                        .font(.caption)
+                }
+                Text(String(localized: "First launch takes a few minutes. Subsequent launches are fast."))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
             }
 
         case .ready:

@@ -38,6 +38,7 @@ final class FileTranscriptionViewModel: ObservableObject {
     }
 
     @Published var files: [FileItem] = []
+    @Published var showFilePickerFromMenu = false
     @Published var batchState: BatchState = .idle
     @Published var currentIndex: Int = 0
     @Published var selectedLanguage: String? = nil

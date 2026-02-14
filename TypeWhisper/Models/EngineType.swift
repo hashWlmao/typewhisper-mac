@@ -32,10 +32,11 @@ enum EngineType: String, CaseIterable, Identifiable, Codable {
     }
 
     static var availableCases: [EngineType] {
-        var cases: [EngineType] = [.whisper, .parakeet]
+        var cases: [EngineType] = []
         if #available(macOS 26, *) {
             cases.append(.speechAnalyzer)
         }
+        cases.append(contentsOf: [.parakeet, .whisper])
         return cases
     }
 }

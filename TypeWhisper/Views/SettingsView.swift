@@ -8,22 +8,31 @@ enum SettingsTab: Hashable {
 
 struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .home
+    @ObservedObject private var fileTranscription = FileTranscriptionViewModel.shared
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            SettingsMainTabs(selectedTab: $selectedTab)
+            SettingsMainTabs()
         }
         .tabViewStyle(.sidebarAdaptable)
         .frame(minWidth: 700, idealWidth: 750, minHeight: 550, idealHeight: 600)
+        .onAppear { navigateToFileTranscriptionIfNeeded() }
+        .onChange(of: fileTranscription.showFilePickerFromMenu) { _, _ in
+            navigateToFileTranscriptionIfNeeded()
+        }
+    }
+
+    private func navigateToFileTranscriptionIfNeeded() {
+        if fileTranscription.showFilePickerFromMenu {
+            selectedTab = .fileTranscription
+        }
     }
 }
 
 private struct SettingsMainTabs: TabContent {
-    @Binding var selectedTab: SettingsTab
-
     var body: some TabContent<SettingsTab> {
         Tab(String(localized: "Home"), systemImage: "house", value: SettingsTab.home) {
-            HomeSettingsView(selectedTab: $selectedTab)
+            HomeSettingsView()
         }
         Tab(String(localized: "General"), systemImage: "gear", value: SettingsTab.general) {
             GeneralSettingsView()
@@ -36,24 +45,12 @@ private struct SettingsMainTabs: TabContent {
         }
         Tab(String(localized: "Dictation"), systemImage: "mic.fill", value: SettingsTab.dictation) {
             DictationSettingsView()
-                .task {
-                    if !UserDefaults.standard.bool(forKey: "hotkeyCustomized") {
-                        UserDefaults.standard.set(true, forKey: "hotkeyCustomized")
-                        HomeViewModel.shared.refresh()
-                    }
-                }
         }
         Tab(String(localized: "File Transcription"), systemImage: "doc.text", value: SettingsTab.fileTranscription) {
             FileTranscriptionView()
         }
         Tab(String(localized: "History"), systemImage: "clock.arrow.circlepath", value: SettingsTab.history) {
             HistoryView()
-                .task {
-                    if !UserDefaults.standard.bool(forKey: "historyTabVisited") {
-                        UserDefaults.standard.set(true, forKey: "historyTabVisited")
-                        HomeViewModel.shared.refresh()
-                    }
-                }
         }
         SettingsExtraTabs()
     }

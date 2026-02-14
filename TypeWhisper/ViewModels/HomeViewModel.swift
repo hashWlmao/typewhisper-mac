@@ -26,15 +26,6 @@ struct ActivityDataPoint: Identifiable {
     let wordCount: Int
 }
 
-struct TutorialStep: Identifiable {
-    let id: Int
-    let title: String
-    let description: String
-    let systemImage: String
-    let isCompleted: Bool
-    let targetTab: SettingsTab?
-}
-
 @MainActor
 final class HomeViewModel: ObservableObject {
     nonisolated(unsafe) static var _shared: HomeViewModel?
@@ -51,23 +42,17 @@ final class HomeViewModel: ObservableObject {
     @Published var appsUsed: Int = 0
     @Published var timeSaved: String = "—"
     @Published var chartData: [ActivityDataPoint] = []
-    @Published var tutorialSteps: [TutorialStep] = []
-    @Published var completedStepCount: Int = 0
-    @Published var showTutorial: Bool {
-        didSet { UserDefaults.standard.set(!showTutorial, forKey: "tutorialDismissed") }
+    @Published var showSetupWizard: Bool {
+        didSet { UserDefaults.standard.set(!showSetupWizard, forKey: "setupWizardCompleted") }
     }
 
     private let historyService: HistoryService
-    private let dictionaryService: DictionaryService
-    private let profileService: ProfileService
     private var cancellables = Set<AnyCancellable>()
     private var refreshWorkItem: DispatchWorkItem?
 
-    init(historyService: HistoryService, dictionaryService: DictionaryService, profileService: ProfileService) {
+    init(historyService: HistoryService) {
         self.historyService = historyService
-        self.dictionaryService = dictionaryService
-        self.profileService = profileService
-        self.showTutorial = !UserDefaults.standard.bool(forKey: "tutorialDismissed")
+        self.showSetupWizard = !UserDefaults.standard.bool(forKey: "setupWizardCompleted")
 
         setupBindings()
         refresh()
@@ -75,16 +60,6 @@ final class HomeViewModel: ObservableObject {
 
     private func setupBindings() {
         historyService.$records
-            .dropFirst()
-            .sink { [weak self] _ in self?.scheduleRefresh() }
-            .store(in: &cancellables)
-
-        dictionaryService.$entries
-            .dropFirst()
-            .sink { [weak self] _ in self?.scheduleRefresh() }
-            .store(in: &cancellables)
-
-        profileService.$profiles
             .dropFirst()
             .sink { [weak self] _ in self?.scheduleRefresh() }
             .store(in: &cancellables)
@@ -144,8 +119,6 @@ final class HomeViewModel: ObservableObject {
         // Chart data
         chartData = buildChartData(records: filtered)
 
-        // Tutorial
-        refreshTutorial()
     }
 
     private func buildChartData(records: [TranscriptionRecord]) -> [ActivityDataPoint] {
@@ -170,65 +143,11 @@ final class HomeViewModel: ObservableObject {
             .sorted { $0.date < $1.date }
     }
 
-    private func refreshTutorial() {
-        let hasRecordings = !historyService.records.isEmpty
-        let hasDictionary = !dictionaryService.entries.isEmpty
-        let hasProfiles = !profileService.profiles.isEmpty
-        let historyVisited = UserDefaults.standard.bool(forKey: "historyTabVisited")
-
-        let steps = [
-            TutorialStep(
-                id: 1,
-                title: String(localized: "Make your first recording"),
-                description: String(localized: "Press your hotkey and start dictating."),
-                systemImage: "mic.fill",
-                isCompleted: hasRecordings,
-                targetTab: nil
-            ),
-            TutorialStep(
-                id: 2,
-                title: String(localized: "Customize your hotkey"),
-                description: String(localized: "Go to Dictation settings and set your preferred shortcut."),
-                systemImage: "keyboard",
-                isCompleted: UserDefaults.standard.bool(forKey: "hotkeyCustomized"),
-                targetTab: .dictation
-            ),
-            TutorialStep(
-                id: 3,
-                title: String(localized: "Add vocabulary"),
-                description: String(localized: "Add terms and corrections to the Dictionary."),
-                systemImage: "book.closed",
-                isCompleted: hasDictionary,
-                targetTab: .dictionary
-            ),
-            TutorialStep(
-                id: 4,
-                title: String(localized: "Create a profile"),
-                description: String(localized: "Set up app-specific settings in Profiles."),
-                systemImage: "person.crop.rectangle.stack",
-                isCompleted: hasProfiles,
-                targetTab: .profiles
-            ),
-            TutorialStep(
-                id: 5,
-                title: String(localized: "Review your history"),
-                description: String(localized: "Check and edit past transcriptions in History."),
-                systemImage: "clock.arrow.circlepath",
-                isCompleted: historyVisited,
-                targetTab: .history
-            )
-        ]
-
-        tutorialSteps = steps
-        completedStepCount = steps.filter(\.isCompleted).count
-
-        // Auto-dismiss tutorial when all steps completed
-        if completedStepCount == steps.count {
-            showTutorial = false
-        }
+    func completeSetupWizard() {
+        showSetupWizard = false
     }
 
-    func dismissTutorial() {
-        showTutorial = false
+    func resetSetupWizard() {
+        showSetupWizard = true
     }
 }

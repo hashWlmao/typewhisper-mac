@@ -1,0 +1,264 @@
+import SwiftUI
+import KeyboardShortcuts
+
+struct SetupWizardView: View {
+    @ObservedObject private var dictation = DictationViewModel.shared
+    @ObservedObject private var modelManager = ModelManagerViewModel.shared
+    @State private var currentStep = 0
+
+    private let totalSteps = 3
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider()
+            stepContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            Divider()
+            navigation
+        }
+        .frame(minHeight: 350)
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack {
+            Text(String(localized: "Setup"))
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Spacer()
+
+            Text(String(localized: "Step \(currentStep + 1) of \(totalSteps)"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 6) {
+                ForEach(0..<totalSteps, id: \.self) { index in
+                    Circle()
+                        .fill(index <= currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .frame(width: 8, height: 8)
+                }
+            }
+        }
+        .padding()
+    }
+
+    // MARK: - Step Content
+
+    @ViewBuilder
+    private var stepContent: some View {
+        ScrollView {
+            switch currentStep {
+            case 0: permissionsStep
+            case 1: engineModelStep
+            case 2: hotkeyStep
+            default: EmptyView()
+            }
+        }
+        .padding()
+    }
+
+    // MARK: - Step 1: Permissions
+
+    private var permissionsStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "Microphone access is required for dictation."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            permissionRow(
+                label: String(localized: "Microphone"),
+                iconGranted: "mic.fill",
+                iconMissing: "mic.slash",
+                isGranted: !dictation.needsMicPermission
+            ) {
+                dictation.requestMicPermission()
+            }
+
+            Text(String(localized: "Accessibility access is required to paste text into other apps."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            permissionRow(
+                label: String(localized: "Accessibility"),
+                iconGranted: "lock.shield.fill",
+                iconMissing: "lock.shield",
+                isGranted: !dictation.needsAccessibilityPermission
+            ) {
+                dictation.requestAccessibilityPermission()
+            }
+        }
+    }
+
+    private func permissionRow(
+        label: String,
+        iconGranted: String,
+        iconMissing: String,
+        isGranted: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        HStack {
+            Label(label, systemImage: isGranted ? iconGranted : iconMissing)
+                .foregroundStyle(isGranted ? .green : .orange)
+
+            Spacer()
+
+            if isGranted {
+                Text(String(localized: "Granted"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Button(String(localized: "Grant Access")) {
+                    action()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding(10)
+        .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
+    }
+
+    // MARK: - Step 2: Engine & Model
+
+    private var engineModelStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "Select an engine and download a model to get started."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            // Engine picker
+            VStack(alignment: .leading, spacing: 8) {
+                Text(String(localized: "Engine"))
+                    .font(.headline)
+
+                Picker(String(localized: "Engine"), selection: Binding(
+                    get: { modelManager.selectedEngine },
+                    set: { modelManager.selectEngine($0) }
+                )) {
+                    ForEach(EngineType.availableCases) { engine in
+                        Text(engine.displayName).tag(engine)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+
+                engineDescription
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Model list — recommended first
+            VStack(alignment: .leading, spacing: 8) {
+                Text(String(localized: "Models"))
+                    .font(.headline)
+
+                let sorted = modelManager.models.sorted { $0.isRecommended && !$1.isRecommended }
+                ForEach(sorted) { model in
+                    ModelRow(model: model, status: modelManager.status(for: model)) {
+                        modelManager.downloadModel(model)
+                    } onDelete: {
+                        modelManager.deleteModel(model)
+                    }
+                }
+            }
+        }
+    }
+
+    private var engineDescription: Text {
+        switch modelManager.selectedEngine {
+        case .speechAnalyzer:
+            Text(String(localized: "Apple Speech — on-device, no download required. Recommended for most users."))
+        case .parakeet:
+            Text(String(localized: "Parakeet — extremely fast on Apple Silicon, 25 European languages."))
+        case .whisper:
+            Text(String(localized: "WhisperKit — 99+ languages, supports streaming and translation to English."))
+        }
+    }
+
+    // MARK: - Step 3: Hotkey
+
+    private var hotkeyStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "Choose how to trigger dictation."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Picker(String(localized: "Mode"), selection: Binding(
+                    get: { dictation.singleKeyMode },
+                    set: { newValue in
+                        if !newValue {
+                            dictation.disableSingleKey()
+                        } else {
+                            dictation.singleKeyMode = true
+                        }
+                    }
+                )) {
+                    Text(String(localized: "Key Combination")).tag(false)
+                    Text(String(localized: "Single Key")).tag(true)
+                }
+                .pickerStyle(.segmented)
+
+                if dictation.singleKeyMode {
+                    SingleKeyRecorderView(
+                        label: dictation.singleKeyLabel,
+                        onRecord: { code, isFn in
+                            dictation.setSingleKey(code: code, isFn: isFn)
+                        }
+                    )
+                } else {
+                    KeyboardShortcuts.Recorder(String(localized: "Dictation shortcut"), name: .toggleDictation)
+                }
+
+                Text(String(localized: "Quick press: toggle mode (press again to stop). Hold 1+ seconds: push-to-talk (release to stop)."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(12)
+            .background(RoundedRectangle(cornerRadius: 8).fill(.quaternary))
+        }
+    }
+
+    // MARK: - Navigation
+
+    private var navigation: some View {
+        HStack {
+            if currentStep > 0 {
+                Button(String(localized: "Back")) {
+                    withAnimation { currentStep -= 1 }
+                }
+                .buttonStyle(.bordered)
+            }
+
+            Spacer()
+
+            if currentStep < totalSteps - 1 {
+                Button(String(localized: "Next")) {
+                    withAnimation { currentStep += 1 }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(currentStep == 1 && !hasAnyModelReady)
+            } else {
+                Button(String(localized: "Finish")) {
+                    HomeViewModel.shared.completeSetupWizard()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding()
+    }
+
+    // MARK: - Helpers
+
+    private var hasAnyModelReady: Bool {
+        ModelInfo.allModels.contains { model in
+            if case .ready = modelManager.status(for: model) {
+                return true
+            }
+            return false
+        }
+    }
+}

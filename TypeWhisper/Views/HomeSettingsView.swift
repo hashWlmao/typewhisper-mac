@@ -3,9 +3,17 @@ import Charts
 
 struct HomeSettingsView: View {
     @ObservedObject private var viewModel = HomeViewModel.shared
-    @Binding var selectedTab: SettingsTab
 
     var body: some View {
+        if viewModel.showSetupWizard {
+            SetupWizardView()
+                .frame(minWidth: 500, minHeight: 400)
+        } else {
+            dashboardView
+        }
+    }
+
+    private var dashboardView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Time period picker
@@ -29,9 +37,17 @@ struct HomeSettingsView: View {
                 // Activity chart
                 chartSection
 
-                // Tutorial
-                if viewModel.showTutorial {
-                    tutorialSection
+                // Run setup again
+                HStack {
+                    Spacer()
+                    Button {
+                        viewModel.resetSetupWizard()
+                    } label: {
+                        Label(String(localized: "Run setup again"), systemImage: "arrow.counterclockwise")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
                 }
             }
             .padding()
@@ -96,81 +112,6 @@ struct HomeSettingsView: View {
         .padding()
         .background(.quaternary.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var tutorialSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Getting Started"))
-                    .font(.headline)
-
-                Text("\(viewModel.completedStepCount)/\(viewModel.tutorialSteps.count)")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(.blue.opacity(0.15))
-                    .foregroundStyle(.blue)
-                    .clipShape(Capsule())
-
-                Spacer()
-
-                Button(String(localized: "Dismiss")) {
-                    viewModel.dismissTutorial()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .font(.caption)
-            }
-
-            ForEach(viewModel.tutorialSteps) { step in
-                if let tab = step.targetTab {
-                    Button {
-                        selectedTab = tab
-                    } label: {
-                        tutorialStepRow(step)
-                    }
-                    .buttonStyle(.plain)
-                    .onHover { hovering in
-                        if hovering {
-                            NSCursor.pointingHand.push()
-                        } else {
-                            NSCursor.pop()
-                        }
-                    }
-                } else {
-                    tutorialStepRow(step)
-                }
-            }
-        }
-        .padding()
-        .background(.quaternary.opacity(0.3))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func tutorialStepRow(_ step: TutorialStep) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(step.isCompleted ? .green : .secondary)
-                .font(.title3)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(step.title)
-                    .fontWeight(.medium)
-                    .strikethrough(step.isCompleted)
-                    .foregroundStyle(step.isCompleted ? .secondary : .primary)
-                Text(step.description)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            if step.targetTab != nil {
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-        }
     }
 }
 

@@ -62,8 +62,9 @@ struct MenuBarView: View {
         .keyboardShortcut(",")
 
         Button {
-            if let url = URL(string: "typewhisperlocal://transcribe-file") {
-                NSWorkspace.shared.open(url)
+            openWindow(id: "settings")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                FileTranscriptionViewModel.shared.showFilePickerFromMenu = true
             }
         } label: {
             Label(String(localized: "Transcribe File..."), systemImage: "doc.text")

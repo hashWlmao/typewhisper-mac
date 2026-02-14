@@ -31,6 +31,12 @@ struct FileTranscriptionView: View {
                 viewModel.addFiles(urls)
             }
         }
+        .onAppear {
+            if viewModel.showFilePickerFromMenu {
+                viewModel.showFilePickerFromMenu = false
+                showFilePicker = true
+            }
+        }
     }
 
     // MARK: - Drop Zone

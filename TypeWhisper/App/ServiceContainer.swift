@@ -92,11 +92,7 @@ final class ServiceContainer: ObservableObject {
         )
         dictionaryViewModel = DictionaryViewModel(dictionaryService: dictionaryService)
         snippetsViewModel = SnippetsViewModel(snippetService: snippetService)
-        homeViewModel = HomeViewModel(
-            historyService: historyService,
-            dictionaryService: dictionaryService,
-            profileService: profileService
-        )
+        homeViewModel = HomeViewModel(historyService: historyService)
 
         // Set shared references
         ModelManagerViewModel._shared = modelManagerViewModel
