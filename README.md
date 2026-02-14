@@ -7,7 +7,7 @@
 Local speech-to-text for macOS. Transcribe audio using on-device AI models — no cloud, no API keys, no subscriptions. Your voice data never leaves your Mac.
 
 <p align="center">
-  <video src="https://github.com/TypeWhisper/typewhisper-mac/releases/download/v0.4.0/demo.mp4" autoplay loop muted playsinline width="700"></video>
+  <video src="https://github.com/user-attachments/assets/98e1aef9-de31-434b-aa13-cfd36c0f3155" autoplay loop muted playsinline width="700"></video>
 </p>
 
 ## Screenshots
