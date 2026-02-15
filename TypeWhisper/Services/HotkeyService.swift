@@ -31,15 +31,30 @@ final class HotkeyService: ObservableObject {
     private var singleKeyMode: Bool = false
     private var singleKeyCode: UInt16 = 0
     private var singleKeyIsFn: Bool = false
+    private var singleKeyIsModifier: Bool = false
     private var fnWasDown = false
+    private var modifierWasDown = false
     private var singleKeyWasDown = false
     private var globalMonitor: Any?
     private var localMonitor: Any?
+
+    // Modifier keyCodes that generate flagsChanged instead of keyDown/keyUp
+    private static let modifierKeyCodes: Set<UInt16> = [
+        0x37, // Left Command
+        0x36, // Right Command
+        0x38, // Left Shift
+        0x3C, // Right Shift
+        0x3A, // Left Option
+        0x3D, // Right Option
+        0x3B, // Left Control
+        0x3E, // Right Control
+    ]
 
     func setup() {
         singleKeyMode = UserDefaults.standard.bool(forKey: "hotkeyUseSingleKey")
         singleKeyCode = UInt16(UserDefaults.standard.integer(forKey: "singleKeyCode"))
         singleKeyIsFn = UserDefaults.standard.bool(forKey: "singleKeyIsFn")
+        singleKeyIsModifier = UserDefaults.standard.bool(forKey: "singleKeyIsModifier")
 
         if !singleKeyMode {
             KeyboardShortcuts.onKeyDown(for: .toggleDictation) { [weak self] in
@@ -61,13 +76,16 @@ final class HotkeyService: ObservableObject {
     func updateSingleKey(code: UInt16, isFn: Bool) {
         singleKeyCode = code
         singleKeyIsFn = isFn
+        singleKeyIsModifier = !isFn && Self.modifierKeyCodes.contains(code)
         singleKeyMode = true
         fnWasDown = false
+        modifierWasDown = false
         singleKeyWasDown = false
 
         UserDefaults.standard.set(true, forKey: "hotkeyUseSingleKey")
         UserDefaults.standard.set(Int(code), forKey: "singleKeyCode")
         UserDefaults.standard.set(isFn, forKey: "singleKeyIsFn")
+        UserDefaults.standard.set(singleKeyIsModifier, forKey: "singleKeyIsModifier")
 
         // Remove KeyboardShortcuts handlers and reinstall monitors
         KeyboardShortcuts.disable(.toggleDictation)
@@ -78,6 +96,7 @@ final class HotkeyService: ObservableObject {
     func disableSingleKey() {
         singleKeyMode = false
         fnWasDown = false
+        modifierWasDown = false
         singleKeyWasDown = false
 
         UserDefaults.standard.set(false, forKey: "hotkeyUseSingleKey")
@@ -146,6 +165,29 @@ final class HotkeyService: ObservableObject {
                 handleKeyDown()
             } else if !fnDown, fnWasDown {
                 fnWasDown = false
+                handleKeyUp()
+            }
+        } else if singleKeyIsModifier {
+            // Handle modifier-only keys (Command, Shift, Option, Control) via flagsChanged
+            guard event.type == .flagsChanged, event.keyCode == singleKeyCode else { return }
+
+            // Determine if this specific modifier key is currently pressed
+            let modifierFlag: NSEvent.ModifierFlags
+            switch singleKeyCode {
+            case 0x37, 0x36: modifierFlag = .command
+            case 0x38, 0x3C: modifierFlag = .shift
+            case 0x3A, 0x3D: modifierFlag = .option
+            case 0x3B, 0x3E: modifierFlag = .control
+            default: return
+            }
+
+            let isDown = event.modifierFlags.contains(modifierFlag)
+
+            if isDown, !modifierWasDown {
+                modifierWasDown = true
+                handleKeyDown()
+            } else if !isDown, modifierWasDown {
+                modifierWasDown = false
                 handleKeyUp()
             }
         } else {
@@ -225,6 +267,15 @@ final class HotkeyService: ObservableObject {
         ]
 
         if let name = knownKeys[keyCode] { return name }
+
+        let modifierNames: [UInt16: String] = [
+            0x37: "⌘ Left Command", 0x36: "⌘ Right Command",
+            0x38: "⇧ Left Shift", 0x3C: "⇧ Right Shift",
+            0x3A: "⌥ Left Option", 0x3D: "⌥ Right Option",
+            0x3B: "⌃ Left Control", 0x3E: "⌃ Right Control",
+        ]
+        if let name = modifierNames[keyCode] { return name }
+
         return "Key \(keyCode)"
     }
 }

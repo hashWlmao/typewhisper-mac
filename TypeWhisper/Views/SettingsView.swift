@@ -259,9 +259,17 @@ struct SingleKeyRecorderView: View {
     private func startRecording() {
         isRecording = true
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
-            if event.type == .flagsChanged, event.modifierFlags.contains(.function) {
-                finishRecording(code: 0, isFn: true)
-                return nil
+            if event.type == .flagsChanged {
+                if event.modifierFlags.contains(.function) {
+                    finishRecording(code: 0, isFn: true)
+                    return nil
+                }
+                // Capture modifier-only keys (Command, Shift, Option, Control)
+                let modifierKeyCodes: Set<UInt16> = [0x37, 0x36, 0x38, 0x3C, 0x3A, 0x3D, 0x3B, 0x3E]
+                if modifierKeyCodes.contains(event.keyCode) {
+                    finishRecording(code: event.keyCode, isFn: false)
+                    return nil
+                }
             }
             if event.type == .keyDown {
                 finishRecording(code: event.keyCode, isFn: false)
