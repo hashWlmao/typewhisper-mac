@@ -233,8 +233,8 @@ private struct RecordDetailView: View {
             if viewModel.showCorrectionBanner, !viewModel.correctionSuggestions.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Image(systemName: "text.badge.checkmark")
-                        Text(String(localized: "Corrections detected"))
+                        Image(systemName: "book.badge.checkmark")
+                        Text(String(localized: "Corrections added to dictionary"))
                             .font(.subheadline.bold())
                         Spacer()
                         Button {

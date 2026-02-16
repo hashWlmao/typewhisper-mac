@@ -84,7 +84,8 @@ final class ServiceContainer: ObservableObject {
         )
         historyViewModel = HistoryViewModel(
             historyService: historyService,
-            textDiffService: textDiffService
+            textDiffService: textDiffService,
+            dictionaryService: dictionaryService
         )
         profilesViewModel = ProfilesViewModel(
             profileService: profileService,

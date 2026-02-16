@@ -22,11 +22,13 @@ final class HistoryViewModel: ObservableObject {
 
     private let historyService: HistoryService
     private let textDiffService: TextDiffService
+    private let dictionaryService: DictionaryService
     private var cancellables = Set<AnyCancellable>()
 
-    init(historyService: HistoryService, textDiffService: TextDiffService) {
+    init(historyService: HistoryService, textDiffService: TextDiffService, dictionaryService: DictionaryService) {
         self.historyService = historyService
         self.textDiffService = textDiffService
+        self.dictionaryService = dictionaryService
         self.records = historyService.records
         setupBindings()
     }
@@ -67,8 +69,13 @@ final class HistoryViewModel: ObservableObject {
         isEditing = false
 
         let suggestions = textDiffService.extractCorrections(original: originalText, edited: newText)
-        correctionSuggestions = suggestions
-        showCorrectionBanner = !suggestions.isEmpty
+        if !suggestions.isEmpty {
+            for suggestion in suggestions {
+                dictionaryService.learnCorrection(original: suggestion.original, replacement: suggestion.replacement)
+            }
+            correctionSuggestions = suggestions
+            showCorrectionBanner = true
+        }
     }
 
     func cancelEditing() {

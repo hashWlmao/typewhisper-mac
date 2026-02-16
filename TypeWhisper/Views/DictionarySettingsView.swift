@@ -22,15 +22,15 @@ struct DictionarySettingsView: View {
                     Spacer()
 
                     if viewModel.filterTab != .termPacks {
-                        Menu {
-                            Button(String(localized: "Add Term")) {
-                                viewModel.startCreating(type: .term)
-                            }
-                            Button(String(localized: "Add Correction")) {
-                                viewModel.startCreating(type: .correction)
-                            }
+                        Button {
+                            viewModel.startCreating(type: .correction)
                         } label: {
-                            Image(systemName: "plus")
+                            Label(String(localized: "Correction"), systemImage: "plus")
+                        }
+                        Button {
+                            viewModel.startCreating(type: .term)
+                        } label: {
+                            Label(String(localized: "Term"), systemImage: "plus")
                         }
                     }
                 }
