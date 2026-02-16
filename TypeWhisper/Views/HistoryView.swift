@@ -213,7 +213,7 @@ private struct RecordDetailView: View {
                     if let lang = record.language {
                         Label(lang.uppercased(), systemImage: "globe")
                     }
-                    Label(record.engineUsed, systemImage: "cpu")
+                    Label(record.modelUsed ?? record.engineUsed, systemImage: "cpu")
                     if let appName = record.appName {
                         Label(appName, systemImage: "app")
                     }

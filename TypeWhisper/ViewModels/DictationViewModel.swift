@@ -343,6 +343,11 @@ final class DictationViewModel: ObservableObject {
                     forcePaste: matchedProfile?.alwaysPaste == true
                 )
 
+                let modelDisplayName = modelManager.resolvedModelDisplayName(
+                    engineOverride: engineOverride,
+                    cloudModelOverride: cloudModelOverride
+                )
+
                 historyService.addRecord(
                     rawText: result.text,
                     finalText: text,
@@ -351,7 +356,8 @@ final class DictationViewModel: ObservableObject {
                     appURL: activeApp.url,
                     durationSeconds: audioDuration,
                     language: language,
-                    engineUsed: result.engineUsed.rawValue
+                    engineUsed: result.engineUsed.rawValue,
+                    modelUsed: modelDisplayName
                 )
 
                 soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)

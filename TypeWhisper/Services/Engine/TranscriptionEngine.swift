@@ -65,7 +65,7 @@ extension TranscriptionEngine {
         try await transcribe(audioSamples: audioSamples, language: language, task: task)
     }
 
-    // Default: prompt+streaming variant delegates to prompt variant
+    // Default: prompt+streaming variant delegates to streaming variant (preserves onProgress)
     func transcribe(
         audioSamples: [Float],
         language: String?,
@@ -73,7 +73,7 @@ extension TranscriptionEngine {
         prompt: String?,
         onProgress: @Sendable @escaping (String) -> Bool
     ) async throws -> TranscriptionResult {
-        try await transcribe(audioSamples: audioSamples, language: language, task: task, prompt: prompt)
+        try await transcribe(audioSamples: audioSamples, language: language, task: task, onProgress: onProgress)
     }
 }
 

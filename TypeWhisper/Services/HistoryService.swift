@@ -50,7 +50,8 @@ final class HistoryService: ObservableObject {
         appURL: String? = nil,
         durationSeconds: Double,
         language: String?,
-        engineUsed: String
+        engineUsed: String,
+        modelUsed: String? = nil
     ) {
         let record = TranscriptionRecord(
             rawText: rawText,
@@ -60,7 +61,8 @@ final class HistoryService: ObservableObject {
             appURL: appURL,
             durationSeconds: durationSeconds,
             language: language,
-            engineUsed: engineUsed
+            engineUsed: engineUsed,
+            modelUsed: modelUsed
         )
         modelContext.insert(record)
         save()

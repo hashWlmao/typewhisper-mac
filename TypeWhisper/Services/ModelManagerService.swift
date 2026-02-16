@@ -323,15 +323,49 @@ final class ModelManagerService: ObservableObject {
         modelStatuses[model.id] ?? .notDownloaded
     }
 
+    func resolvedModelDisplayName(engineOverride: EngineType? = nil, cloudModelOverride: String? = nil) -> String? {
+        if let override = engineOverride {
+            if let cloudEngine = engine(for: override) as? CloudTranscriptionEngine {
+                if let cloudModel = cloudModelOverride,
+                   let info = cloudEngine.transcriptionModels.first(where: { $0.id == cloudModel }) {
+                    return info.displayName
+                }
+                if let selected = cloudEngine.selectedModel {
+                    return selected.displayName
+                }
+                return nil
+            }
+            let models = ModelInfo.models(for: override)
+            if let readyModel = models.first(where: { status(for: $0) == .ready }) {
+                return readyModel.displayName
+            }
+            return nil
+        }
+
+        guard let selectedId = selectedModelId else { return nil }
+        if CloudProvider.isCloudModel(selectedId) {
+            let (provider, model) = CloudProvider.parse(selectedId)
+            if let cloudEngine = cloudEngines.first(where: { $0.providerId == provider }),
+               let info = cloudEngine.transcriptionModels.first(where: { $0.id == model }) {
+                return info.displayName
+            }
+        }
+        return ModelInfo.allModels.first(where: { $0.id == selectedId })?.displayName
+    }
+
     func resolveEngine(override: EngineType?, cloudModelOverride: String? = nil) -> (any TranscriptionEngine)? {
         if let override {
             let e = engine(for: override)
-            guard e.isModelLoaded else { return activeEngine }
-            // Apply cloud model override if specified
-            if let cloudModel = cloudModelOverride,
-               let cloudEngine = e as? CloudTranscriptionEngine {
-                cloudEngine.selectTranscriptionModel(cloudModel)
+            // For cloud engines: select model BEFORE checking isModelLoaded
+            if let cloudEngine = e as? CloudTranscriptionEngine {
+                if let cloudModel = cloudModelOverride {
+                    cloudEngine.selectTranscriptionModel(cloudModel)
+                } else if cloudEngine.selectedModel == nil,
+                          let firstModel = cloudEngine.transcriptionModels.first {
+                    cloudEngine.selectTranscriptionModel(firstModel.id)
+                }
             }
+            guard e.isModelLoaded else { return activeEngine }
             return e
         }
         return activeEngine
