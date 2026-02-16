@@ -85,6 +85,7 @@
 		AA00000000000000000099 /* OpenAIEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000099 /* OpenAIEngine.swift */; };
 		AA00000000000000000100 /* CloudModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000100 /* CloudModelInfo.swift */; };
 		AA00000000000000000101 /* CloudProviderSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000101 /* CloudProviderSection.swift */; };
+		AA00000000000000000102 /* AudioDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000102 /* AudioDeviceService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -164,6 +165,7 @@
 		BB00000000000000000099 /* OpenAIEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIEngine.swift; sourceTree = "<group>"; };
 		BB00000000000000000100 /* CloudModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudModelInfo.swift; sourceTree = "<group>"; };
 		BB00000000000000000101 /* CloudProviderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudProviderSection.swift; sourceTree = "<group>"; };
+		BB00000000000000000102 /* AudioDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioDeviceService.swift; sourceTree = "<group>"; };
 		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypeWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -251,6 +253,7 @@
 				BB00000000000000000079 /* DictionaryService.swift */,
 				BB00000000000000000081 /* SnippetService.swift */,
 				BB00000000000000000086 /* SoundService.swift */,
+				BB00000000000000000102 /* AudioDeviceService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -516,6 +519,7 @@
 				AA00000000000000000099 /* OpenAIEngine.swift in Sources */,
 				AA00000000000000000100 /* CloudModelInfo.swift in Sources */,
 				AA00000000000000000101 /* CloudProviderSection.swift in Sources */,
+				AA00000000000000000102 /* AudioDeviceService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

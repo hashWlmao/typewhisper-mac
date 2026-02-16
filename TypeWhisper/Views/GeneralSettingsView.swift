@@ -13,6 +13,7 @@ struct GeneralSettingsView: View {
     @ObservedObject private var dictation = DictationViewModel.shared
     @ObservedObject private var modelManager = ModelManagerViewModel.shared
     @ObservedObject private var settings = SettingsViewModel.shared
+    @ObservedObject private var audioDevice = ServiceContainer.shared.audioDeviceService
 
     var body: some View {
         Form {
@@ -100,6 +101,66 @@ struct GeneralSettingsView: View {
                 Text(String(localized: "The overlay appears centered at the top or bottom of the active screen."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section(String(localized: "Microphone")) {
+                Picker(String(localized: "Input Device"), selection: $audioDevice.selectedDeviceUID) {
+                    Text(String(localized: "System Default")).tag(nil as String?)
+                    Divider()
+                    ForEach(audioDevice.inputDevices) { device in
+                        Text(device.name).tag(device.uid as String?)
+                    }
+                }
+
+                if audioDevice.isPreviewActive {
+                    HStack(spacing: 8) {
+                        Image(systemName: "mic.fill")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(.quaternary)
+
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(.green.gradient)
+                                    .frame(width: max(0, geo.size.width * CGFloat(audioDevice.previewAudioLevel)))
+                                    .animation(.easeOut(duration: 0.08), value: audioDevice.previewAudioLevel)
+                            }
+                        }
+                        .frame(height: 6)
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Button(audioDevice.isPreviewActive
+                    ? String(localized: "Stop Preview")
+                    : String(localized: "Test Microphone")
+                ) {
+                    if audioDevice.isPreviewActive {
+                        audioDevice.stopPreview()
+                    } else {
+                        audioDevice.startPreview()
+                    }
+                }
+
+                if let name = audioDevice.disconnectedDeviceName {
+                    Label(
+                        String(localized: "Microphone disconnected. Falling back to system default."),
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+                    .onAppear {
+                        // Auto-dismiss after 5 seconds
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                            if audioDevice.disconnectedDeviceName == name {
+                                audioDevice.disconnectedDeviceName = nil
+                            }
+                        }
+                    }
+                }
             }
 
             Section(String(localized: "Sound")) {

@@ -70,6 +70,7 @@ final class DictationViewModel: ObservableObject {
     private let dictionaryService: DictionaryService
     private let snippetService: SnippetService
     private let soundService: SoundService
+    private let audioDeviceService: AudioDeviceService
     private var matchedProfile: Profile?
     private var capturedActiveApp: (name: String?, bundleId: String?, url: String?)?
 
@@ -92,7 +93,8 @@ final class DictationViewModel: ObservableObject {
         mediaPlaybackService: MediaPlaybackService,
         dictionaryService: DictionaryService,
         snippetService: SnippetService,
-        soundService: SoundService
+        soundService: SoundService,
+        audioDeviceService: AudioDeviceService
     ) {
         self.audioRecordingService = audioRecordingService
         self.textInsertionService = textInsertionService
@@ -107,6 +109,7 @@ final class DictationViewModel: ObservableObject {
         self.dictionaryService = dictionaryService
         self.snippetService = snippetService
         self.soundService = soundService
+        self.audioDeviceService = audioDeviceService
         self.whisperModeEnabled = UserDefaults.standard.bool(forKey: "whisperModeEnabled")
         self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: "audioDuckingEnabled")
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: "audioDuckingLevel") as? Double ?? 0.2
@@ -163,6 +166,16 @@ final class DictationViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+
+        audioDeviceService.$disconnectedDeviceName
+            .compactMap { $0 }
+            .sink { [weak self] _ in
+                guard let self, self.state == .recording else { return }
+                self.stopDictation()
+                self.hotkeyService.cancelDictation()
+                self.showError(String(localized: "Microphone disconnected. Falling back to system default."))
+            }
+            .store(in: &cancellables)
     }
 
     private func startRecording() {
@@ -208,6 +221,7 @@ final class DictationViewModel: ObservableObject {
         }
 
         do {
+            audioRecordingService.selectedDeviceID = audioDeviceService.selectedDeviceID
             try audioRecordingService.startRecording()
             if audioDuckingEnabled {
                 audioDuckingService.duckAudio(to: Float(audioDuckingLevel))

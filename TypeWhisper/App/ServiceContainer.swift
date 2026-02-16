@@ -20,6 +20,7 @@ final class ServiceContainer: ObservableObject {
     let dictionaryService: DictionaryService
     let snippetService: SnippetService
     let soundService: SoundService
+    let audioDeviceService: AudioDeviceService
 
     // HTTP API
     let httpServer: HTTPServer
@@ -52,6 +53,7 @@ final class ServiceContainer: ObservableObject {
         dictionaryService = DictionaryService()
         snippetService = SnippetService()
         soundService = SoundService()
+        audioDeviceService = AudioDeviceService()
 
         // HTTP API
         let router = APIRouter()
@@ -80,7 +82,8 @@ final class ServiceContainer: ObservableObject {
             mediaPlaybackService: mediaPlaybackService,
             dictionaryService: dictionaryService,
             snippetService: snippetService,
-            soundService: soundService
+            soundService: soundService,
+            audioDeviceService: audioDeviceService
         )
         historyViewModel = HistoryViewModel(
             historyService: historyService,

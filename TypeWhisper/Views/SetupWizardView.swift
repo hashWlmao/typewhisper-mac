@@ -4,6 +4,7 @@ import KeyboardShortcuts
 struct SetupWizardView: View {
     @ObservedObject private var dictation = DictationViewModel.shared
     @ObservedObject private var modelManager = ModelManagerViewModel.shared
+    @ObservedObject private var audioDevice = ServiceContainer.shared.audioDeviceService
     @State private var currentStep = 0
 
     private let totalSteps = 4
@@ -89,6 +90,57 @@ struct SetupWizardView: View {
                 isGranted: !dictation.needsAccessibilityPermission
             ) {
                 dictation.requestAccessibilityPermission()
+            }
+
+            if !dictation.needsMicPermission {
+                Divider()
+
+                Text(String(localized: "Select your preferred microphone:"))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+
+                Picker(String(localized: "Microphone"), selection: $audioDevice.selectedDeviceUID) {
+                    Text(String(localized: "System Default")).tag(nil as String?)
+                    Divider()
+                    ForEach(audioDevice.inputDevices) { device in
+                        Text(device.name).tag(device.uid as String?)
+                    }
+                }
+
+                if audioDevice.isPreviewActive {
+                    HStack(spacing: 8) {
+                        Image(systemName: "mic.fill")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(.quaternary)
+
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(.green.gradient)
+                                    .frame(width: max(0, geo.size.width * CGFloat(audioDevice.previewAudioLevel)))
+                                    .animation(.easeOut(duration: 0.08), value: audioDevice.previewAudioLevel)
+                            }
+                        }
+                        .frame(height: 6)
+                    }
+                    .padding(.vertical, 4)
+                }
+
+                Button(audioDevice.isPreviewActive
+                    ? String(localized: "Stop Preview")
+                    : String(localized: "Test Microphone")
+                ) {
+                    if audioDevice.isPreviewActive {
+                        audioDevice.stopPreview()
+                    } else {
+                        audioDevice.startPreview()
+                    }
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
         }
     }

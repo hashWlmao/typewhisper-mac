@@ -1,5 +1,6 @@
 import Foundation
 @preconcurrency import AVFoundation
+import AudioToolbox
 import AppKit
 import Combine
 import os
@@ -36,6 +37,8 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
     var silenceAutoStopDuration: TimeInterval = 2.0
     /// Gain multiplier applied to audio samples (1.0 = normal, 4.0 = whisper mode)
     var gainMultiplier: Float = 1.0
+    /// CoreAudio device ID to use for recording. nil = system default input.
+    var selectedDeviceID: AudioDeviceID?
 
     private var audioEngine: AVAudioEngine?
     private var sampleBuffer: [Float] = []
@@ -97,6 +100,20 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
         }
 
         let engine = AVAudioEngine()
+
+        // Set the input device before reading the format
+        if let deviceID = selectedDeviceID,
+           let audioUnit = engine.inputNode.audioUnit {
+            var id = deviceID
+            AudioUnitSetProperty(
+                audioUnit,
+                kAudioOutputUnitProperty_CurrentDevice,
+                kAudioUnitScope_Global, 0,
+                &id,
+                UInt32(MemoryLayout<AudioDeviceID>.size)
+            )
+        }
+
         let inputNode = engine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
 
