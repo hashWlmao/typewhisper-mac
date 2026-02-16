@@ -11,9 +11,62 @@ struct GeneralSettingsView: View {
     }()
     @State private var showRestartAlert = false
     @ObservedObject private var dictation = DictationViewModel.shared
+    @ObservedObject private var modelManager = ModelManagerViewModel.shared
+    @ObservedObject private var settings = SettingsViewModel.shared
 
     var body: some View {
         Form {
+            Section(String(localized: "Spoken Language")) {
+                Picker(String(localized: "Spoken language"), selection: $settings.selectedLanguage) {
+                    Text(String(localized: "Auto-detect")).tag(nil as String?)
+                    Divider()
+                    ForEach(settings.availableLanguages, id: \.code) { lang in
+                        Text(lang.name).tag(lang.code as String?)
+                    }
+                }
+
+                Text(String(localized: "The language being spoken. Setting this explicitly improves accuracy."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(String(localized: "Translation")) {
+                Toggle(String(localized: "Enable translation"), isOn: $settings.translationEnabled)
+
+                if settings.translationEnabled {
+                    Picker(String(localized: "Target language"), selection: $settings.translationTargetLanguage) {
+                        ForEach(TranslationService.availableTargetLanguages, id: \.code) { lang in
+                            Text(lang.name).tag(lang.code)
+                        }
+                    }
+                }
+
+                Text(String(localized: "Uses Apple Translate (on-device)"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(String(localized: "Default Model")) {
+                if modelManager.readyModels.isEmpty {
+                    Text(String(localized: "No models available. Download or configure a model in the Models tab."))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Picker(String(localized: "Model"), selection: Binding(
+                        get: { modelManager.selectedModelId },
+                        set: { if let id = $0 { modelManager.selectDefaultModel(id) } }
+                    )) {
+                        ForEach(modelManager.readyModels) { model in
+                            Text("\(model.displayName) (\(model.engineType.displayName))")
+                                .tag(model.id as String?)
+                        }
+                    }
+                }
+
+                Text(String(localized: "The model used for transcription unless overridden by a profile."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section(String(localized: "Language")) {
                 Picker(String(localized: "App Language"), selection: $appLanguage) {
                     Text("English").tag("en")

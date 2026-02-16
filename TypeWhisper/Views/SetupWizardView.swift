@@ -6,7 +6,7 @@ struct SetupWizardView: View {
     @ObservedObject private var modelManager = ModelManagerViewModel.shared
     @State private var currentStep = 0
 
-    private let totalSteps = 3
+    private let totalSteps = 4
 
     var body: some View {
         VStack(spacing: 0) {
@@ -53,7 +53,8 @@ struct SetupWizardView: View {
             switch currentStep {
             case 0: permissionsStep
             case 1: engineModelStep
-            case 2: hotkeyStep
+            case 2: cloudProviderStep
+            case 3: hotkeyStep
             default: EmptyView()
             }
         }
@@ -175,10 +176,34 @@ struct SetupWizardView: View {
             Text(String(localized: "Parakeet — extremely fast on Apple Silicon, 25 European languages."))
         case .whisper:
             Text(String(localized: "WhisperKit — 99+ languages, supports streaming and translation to English."))
+        case .groq, .openai:
+            Text(String(localized: "Cloud — requires an API key. Fast transcription via cloud API."))
         }
     }
 
-    // MARK: - Step 3: Hotkey
+    // MARK: - Step 3: Cloud Provider (Optional)
+
+    private var cloudProviderStep: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(String(localized: "Optionally configure a cloud provider for faster transcription via API."))
+                .font(.callout)
+                .foregroundStyle(.secondary)
+
+            ForEach(EngineType.cloudCases) { provider in
+                CloudProviderSection(provider: provider, viewModel: modelManager)
+            }
+
+            Text(String(localized: "API keys are stored securely in the Keychain"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(String(localized: "You can skip this step and configure cloud providers later in Settings."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: - Step 4: Hotkey
 
     private var hotkeyStep: some View {
         VStack(alignment: .leading, spacing: 16) {

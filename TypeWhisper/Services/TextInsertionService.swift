@@ -46,8 +46,13 @@ enum InsertionResult {
     func captureActiveApp() -> (name: String?, bundleId: String?, url: String?) {
         let app = NSWorkspace.shared.frontmostApplication
         let bundleId = app?.bundleIdentifier
-        let url = bundleId.flatMap { getBrowserURL(bundleId: $0) }
-        return (app?.localizedName, bundleId, url)
+        return (app?.localizedName, bundleId, nil)
+    }
+
+    func resolveBrowserURL(bundleId: String) async -> String? {
+        await Task.detached(priority: .utility) {
+            Self.getBrowserURL(bundleId: bundleId)
+        }.value
     }
 
     // MARK: - Browser URL Detection
@@ -56,7 +61,7 @@ enum InsertionResult {
         case safari, arc, chromiumBased, firefox, notABrowser
     }
 
-    private func identifyBrowser(_ bundleId: String) -> BrowserType {
+    nonisolated private static func identifyBrowser(_ bundleId: String) -> BrowserType {
         switch bundleId {
         case "com.apple.Safari":
             return .safari
@@ -77,7 +82,7 @@ enum InsertionResult {
         }
     }
 
-    private func getBrowserURL(bundleId: String) -> String? {
+    nonisolated private static func getBrowserURL(bundleId: String) -> String? {
         let browserType = identifyBrowser(bundleId)
         guard browserType != .notABrowser else { return nil }
 
@@ -120,7 +125,7 @@ enum InsertionResult {
         return executeAppleScript(script, timeout: 2.5)
     }
 
-    private func executeAppleScript(_ source: String, timeout: TimeInterval) -> String? {
+    nonisolated private static func executeAppleScript(_ source: String, timeout: TimeInterval) -> String? {
         let process = Process()
         let outputPipe = Pipe()
         let errorPipe = Pipe()
@@ -158,7 +163,7 @@ enum InsertionResult {
         return result
     }
 
-    private func isValidURL(_ string: String) -> Bool {
+    nonisolated private static func isValidURL(_ string: String) -> Bool {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > 3, trimmed.count < 2048 else { return false }
         return trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") || trimmed.hasPrefix("file://")

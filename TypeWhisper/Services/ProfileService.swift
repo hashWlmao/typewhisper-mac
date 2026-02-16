@@ -47,6 +47,7 @@ final class ProfileService: ObservableObject {
         selectedTask: String? = nil,
         whisperModeOverride: Bool? = nil,
         engineOverride: String? = nil,
+        cloudModelOverride: String? = nil,
         alwaysPaste: Bool? = nil,
         priority: Int = 0
     ) {
@@ -60,6 +61,7 @@ final class ProfileService: ObservableObject {
             selectedTask: selectedTask,
             whisperModeOverride: whisperModeOverride,
             engineOverride: engineOverride,
+            cloudModelOverride: cloudModelOverride,
             alwaysPaste: alwaysPaste
         )
         modelContext.insert(profile)

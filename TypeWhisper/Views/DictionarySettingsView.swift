@@ -322,7 +322,9 @@ private struct DictionaryEditorSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(viewModel.isCreatingNew ? String(localized: "New Entry") : String(localized: "Edit Entry"))
+                Text(viewModel.isCreatingNew
+                     ? (viewModel.editType == .term ? String(localized: "New Term") : String(localized: "New Correction"))
+                     : (viewModel.editType == .term ? String(localized: "Edit Term") : String(localized: "Edit Correction")))
                     .font(.headline)
                 Spacer()
             }
@@ -332,23 +334,11 @@ private struct DictionaryEditorSheet: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 20) {
-                GroupBox(String(localized: "Entry Type")) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Picker("", selection: $viewModel.editType) {
-                            Text(String(localized: "Term")).tag(DictionaryEntryType.term)
-                            Text(String(localized: "Correction")).tag(DictionaryEntryType.correction)
-                        }
-                        .pickerStyle(.segmented)
-                        .frame(maxWidth: 200)
-
-                        Text(viewModel.editType == .term
-                             ? String(localized: "Terms are sent to the transcription service for better recognition")
-                             : String(localized: "Corrections replace text after transcription"))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 8)
-                }
+                Text(viewModel.editType == .term
+                     ? String(localized: "Terms are sent to the transcription service for better recognition")
+                     : String(localized: "Corrections replace text after transcription"))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
 
                 GroupBox(viewModel.editType == .term ? String(localized: "Term") : String(localized: "Correction")) {
                     VStack(alignment: .leading, spacing: 12) {
@@ -408,7 +398,7 @@ private struct DictionaryEditorSheet: View {
             .padding()
             .background(Color(NSColor.windowBackgroundColor))
         }
-        .frame(width: 400, height: 400)
+        .frame(width: 400, height: 340)
         .onAppear {
             focusedField = .original
         }

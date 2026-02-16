@@ -39,6 +39,7 @@ final class ProfilesViewModel: ObservableObject {
     @Published var editorSelectedTask: String?
     @Published var editorWhisperModeOverride: Bool?
     @Published var editorEngineOverride: String?
+    @Published var editorCloudModelOverride: String?
     @Published var editorAlwaysPaste: Bool?
     @Published var editorPriority: Int = 0
 
@@ -86,6 +87,7 @@ final class ProfilesViewModel: ObservableObject {
             selectedTask: editorSelectedTask,
             whisperModeOverride: editorWhisperModeOverride,
             engineOverride: editorEngineOverride,
+            cloudModelOverride: editorCloudModelOverride,
             alwaysPaste: editorAlwaysPaste,
             priority: editorPriority
         )
@@ -101,6 +103,7 @@ final class ProfilesViewModel: ObservableObject {
             profile.selectedTask = editorSelectedTask
             profile.whisperModeOverride = editorWhisperModeOverride
             profile.engineOverride = editorEngineOverride
+            profile.cloudModelOverride = editorCloudModelOverride
             profile.alwaysPaste = editorAlwaysPaste
             profile.priority = editorPriority
             profileService.updateProfile(profile)
@@ -130,6 +133,7 @@ final class ProfilesViewModel: ObservableObject {
         editorSelectedTask = nil
         editorWhisperModeOverride = nil
         editorEngineOverride = nil
+        editorCloudModelOverride = nil
         editorAlwaysPaste = nil
         editorPriority = 0
         urlPatternInput = ""
@@ -148,6 +152,7 @@ final class ProfilesViewModel: ObservableObject {
         editorSelectedTask = profile.selectedTask
         editorWhisperModeOverride = profile.whisperModeOverride
         editorEngineOverride = profile.engineOverride
+        editorCloudModelOverride = profile.cloudModelOverride
         editorAlwaysPaste = profile.alwaysPaste
         editorPriority = profile.priority
         urlPatternInput = ""
@@ -288,6 +293,14 @@ final class ProfilesViewModel: ObservableObject {
                 DispatchQueue.main.async {
                     self?.profiles = profiles
                 }
+            }
+            .store(in: &cancellables)
+
+        // Reset cloud model override when engine changes
+        $editorEngineOverride
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.editorCloudModelOverride = nil
             }
             .store(in: &cancellables)
     }

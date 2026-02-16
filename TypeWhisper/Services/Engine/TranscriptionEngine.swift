@@ -17,6 +17,14 @@ protocol TranscriptionEngine: Sendable {
         task: TranscriptionTask
     ) async throws -> TranscriptionResult
 
+    /// Transcription with an optional prompt for term hints (used by cloud APIs).
+    func transcribe(
+        audioSamples: [Float],
+        language: String?,
+        task: TranscriptionTask,
+        prompt: String?
+    ) async throws -> TranscriptionResult
+
     /// Streaming transcription with progress callback.
     /// - Parameter onProgress: Called with partial text; return `true` to continue, `false` to stop early.
     func transcribe(
@@ -25,9 +33,28 @@ protocol TranscriptionEngine: Sendable {
         task: TranscriptionTask,
         onProgress: @Sendable @escaping (String) -> Bool
     ) async throws -> TranscriptionResult
+
+    /// Streaming transcription with prompt and progress callback.
+    func transcribe(
+        audioSamples: [Float],
+        language: String?,
+        task: TranscriptionTask,
+        prompt: String?,
+        onProgress: @Sendable @escaping (String) -> Bool
+    ) async throws -> TranscriptionResult
 }
 
 extension TranscriptionEngine {
+    // Default: prompt variant delegates to base (engines that don't use prompt)
+    func transcribe(
+        audioSamples: [Float],
+        language: String?,
+        task: TranscriptionTask,
+        prompt: String?
+    ) async throws -> TranscriptionResult {
+        try await transcribe(audioSamples: audioSamples, language: language, task: task)
+    }
+
     // Default: ignore callback, delegate to batch transcribe (for engines that don't support streaming)
     func transcribe(
         audioSamples: [Float],
@@ -36,6 +63,17 @@ extension TranscriptionEngine {
         onProgress: @Sendable @escaping (String) -> Bool
     ) async throws -> TranscriptionResult {
         try await transcribe(audioSamples: audioSamples, language: language, task: task)
+    }
+
+    // Default: prompt+streaming variant delegates to prompt variant
+    func transcribe(
+        audioSamples: [Float],
+        language: String?,
+        task: TranscriptionTask,
+        prompt: String?,
+        onProgress: @Sendable @escaping (String) -> Bool
+    ) async throws -> TranscriptionResult {
+        try await transcribe(audioSamples: audioSamples, language: language, task: task, prompt: prompt)
     }
 }
 

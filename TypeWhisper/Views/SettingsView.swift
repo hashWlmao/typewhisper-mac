@@ -2,7 +2,7 @@ import SwiftUI
 import KeyboardShortcuts
 
 enum SettingsTab: Hashable {
-    case home, general, models, transcription, dictation
+    case home, general, models, dictation
     case fileTranscription, history, dictionary, snippets, profiles, apiServer
 }
 
@@ -37,11 +37,8 @@ private struct SettingsMainTabs: TabContent {
         Tab(String(localized: "General"), systemImage: "gear", value: SettingsTab.general) {
             GeneralSettingsView()
         }
-        Tab(String(localized: "Models"), systemImage: "square.and.arrow.down", value: SettingsTab.models) {
+        Tab(String(localized: "Models"), systemImage: "cpu", value: SettingsTab.models) {
             ModelManagerView()
-        }
-        Tab(String(localized: "Transcription"), systemImage: "text.bubble", value: SettingsTab.transcription) {
-            TranscriptionSettingsView()
         }
         Tab(String(localized: "Dictation"), systemImage: "mic.fill", value: SettingsTab.dictation) {
             DictationSettingsView()
@@ -168,47 +165,6 @@ struct DictationSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-        }
-        .formStyle(.grouped)
-        .padding()
-        .frame(minWidth: 500, minHeight: 300)
-    }
-}
-
-struct TranscriptionSettingsView: View {
-    @ObservedObject private var viewModel = SettingsViewModel.shared
-
-    var body: some View {
-        Form {
-            Section(String(localized: "Language")) {
-                Picker(String(localized: "Spoken language"), selection: $viewModel.selectedLanguage) {
-                    Text(String(localized: "Auto-detect")).tag(nil as String?)
-                    Divider()
-                    ForEach(viewModel.availableLanguages, id: \.code) { lang in
-                        Text(lang.name).tag(lang.code as String?)
-                    }
-                }
-
-                Text(String(localized: "The language being spoken. Setting this explicitly improves accuracy."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section(String(localized: "Translation")) {
-                Toggle(String(localized: "Enable translation"), isOn: $viewModel.translationEnabled)
-
-                if viewModel.translationEnabled {
-                    Picker(String(localized: "Target language"), selection: $viewModel.translationTargetLanguage) {
-                        ForEach(TranslationService.availableTargetLanguages, id: \.code) { lang in
-                            Text(lang.name).tag(lang.code)
-                        }
-                    }
-                }
-
-                Text(String(localized: "Uses Apple Translate (on-device)"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
         }
         .formStyle(.grouped)
         .padding()

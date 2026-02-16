@@ -179,12 +179,33 @@ final class DictationViewModel: ObservableObject {
         // Match profile based on active app — store for reuse in stopDictation
         let activeApp = textInsertionService.captureActiveApp()
         capturedActiveApp = activeApp
-        matchedProfile = profileService.matchProfile(bundleIdentifier: activeApp.bundleId, url: activeApp.url)
+        matchedProfile = profileService.matchProfile(bundleIdentifier: activeApp.bundleId, url: nil)
         activeProfileName = matchedProfile?.name
 
         // Apply gain boost: profile override ?? global setting
         let effectiveWhisperMode = matchedProfile?.whisperModeOverride ?? whisperModeEnabled
         audioRecordingService.gainMultiplier = effectiveWhisperMode ? 4.0 : 1.0
+
+        // Resolve browser URL asynchronously to avoid blocking the main thread.
+        // If a more specific URL profile matches, update the active profile on the fly.
+        if let bundleId = activeApp.bundleId {
+            Task { [weak self] in
+                guard let self else { return }
+                let resolvedURL = await textInsertionService.resolveBrowserURL(bundleId: bundleId)
+                guard state == .recording || state == .processing else { return }
+                guard let currentApp = capturedActiveApp, currentApp.bundleId == bundleId else { return }
+
+                capturedActiveApp = (name: currentApp.name, bundleId: currentApp.bundleId, url: resolvedURL)
+
+                guard let resolvedURL else { return }
+                guard let refinedProfile = profileService.matchProfile(bundleIdentifier: bundleId, url: resolvedURL) else { return }
+
+                matchedProfile = refinedProfile
+                activeProfileName = refinedProfile.name
+                let refinedWhisperMode = refinedProfile.whisperModeOverride ?? whisperModeEnabled
+                audioRecordingService.gainMultiplier = refinedWhisperMode ? 4.0 : 1.0
+            }
+        }
 
         do {
             try audioRecordingService.startRecording()
@@ -240,6 +261,10 @@ final class DictationViewModel: ObservableObject {
         return EngineType(rawValue: raw)
     }
 
+    private var effectiveCloudModelOverride: String? {
+        matchedProfile?.cloudModelOverride
+    }
+
     private func stopDictation() {
         guard state == .recording else { return }
 
@@ -276,7 +301,9 @@ final class DictationViewModel: ObservableObject {
         let language = effectiveLanguage
         let task = effectiveTask
         let engineOverride = effectiveEngineOverride
+        let cloudModelOverride = effectiveCloudModelOverride
         let translationTarget = effectiveTranslationTarget
+        let termsPrompt = dictionaryService.getTermsForPrompt()
 
         state = .processing
 
@@ -286,7 +313,9 @@ final class DictationViewModel: ObservableObject {
                     audioSamples: samples,
                     language: language,
                     task: task,
-                    engineOverride: engineOverride
+                    engineOverride: engineOverride,
+                    cloudModelOverride: cloudModelOverride,
+                    prompt: termsPrompt
                 )
 
                 var text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -411,7 +440,7 @@ final class DictationViewModel: ObservableObject {
     private var streamingWindowActive = false
 
     private func startStreamingIfSupported() {
-        let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverride)
+        let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverride, cloudModelOverride: effectiveCloudModelOverride)
         guard let engine = resolvedEngine, engine.supportsStreaming else { return }
 
         isStreaming = true
@@ -420,6 +449,8 @@ final class DictationViewModel: ObservableObject {
         let streamLanguage = effectiveLanguage
         let streamTask = effectiveTask
         let streamEngineOverride = effectiveEngineOverride
+        let streamCloudModelOverride = effectiveCloudModelOverride
+        let streamPrompt = dictionaryService.getTermsForPrompt()
         streamingTask = Task { [weak self] in
             guard let self else { return }
             // Initial delay before first streaming attempt
@@ -446,6 +477,8 @@ final class DictationViewModel: ObservableObject {
                             language: streamLanguage,
                             task: streamTask,
                             engineOverride: streamEngineOverride,
+                            cloudModelOverride: streamCloudModelOverride,
+                            prompt: streamPrompt,
                             onProgress: { [weak self] text in
                                 guard let self, !Task.isCancelled else { return false }
                                 let stable = Self.stabilizeText(confirmed: confirmed, new: text)

@@ -25,7 +25,11 @@ struct DictationOverlayView: View {
                         .foregroundStyle(.blue)
                 }
                 if case .recording = viewModel.state {
-                    audioLevelBar
+                    AudioWaveformView(
+                        audioLevel: viewModel.audioLevel,
+                        isSetup: viewModel.recordingDuration < 0.5 && viewModel.audioLevel < 0.05
+                    )
+                    .frame(width: 40)
                     durationText
                 }
             }
@@ -152,18 +156,6 @@ struct DictationOverlayView: View {
         case .idle:
             EmptyView()
         }
-    }
-
-    @ViewBuilder
-    private var audioLevelBar: some View {
-        GeometryReader { geo in
-            Capsule()
-                .fill(.green.gradient)
-                .frame(width: geo.size.width * CGFloat(viewModel.audioLevel))
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(width: 40, height: 6)
-        .background(.quaternary, in: Capsule())
     }
 
     @ViewBuilder

@@ -2,40 +2,82 @@ import SwiftUI
 
 struct ModelManagerView: View {
     @ObservedObject private var viewModel = ModelManagerViewModel.shared
+    @State private var selectedSection: ModelSection = .localModels
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            enginePicker
-
-            Divider()
-
-            modelList
-        }
-        .padding()
-        .frame(minWidth: 500, minHeight: 300)
+    private enum ModelSection: String, CaseIterable {
+        case localModels
+        case cloudProvider
     }
 
-    @ViewBuilder
-    private var enginePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(String(localized: "Engine"))
-                .font(.headline)
-
-            Picker(String(localized: "Engine"), selection: Binding(
-                get: { viewModel.selectedEngine },
-                set: { viewModel.selectEngine($0) }
-            )) {
-                ForEach(EngineType.availableCases) { engine in
-                    Text(engine.displayName).tag(engine)
-                }
+    var body: some View {
+        VStack(spacing: 0) {
+            Picker(String(localized: "Section"), selection: $selectedSection) {
+                Text(String(localized: "Local Models")).tag(ModelSection.localModels)
+                Text(String(localized: "Cloud Provider")).tag(ModelSection.cloudProvider)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+            .padding()
 
-            Text(engineDescription)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    switch selectedSection {
+                    case .localModels:
+                        // Engine Picker
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(String(localized: "Engine"))
+                                .font(.headline)
+
+                            Picker(String(localized: "Engine"), selection: Binding(
+                                get: { viewModel.selectedEngine },
+                                set: { viewModel.selectEngine($0) }
+                            )) {
+                                ForEach(EngineType.availableCases) { engine in
+                                    Text(engine.displayName).tag(engine)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .labelsHidden()
+
+                            Text(engineDescription)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Divider()
+
+                        // Local Models
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(String(localized: "Models"))
+                                .font(.headline)
+
+                            ForEach(viewModel.models) { model in
+                                ModelRow(model: model, status: viewModel.status(for: model)) {
+                                    viewModel.downloadModel(model)
+                                } onDelete: {
+                                    viewModel.deleteModel(model)
+                                }
+                            }
+                        }
+
+                    case .cloudProvider:
+                        Text(String(localized: "Configure cloud transcription providers. An API key is required for each provider."))
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+
+                        ForEach(EngineType.cloudCases) { provider in
+                            CloudProviderSection(provider: provider, viewModel: viewModel)
+                        }
+
+                        Text(String(localized: "API keys are stored securely in the Keychain"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding()
+            }
         }
+        .frame(minWidth: 500, minHeight: 300)
     }
 
     private var engineDescription: String {
@@ -46,24 +88,8 @@ struct ModelManagerView: View {
             String(localized: "Parakeet - 25 European languages, extremely fast on Apple Silicon")
         case .speechAnalyzer:
             String(localized: "Apple Speech - system-managed models, streaming support, ~40 languages")
-        }
-    }
-
-    @ViewBuilder
-    private var modelList: some View {
-        Text(String(localized: "Models"))
-            .font(.headline)
-
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 8) {
-                ForEach(viewModel.models) { model in
-                    ModelRow(model: model, status: viewModel.status(for: model)) {
-                        viewModel.downloadModel(model)
-                    } onDelete: {
-                        viewModel.deleteModel(model)
-                    }
-                }
-            }
+        case .groq, .openai:
+            ""
         }
     }
 }

@@ -11,6 +11,10 @@ final class ModelManagerService: ObservableObject {
     private let whisperEngine = WhisperEngine()
     private let parakeetEngine = ParakeetEngine()
     private let _speechAnalyzerEngine: (any TranscriptionEngine)?
+    let groqEngine = GroqEngine()
+    let openAiEngine = OpenAIEngine()
+
+    var cloudEngines: [CloudTranscriptionEngine] { [groqEngine, openAiEngine] }
 
     private let engineKey = "selectedEngine"
     private let modelKey = "selectedModelId"
@@ -47,6 +51,8 @@ final class ModelManagerService: ObservableObject {
         case .whisper: return whisperEngine
         case .parakeet: return parakeetEngine
         case .speechAnalyzer: return _speechAnalyzerEngine ?? whisperEngine
+        case .groq: return groqEngine
+        case .openai: return openAiEngine
         }
     }
 
@@ -58,9 +64,43 @@ final class ModelManagerService: ObservableObject {
     func selectModel(_ modelId: String) {
         selectedModelId = modelId
         UserDefaults.standard.set(modelId, forKey: modelKey)
+
+        if CloudProvider.isCloudModel(modelId) {
+            let (provider, model) = CloudProvider.parse(modelId)
+            if let cloudEngine = cloudEngines.first(where: { $0.providerId == provider }) {
+                cloudEngine.selectTranscriptionModel(model)
+                activeEngine = cloudEngine
+                if let engineType = EngineType(rawValue: provider) {
+                    selectEngine(engineType)
+                }
+            }
+        } else if let model = ModelInfo.allModels.first(where: { $0.id == modelId }) {
+            let eng = engine(for: model.engineType)
+            if eng.isModelLoaded {
+                activeEngine = eng
+                selectEngine(model.engineType)
+            }
+        }
     }
 
     func downloadAndLoadModel(_ model: ModelInfo) async {
+        // Cloud models are instantly "ready" when API key is configured
+        if model.isCloud {
+            let cloudEngine = engine(for: model.engineType) as? CloudTranscriptionEngine
+            guard cloudEngine?.isConfigured == true else {
+                modelStatuses[model.id] = .error("API key not configured")
+                return
+            }
+            let (_, modelPart) = CloudProvider.parse(model.id)
+            cloudEngine?.selectTranscriptionModel(modelPart)
+            modelStatuses[model.id] = .ready
+            activeEngine = cloudEngine
+            selectEngine(model.engineType)
+            selectModel(model.id)
+            addToLoadedModels(model.id, engineType: model.engineType)
+            return
+        }
+
         let engine = engine(for: model.engineType)
 
         modelStatuses[model.id] = .downloading(progress: 0)
@@ -96,6 +136,9 @@ final class ModelManagerService: ObservableObject {
     }
 
     func loadAllSavedModels() async {
+        // Load cloud API keys first
+        loadCloudApiKeys()
+
         var modelIds = UserDefaults.standard.stringArray(forKey: loadedModelsKey) ?? []
 
         // Migration: if loadedModelIds is empty but selectedModelId exists, seed from it
@@ -106,14 +149,14 @@ final class ModelManagerService: ObservableObject {
 
         let modelsToLoad = modelIds.compactMap { id in
             ModelInfo.allModels.first(where: { $0.id == id })
-        }
+        }.filter { !$0.isCloud } // Cloud models are handled by loadCloudApiKeys
 
-        guard !modelsToLoad.isEmpty else { return }
-
-        await withTaskGroup(of: Void.self) { group in
-            for model in modelsToLoad {
-                group.addTask {
-                    await self.loadSingleModel(model)
+        if !modelsToLoad.isEmpty {
+            await withTaskGroup(of: Void.self) { group in
+                for model in modelsToLoad {
+                    group.addTask {
+                        await self.loadSingleModel(model)
+                    }
                 }
             }
         }
@@ -208,14 +251,88 @@ final class ModelManagerService: ObservableObject {
         UserDefaults.standard.set(ids, forKey: loadedModelsKey)
     }
 
+    // MARK: - Cloud Provider Configuration
+
+    func configureCloudProvider(_ type: EngineType, apiKey: String) {
+        guard let cloudEngine = cloudEngines.first(where: { $0.engineType == type }) else { return }
+        cloudEngine.configure(apiKey: apiKey)
+
+        // Mark all models for this provider as ready
+        let providerModels = ModelInfo.models(for: type)
+        for model in providerModels {
+            modelStatuses[model.id] = .ready
+        }
+
+        // Auto-select first model for this provider
+        if let firstModel = providerModels.first {
+            let (_, modelPart) = CloudProvider.parse(firstModel.id)
+            cloudEngine.selectTranscriptionModel(modelPart)
+            activeEngine = cloudEngine
+            selectEngine(type)
+            selectModel(firstModel.id)
+            addToLoadedModels(firstModel.id, engineType: type)
+        }
+    }
+
+    func removeCloudProvider(_ type: EngineType) {
+        guard let cloudEngine = cloudEngines.first(where: { $0.engineType == type }) else { return }
+        cloudEngine.removeApiKey()
+
+        // Mark all models for this provider as not downloaded
+        for model in ModelInfo.models(for: type) {
+            modelStatuses[model.id] = .notDownloaded
+            removeFromLoadedModels(model.id)
+        }
+
+        // If current engine was this cloud provider, clear it
+        if selectedEngine == type {
+            if let fallback = findLoadedFallback(excluding: type) {
+                selectEngine(fallback.engineType)
+                selectModel(fallback.id)
+                activeEngine = self.engine(for: fallback.engineType)
+            } else {
+                selectedModelId = nil
+                UserDefaults.standard.removeObject(forKey: modelKey)
+                activeEngine = nil
+            }
+        }
+    }
+
+    func loadCloudApiKeys() {
+        for cloudEngine in cloudEngines {
+            cloudEngine.loadApiKey()
+            if cloudEngine.isConfigured {
+                for model in ModelInfo.models(for: cloudEngine.engineType) {
+                    modelStatuses[model.id] = .ready
+                }
+            }
+        }
+
+        // Restore selected cloud model
+        if let selectedId = selectedModelId, CloudProvider.isCloudModel(selectedId) {
+            let (provider, model) = CloudProvider.parse(selectedId)
+            if let cloudEngine = cloudEngines.first(where: { $0.providerId == provider }),
+               cloudEngine.isConfigured {
+                cloudEngine.selectTranscriptionModel(model)
+                activeEngine = cloudEngine
+            }
+        }
+    }
+
     func status(for model: ModelInfo) -> ModelStatus {
         modelStatuses[model.id] ?? .notDownloaded
     }
 
-    func resolveEngine(override: EngineType?) -> (any TranscriptionEngine)? {
+    func resolveEngine(override: EngineType?, cloudModelOverride: String? = nil) -> (any TranscriptionEngine)? {
         if let override {
             let e = engine(for: override)
-            return e.isModelLoaded ? e : activeEngine
+            guard e.isModelLoaded else { return activeEngine }
+            // Apply cloud model override if specified
+            if let cloudModel = cloudModelOverride,
+               let cloudEngine = e as? CloudTranscriptionEngine {
+                cloudEngine.selectTranscriptionModel(cloudModel)
+            }
+            return e
         }
         return activeEngine
     }
@@ -224,15 +341,18 @@ final class ModelManagerService: ObservableObject {
         audioSamples: [Float],
         language: String?,
         task: TranscriptionTask,
-        engineOverride: EngineType? = nil
+        engineOverride: EngineType? = nil,
+        cloudModelOverride: String? = nil,
+        prompt: String? = nil
     ) async throws -> TranscriptionResult {
-        guard let engine = resolveEngine(override: engineOverride) else {
+        guard let engine = resolveEngine(override: engineOverride, cloudModelOverride: cloudModelOverride) else {
             throw TranscriptionEngineError.modelNotLoaded
         }
         return try await engine.transcribe(
             audioSamples: audioSamples,
             language: language,
-            task: task
+            task: task,
+            prompt: prompt
         )
     }
 
@@ -241,15 +361,18 @@ final class ModelManagerService: ObservableObject {
         language: String?,
         task: TranscriptionTask,
         engineOverride: EngineType? = nil,
+        cloudModelOverride: String? = nil,
+        prompt: String? = nil,
         onProgress: @Sendable @escaping (String) -> Bool
     ) async throws -> TranscriptionResult {
-        guard let engine = resolveEngine(override: engineOverride) else {
+        guard let engine = resolveEngine(override: engineOverride, cloudModelOverride: cloudModelOverride) else {
             throw TranscriptionEngineError.modelNotLoaded
         }
         return try await engine.transcribe(
             audioSamples: audioSamples,
             language: language,
             task: task,
+            prompt: prompt,
             onProgress: onProgress
         )
     }

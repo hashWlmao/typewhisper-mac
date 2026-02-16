@@ -92,6 +92,10 @@ private struct ProfileRow: View {
             .buttonStyle(.borderless)
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            viewModel.prepareEditProfile(profile)
+        }
     }
 }
 
@@ -251,12 +255,40 @@ private struct ProfileEditorSheet: View {
                         ForEach(EngineType.availableCases) { engine in
                             Text(engine.displayName).tag(engine.rawValue as String?)
                         }
+
+                        let configuredCloud = EngineType.cloudCases.filter {
+                            ModelManagerViewModel.shared.isCloudProviderConfigured($0)
+                        }
+                        if !configuredCloud.isEmpty {
+                            Divider()
+                            ForEach(configuredCloud) { engine in
+                                Text(engine.displayName).tag(engine.rawValue as String?)
+                            }
+                        }
                     }
 
-                    if viewModel.editorEngineOverride != nil {
-                        Text(String(localized: "Using a different engine per profile requires both models to be loaded, which increases memory usage."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    if let override = viewModel.editorEngineOverride,
+                       let engine = EngineType(rawValue: override) {
+                        if engine.isCloud {
+                            let models = ModelManagerViewModel.shared.cloudModels(for: engine)
+                            if models.count > 1 {
+                                Picker(String(localized: "Model"), selection: $viewModel.editorCloudModelOverride) {
+                                    Text(String(localized: "Default")).tag(nil as String?)
+                                    Divider()
+                                    ForEach(models, id: \.id) { model in
+                                        Text(model.displayName).tag(model.id as String?)
+                                    }
+                                }
+                            }
+
+                            Text(String(localized: "Cloud transcription requires an internet connection."))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(String(localized: "Using a different engine per profile requires both models to be loaded, which increases memory usage."))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     // Whisper mode override

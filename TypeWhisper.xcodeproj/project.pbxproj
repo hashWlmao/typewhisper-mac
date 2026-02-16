@@ -76,7 +76,15 @@
 		AA00000000000000000090 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000090 /* HomeViewModel.swift */; };
 		AA00000000000000000091 /* HomeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000091 /* HomeSettingsView.swift */; };
 		AA00000000000000000092 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000092 /* SetupWizardView.swift */; };
+		AA00000000000000000094 /* AudioWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000094 /* AudioWaveformView.swift */; };
 		AA00000000000000000093 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000093 /* main.swift */; };
+		AA00000000000000000095 /* WavEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000095 /* WavEncoder.swift */; };
+		AA00000000000000000096 /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000096 /* KeychainService.swift */; };
+		AA00000000000000000097 /* CloudTranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000097 /* CloudTranscriptionEngine.swift */; };
+		AA00000000000000000098 /* GroqEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000098 /* GroqEngine.swift */; };
+		AA00000000000000000099 /* OpenAIEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000099 /* OpenAIEngine.swift */; };
+		AA00000000000000000100 /* CloudModelInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000100 /* CloudModelInfo.swift */; };
+		AA00000000000000000101 /* CloudProviderSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000101 /* CloudProviderSection.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -147,7 +155,15 @@
 		BB00000000000000000090 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		BB00000000000000000091 /* HomeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeSettingsView.swift; sourceTree = "<group>"; };
 		BB00000000000000000092 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetupWizardView.swift; sourceTree = "<group>"; };
+		BB00000000000000000094 /* AudioWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioWaveformView.swift; sourceTree = "<group>"; };
 		BB00000000000000000093 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		BB00000000000000000095 /* WavEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WavEncoder.swift; sourceTree = "<group>"; };
+		BB00000000000000000096 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		BB00000000000000000097 /* CloudTranscriptionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudTranscriptionEngine.swift; sourceTree = "<group>"; };
+		BB00000000000000000098 /* GroqEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroqEngine.swift; sourceTree = "<group>"; };
+		BB00000000000000000099 /* OpenAIEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIEngine.swift; sourceTree = "<group>"; };
+		BB00000000000000000100 /* CloudModelInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudModelInfo.swift; sourceTree = "<group>"; };
+		BB00000000000000000101 /* CloudProviderSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudProviderSection.swift; sourceTree = "<group>"; };
 		DD00000000000000000099 /* TypeWhisper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TypeWhisper.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -209,6 +225,7 @@
 				BB00000000000000000077 /* DictionaryEntry.swift */,
 				BB00000000000000000078 /* TermPack.swift */,
 				BB00000000000000000080 /* Snippet.swift */,
+				BB00000000000000000100 /* CloudModelInfo.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -217,6 +234,7 @@
 			isa = PBXGroup;
 			children = (
 				CC00000000000000000006 /* Engine */,
+				CC00000000000000000012 /* Cloud */,
 				CC00000000000000000010 /* HTTPServer */,
 				BB00000000000000000009 /* ModelManagerService.swift */,
 				BB00000000000000000010 /* AudioFileService.swift */,
@@ -283,6 +301,8 @@
 				BB00000000000000000085 /* SnippetsSettingsView.swift */,
 				BB00000000000000000091 /* HomeSettingsView.swift */,
 				BB00000000000000000092 /* SetupWizardView.swift */,
+				BB00000000000000000094 /* AudioWaveformView.swift */,
+				BB00000000000000000101 /* CloudProviderSection.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -319,6 +339,18 @@
 				BB00000000000000000044 /* APIHandlers.swift */,
 			);
 			path = HTTPServer;
+			sourceTree = "<group>";
+		};
+		CC00000000000000000012 /* Cloud */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000000000000000095 /* WavEncoder.swift */,
+				BB00000000000000000096 /* KeychainService.swift */,
+				BB00000000000000000097 /* CloudTranscriptionEngine.swift */,
+				BB00000000000000000098 /* GroqEngine.swift */,
+				BB00000000000000000099 /* OpenAIEngine.swift */,
+			);
+			path = Cloud;
 			sourceTree = "<group>";
 		};
 		CC00000000000000000090 /* Products */ = {
@@ -362,7 +394,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1600;
+				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2620;
 				TargetAttributes = {
 					DD00000000000000000001 = {
@@ -475,7 +507,15 @@
 				AA00000000000000000090 /* HomeViewModel.swift in Sources */,
 				AA00000000000000000091 /* HomeSettingsView.swift in Sources */,
 				AA00000000000000000092 /* SetupWizardView.swift in Sources */,
+				AA00000000000000000094 /* AudioWaveformView.swift in Sources */,
 				AA00000000000000000093 /* main.swift in Sources */,
+				AA00000000000000000095 /* WavEncoder.swift in Sources */,
+				AA00000000000000000096 /* KeychainService.swift in Sources */,
+				AA00000000000000000097 /* CloudTranscriptionEngine.swift in Sources */,
+				AA00000000000000000098 /* GroqEngine.swift in Sources */,
+				AA00000000000000000099 /* OpenAIEngine.swift in Sources */,
+				AA00000000000000000100 /* CloudModelInfo.swift in Sources */,
+				AA00000000000000000101 /* CloudProviderSection.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -702,8 +742,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/FluidInference/FluidAudio.git";
 			requirement = {
-				kind = revision;
-				revision = 81e58a28;
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.12.1;
 			};
 		};
 		RR00000000000000000003 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {

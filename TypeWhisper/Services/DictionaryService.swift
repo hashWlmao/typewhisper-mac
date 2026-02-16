@@ -201,11 +201,19 @@ class DictionaryService: ObservableObject {
         }
     }
 
-    /// Get all enabled terms as a comma-separated string for Whisper prompt
+    /// Get all enabled terms as a comma-separated string for Whisper prompt.
+    /// Truncates at 600 characters to stay within the API's 224-token limit.
     func getTermsForPrompt() -> String? {
         let enabledTerms = terms.map { $0.original }
         guard !enabledTerms.isEmpty else { return nil }
-        return enabledTerms.joined(separator: ", ")
+        let maxLength = 600
+        var result = ""
+        for (i, term) in enabledTerms.enumerated() {
+            let separator = i > 0 ? ", " : ""
+            if result.count + separator.count + term.count > maxLength { break }
+            result += separator + term
+        }
+        return result.isEmpty ? nil : result
     }
 
     /// Apply all enabled corrections to the given text

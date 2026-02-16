@@ -4,7 +4,7 @@ import Foundation
 // This must happen before TypeWhisperApp.main() so that all String(localized:)
 // calls resolve using the user's preferred language, not the system language.
 
-private class OverrideBundle: Bundle {
+private class OverrideBundle: Bundle, @unchecked Sendable {
     override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
         guard let lang = UserDefaults.standard.string(forKey: "preferredAppLanguage") else {
             return super.localizedString(forKey: key, value: value, table: tableName)
