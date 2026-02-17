@@ -47,6 +47,12 @@ Speech-to-text for macOS. Transcribe audio using on-device AI models or cloud AP
 - **Auto-update** - Built-in updates via Sparkle
 - **Launch at Login** - Start automatically with macOS
 - **Multilingual UI** - English and German
+- **Microphone selection** - Choose a specific input device with live preview
+- **Modifier-key hotkeys** - Use a single modifier key (Command, Shift, Option, Control) as your hotkey
+- **Auto-learn corrections** - Dictionary automatically learns from manual corrections
+- **Universal binary** - Runs natively on Apple Silicon and Intel Macs
+- **Setup wizard** - Interactive 3-step onboarding assistant
+- **CLI tool** - Shell-friendly transcription via the command line
 
 ## System Requirements
 
@@ -81,12 +87,12 @@ Speech-to-text for macOS. Transcribe audio using on-device AI models or cloud AP
 
 ## HTTP API
 
-Enable the API server in Settings > API Server (default port: 8787).
+Enable the API server in Settings > Advanced (default port: 8978).
 
 ### Check Status
 
 ```bash
-curl http://localhost:8787/v1/status
+curl http://localhost:8978/v1/status
 ```
 
 ```json
@@ -102,7 +108,7 @@ curl http://localhost:8787/v1/status
 ### Transcribe Audio
 
 ```bash
-curl -X POST http://localhost:8787/v1/transcribe \
+curl -X POST http://localhost:8978/v1/transcribe \
   -F "file=@recording.wav" \
   -F "language=en"
 ```
@@ -121,12 +127,66 @@ curl -X POST http://localhost:8787/v1/transcribe \
 Optional parameters:
 - `language` - ISO 639-1 code (e.g., `en`, `de`). Omit for auto-detection.
 - `task` - `transcribe` (default) or `translate` (translates to English, WhisperKit only).
+- `target_language` - ISO 639-1 code for translation target language (e.g., `es`, `fr`). Uses Apple Translate.
 
 ### List Models
 
 ```bash
-curl http://localhost:8787/v1/models
+curl http://localhost:8978/v1/models
 ```
+
+```json
+{
+  "models": [
+    {
+      "id": "openai_whisper-large-v3_turbo",
+      "engine": "whisper",
+      "ready": true
+    }
+  ]
+}
+```
+
+## CLI Tool
+
+TypeWhisper includes a command-line tool for shell-friendly transcription. It connects to the running API server.
+
+### Installation
+
+Install via Settings > Advanced > CLI Tool > Install. This places the `typewhisper` binary in `/usr/local/bin`.
+
+### Commands
+
+```bash
+typewhisper status              # Show server status
+typewhisper models              # List available models
+typewhisper transcribe file.wav # Transcribe an audio file
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--port <N>` | Server port (default: auto-detect) |
+| `--json` | Output as JSON |
+| `--language <code>` | Source language (e.g. `en`, `de`) |
+| `--task <task>` | `transcribe` (default) or `translate` |
+| `--translate-to <code>` | Target language for translation |
+
+### Examples
+
+```bash
+# Transcribe with language and JSON output
+typewhisper transcribe recording.wav --language de --json
+
+# Pipe audio from stdin
+cat audio.wav | typewhisper transcribe -
+
+# Use in a script
+typewhisper transcribe meeting.m4a --json | jq -r '.text'
+```
+
+The CLI requires the API server to be running (Settings > Advanced).
 
 ## Profiles
 
@@ -153,6 +213,7 @@ Multiple engines can be loaded simultaneously for instant switching between prof
 
 ```
 TypeWhisper/
+├── typewhisper-cli/           # Command-line tool (status, models, transcribe)
 ├── App/                    # App entry point, dependency injection
 ├── Models/                 # Data models (ModelInfo, TranscriptionResult, EngineType, Profile, etc.)
 ├── Services/
