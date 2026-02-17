@@ -113,7 +113,12 @@ jobs:
             --bundle-version "$VERSION" \
             --bundle-short-version-string "$VERSION" \
             --apiKey "$APPLE_API_KEY_ID" \
-            --apiIssuer "$APPLE_API_ISSUER_ID"
+            --apiIssuer "$APPLE_API_ISSUER_ID" 2>&1 | tee /tmp/upload.log
+
+          if grep -q "UPLOAD FAILED" /tmp/upload.log; then
+            echo "::error::App Store upload failed"
+            exit 1
+          fi
 
       - name: Cleanup Signing Assets
         if: always()
