@@ -1,6 +1,9 @@
 import Foundation
 import SwiftData
 import Combine
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "DictionaryService")
 
 @MainActor
 class DictionaryService: ObservableObject {
@@ -78,7 +81,7 @@ class DictionaryService: ObservableObject {
             )
             entries = try context.fetch(descriptor)
         } catch {
-            print("DictionaryService: Failed to fetch entries: \(error)")
+            logger.error("Failed to fetch entries: \(error.localizedDescription)")
         }
     }
 
@@ -108,7 +111,7 @@ class DictionaryService: ObservableObject {
             try context.save()
             loadEntries()
         } catch {
-            print("DictionaryService: Failed to save entry: \(error)")
+            logger.error("Failed to save entry: \(error.localizedDescription)")
         }
     }
 
@@ -128,7 +131,7 @@ class DictionaryService: ObservableObject {
             try context.save()
             loadEntries()
         } catch {
-            print("DictionaryService: Failed to update entry: \(error)")
+            logger.error("Failed to update entry: \(error.localizedDescription)")
         }
     }
 
@@ -141,7 +144,7 @@ class DictionaryService: ObservableObject {
             try context.save()
             loadEntries()
         } catch {
-            print("DictionaryService: Failed to delete entry: \(error)")
+            logger.error("Failed to delete entry: \(error.localizedDescription)")
         }
     }
 
@@ -154,7 +157,7 @@ class DictionaryService: ObservableObject {
             try context.save()
             loadEntries()
         } catch {
-            print("DictionaryService: Failed to toggle entry: \(error)")
+            logger.error("Failed to toggle entry: \(error.localizedDescription)")
         }
     }
 
@@ -181,7 +184,7 @@ class DictionaryService: ObservableObject {
             try context.save()
             loadEntries()
         } catch {
-            print("DictionaryService: Failed to batch save entries: \(error)")
+            logger.error("Failed to batch save entries: \(error.localizedDescription)")
         }
     }
 
@@ -197,7 +200,7 @@ class DictionaryService: ObservableObject {
             try context.save()
             loadEntries()
         } catch {
-            print("DictionaryService: Failed to batch delete entries: \(error)")
+            logger.error("Failed to batch delete entries: \(error.localizedDescription)")
         }
     }
 
@@ -269,7 +272,7 @@ class DictionaryService: ObservableObject {
         do {
             try context.save()
         } catch {
-            print("DictionaryService: Failed to update usage count: \(error)")
+            logger.error("Failed to update usage count: \(error.localizedDescription)")
         }
     }
 }

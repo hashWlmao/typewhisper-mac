@@ -117,22 +117,8 @@ enum HTTPRequestParser {
             let partBody = Data(body[partBodyStart..<partBodyEnd])
 
             // Parse part headers
-            if let headerStr = String(data: headerData, encoding: .utf8) {
-                var name = ""
-                var filename: String?
-                var contentType: String?
-
-                for line in headerStr.components(separatedBy: "\r\n") {
-                    let lower = line.lowercased()
-                    if lower.hasPrefix("content-disposition:") {
-                        name = extractParam(line, key: "name") ?? ""
-                        filename = extractParam(line, key: "filename")
-                    } else if lower.hasPrefix("content-type:") {
-                        contentType = line.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
-                    }
-                }
-
-                parts.append(MultipartPart(name: name, filename: filename, contentType: contentType, data: partBody))
+            if let headers = parsePartHeaders(headerData) {
+                parts.append(MultipartPart(name: headers.name, filename: headers.filename, contentType: headers.contentType, data: partBody))
             }
 
             searchStart = nextBoundaryRange?.lowerBound ?? body.count
@@ -157,6 +143,26 @@ enum HTTPRequestParser {
             }
         }
         return (path, params)
+    }
+
+    private static func parsePartHeaders(_ data: Data) -> (name: String, filename: String?, contentType: String?)? {
+        guard let headerStr = String(data: data, encoding: .utf8) else { return nil }
+
+        var name = ""
+        var filename: String?
+        var contentType: String?
+
+        for line in headerStr.components(separatedBy: "\r\n") {
+            let lower = line.lowercased()
+            if lower.hasPrefix("content-disposition:") {
+                name = extractParam(line, key: "name") ?? ""
+                filename = extractParam(line, key: "filename")
+            } else if lower.hasPrefix("content-type:") {
+                contentType = line.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespaces)
+            }
+        }
+
+        return (name, filename, contentType)
     }
 
     private static func extractParam(_ header: String, key: String) -> String? {

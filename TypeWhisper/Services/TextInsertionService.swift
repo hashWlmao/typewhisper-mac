@@ -263,47 +263,45 @@ enum InsertionResult {
             return nil
         }
 
+        let axElement = element as! AXUIElement
+
         // Try to get the caret position from selected text range
-        var selectedRangeValue: AnyObject?
-        let rangeResult = AXUIElementCopyAttributeValue(
-            element as! AXUIElement,
-            kAXSelectedTextRangeAttribute as CFString,
-            &selectedRangeValue
-        )
-
-        if rangeResult == .success, let rangeValue = selectedRangeValue {
-            var bounds: CFTypeRef?
-            let boundsResult = AXUIElementCopyParameterizedAttributeValue(
-                element as! AXUIElement,
-                kAXBoundsForRangeParameterizedAttribute as CFString,
-                rangeValue,
-                &bounds
-            )
-
-            if boundsResult == .success, let boundsValue = bounds {
-                var rect = CGRect.zero
-                if AXValueGetValue(boundsValue as! AXValue, .cgRect, &rect) {
-                    return CGPoint(x: rect.origin.x + rect.width, y: rect.origin.y + rect.height)
-                }
-            }
+        if let rect = caretRect(from: axElement) {
+            return CGPoint(x: rect.origin.x + rect.width, y: rect.origin.y + rect.height)
         }
 
         // Fallback: get position of focused element
+        return elementPosition(from: axElement)
+    }
+
+    private func caretRect(from element: AXUIElement) -> CGRect? {
+        var selectedRangeValue: AnyObject?
+        let rangeResult = AXUIElementCopyAttributeValue(
+            element, kAXSelectedTextRangeAttribute as CFString, &selectedRangeValue
+        )
+        guard rangeResult == .success, let rangeValue = selectedRangeValue else { return nil }
+
+        var bounds: CFTypeRef?
+        let boundsResult = AXUIElementCopyParameterizedAttributeValue(
+            element, kAXBoundsForRangeParameterizedAttribute as CFString, rangeValue, &bounds
+        )
+        guard boundsResult == .success, let boundsValue = bounds else { return nil }
+
+        var rect = CGRect.zero
+        guard AXValueGetValue(boundsValue as! AXValue, .cgRect, &rect) else { return nil }
+        return rect
+    }
+
+    private func elementPosition(from element: AXUIElement) -> CGPoint? {
         var positionValue: AnyObject?
         let posResult = AXUIElementCopyAttributeValue(
-            element as! AXUIElement,
-            kAXPositionAttribute as CFString,
-            &positionValue
+            element, kAXPositionAttribute as CFString, &positionValue
         )
+        guard posResult == .success, let posValue = positionValue else { return nil }
 
-        if posResult == .success, let posValue = positionValue {
-            var point = CGPoint.zero
-            if AXValueGetValue(posValue as! AXValue, .cgPoint, &point) {
-                return point
-            }
-        }
-
-        return nil
+        var point = CGPoint.zero
+        guard AXValueGetValue(posValue as! AXValue, .cgPoint, &point) else { return nil }
+        return point
     }
 
     private func simulatePaste() {

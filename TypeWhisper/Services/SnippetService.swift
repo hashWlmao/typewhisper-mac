@@ -1,6 +1,9 @@
 import Foundation
 import SwiftData
 import Combine
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "SnippetService")
 
 @MainActor
 class SnippetService: ObservableObject {
@@ -55,7 +58,7 @@ class SnippetService: ObservableObject {
             )
             snippets = try context.fetch(descriptor)
         } catch {
-            print("SnippetService: Failed to fetch snippets: \(error)")
+            logger.error("Failed to fetch snippets: \(error.localizedDescription)")
         }
     }
 
@@ -79,7 +82,7 @@ class SnippetService: ObservableObject {
             try context.save()
             loadSnippets()
         } catch {
-            print("SnippetService: Failed to save snippet: \(error)")
+            logger.error("Failed to save snippet: \(error.localizedDescription)")
         }
     }
 
@@ -94,7 +97,7 @@ class SnippetService: ObservableObject {
             try context.save()
             loadSnippets()
         } catch {
-            print("SnippetService: Failed to update snippet: \(error)")
+            logger.error("Failed to update snippet: \(error.localizedDescription)")
         }
     }
 
@@ -107,7 +110,7 @@ class SnippetService: ObservableObject {
             try context.save()
             loadSnippets()
         } catch {
-            print("SnippetService: Failed to delete snippet: \(error)")
+            logger.error("Failed to delete snippet: \(error.localizedDescription)")
         }
     }
 
@@ -120,7 +123,7 @@ class SnippetService: ObservableObject {
             try context.save()
             loadSnippets()
         } catch {
-            print("SnippetService: Failed to toggle snippet: \(error)")
+            logger.error("Failed to toggle snippet: \(error.localizedDescription)")
         }
     }
 
@@ -160,7 +163,7 @@ class SnippetService: ObservableObject {
         do {
             try context.save()
         } catch {
-            print("SnippetService: Failed to update usage count: \(error)")
+            logger.error("Failed to update usage count: \(error.localizedDescription)")
         }
     }
 }

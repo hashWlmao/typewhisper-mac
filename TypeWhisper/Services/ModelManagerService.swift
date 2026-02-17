@@ -67,19 +67,16 @@ final class ModelManagerService: ObservableObject {
 
         if CloudProvider.isCloudModel(modelId) {
             let (provider, model) = CloudProvider.parse(modelId)
-            if let cloudEngine = cloudEngines.first(where: { $0.providerId == provider }) {
-                cloudEngine.selectTranscriptionModel(model)
-                activeEngine = cloudEngine
-                if let engineType = EngineType(rawValue: provider) {
-                    selectEngine(engineType)
-                }
-            }
+            guard let cloudEngine = cloudEngines.first(where: { $0.providerId == provider }),
+                  let engineType = EngineType(rawValue: provider) else { return }
+            cloudEngine.selectTranscriptionModel(model)
+            activeEngine = cloudEngine
+            selectEngine(engineType)
         } else if let model = ModelInfo.allModels.first(where: { $0.id == modelId }) {
             let eng = engine(for: model.engineType)
-            if eng.isModelLoaded {
-                activeEngine = eng
-                selectEngine(model.engineType)
-            }
+            guard eng.isModelLoaded else { return }
+            activeEngine = eng
+            selectEngine(model.engineType)
         }
     }
 
@@ -325,21 +322,14 @@ final class ModelManagerService: ObservableObject {
 
     func resolvedModelDisplayName(engineOverride: EngineType? = nil, cloudModelOverride: String? = nil) -> String? {
         if let override = engineOverride {
-            if let cloudEngine = engine(for: override) as? CloudTranscriptionEngine {
-                if let cloudModel = cloudModelOverride,
-                   let info = cloudEngine.transcriptionModels.first(where: { $0.id == cloudModel }) {
-                    return info.displayName
-                }
-                if let selected = cloudEngine.selectedModel {
-                    return selected.displayName
-                }
-                return nil
+            guard let cloudEngine = engine(for: override) as? CloudTranscriptionEngine else {
+                return ModelInfo.models(for: override).first(where: { status(for: $0) == .ready })?.displayName
             }
-            let models = ModelInfo.models(for: override)
-            if let readyModel = models.first(where: { status(for: $0) == .ready }) {
-                return readyModel.displayName
+            if let cloudModel = cloudModelOverride,
+               let info = cloudEngine.transcriptionModels.first(where: { $0.id == cloudModel }) {
+                return info.displayName
             }
-            return nil
+            return cloudEngine.selectedModel?.displayName
         }
 
         guard let selectedId = selectedModelId else { return nil }
@@ -354,21 +344,19 @@ final class ModelManagerService: ObservableObject {
     }
 
     func resolveEngine(override: EngineType?, cloudModelOverride: String? = nil) -> (any TranscriptionEngine)? {
-        if let override {
-            let e = engine(for: override)
-            // For cloud engines: select model BEFORE checking isModelLoaded
-            if let cloudEngine = e as? CloudTranscriptionEngine {
-                if let cloudModel = cloudModelOverride {
-                    cloudEngine.selectTranscriptionModel(cloudModel)
-                } else if cloudEngine.selectedModel == nil,
-                          let firstModel = cloudEngine.transcriptionModels.first {
-                    cloudEngine.selectTranscriptionModel(firstModel.id)
-                }
+        guard let override else { return activeEngine }
+        let e = engine(for: override)
+        // For cloud engines: select model BEFORE checking isModelLoaded
+        if let cloudEngine = e as? CloudTranscriptionEngine {
+            if let cloudModel = cloudModelOverride {
+                cloudEngine.selectTranscriptionModel(cloudModel)
+            } else if cloudEngine.selectedModel == nil,
+                      let firstModel = cloudEngine.transcriptionModels.first {
+                cloudEngine.selectTranscriptionModel(firstModel.id)
             }
-            guard e.isModelLoaded else { return activeEngine }
-            return e
         }
-        return activeEngine
+        guard e.isModelLoaded else { return activeEngine }
+        return e
     }
 
     func transcribe(

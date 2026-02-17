@@ -78,6 +78,7 @@ final class DictationViewModel: ObservableObject {
     private var recordingTimer: Timer?
     private var recordingStartTime: Date?
     private var streamingTask: Task<Void, Never>?
+    private var transcriptionTask: Task<Void, Never>?
     private var silenceCancellable: AnyCancellable?
 
     init(
@@ -189,6 +190,10 @@ final class DictationViewModel: ObservableObject {
             return
         }
 
+        // Cancel any pending transcription from a previous recording
+        transcriptionTask?.cancel()
+        transcriptionTask = nil
+
         // Match profile based on active app — store for reuse in stopDictation
         let activeApp = textInsertionService.captureActiveApp()
         capturedActiveApp = activeApp
@@ -290,22 +295,14 @@ final class DictationViewModel: ObservableObject {
         let samples = audioRecordingService.stopRecording()
 
         guard !samples.isEmpty else {
-            state = .idle
-            partialText = ""
-            matchedProfile = nil
-            capturedActiveApp = nil
-            activeProfileName = nil
+            resetDictationState()
             return
         }
 
         let audioDuration = Double(samples.count) / 16000.0
         guard audioDuration >= 0.3 else {
             // Too short to transcribe meaningfully
-            state = .idle
-            partialText = ""
-            matchedProfile = nil
-            capturedActiveApp = nil
-            activeProfileName = nil
+            resetDictationState()
             return
         }
 
@@ -321,7 +318,7 @@ final class DictationViewModel: ObservableObject {
 
         state = .processing
 
-        Task {
+        transcriptionTask = Task {
             do {
                 let result = try await modelManager.transcribe(
                     audioSamples: samples,
@@ -332,13 +329,12 @@ final class DictationViewModel: ObservableObject {
                     prompt: termsPrompt
                 )
 
+                // Bail out if a new recording started while we were transcribing
+                guard !Task.isCancelled else { return }
+
                 var text = result.text.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !text.isEmpty else {
-                    state = .idle
-                    partialText = ""
-                    matchedProfile = nil
-                    capturedActiveApp = nil
-                    activeProfileName = nil
+                    resetDictationState()
                     return
                 }
 
@@ -346,6 +342,8 @@ final class DictationViewModel: ObservableObject {
                     let target = Locale.Language(identifier: targetCode)
                     text = try await translationService.translate(text: text, to: target)
                 }
+
+                guard !Task.isCancelled else { return }
 
                 // Post-processing pipeline
                 text = snippetService.applySnippets(to: text)
@@ -384,11 +382,10 @@ final class DictationViewModel: ObservableObject {
                 }
 
                 try? await Task.sleep(for: .seconds(1.5))
-                state = .idle
-                matchedProfile = nil
-                capturedActiveApp = nil
-                activeProfileName = nil
+                guard !Task.isCancelled else { return }
+                resetDictationState()
             } catch {
+                guard !Task.isCancelled else { return }
                 soundService.play(.error, enabled: soundFeedbackEnabled)
                 showError(error.localizedDescription)
                 matchedProfile = nil
@@ -441,6 +438,14 @@ final class DictationViewModel: ObservableObject {
                 if !needsMicPermission, !needsAccessibilityPermission { return }
             }
         }
+    }
+
+    private func resetDictationState() {
+        state = .idle
+        partialText = ""
+        matchedProfile = nil
+        capturedActiveApp = nil
+        activeProfileName = nil
     }
 
     private func showError(_ message: String) {

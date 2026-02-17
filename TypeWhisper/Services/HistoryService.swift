@@ -1,6 +1,9 @@
 import Foundation
 import SwiftData
 import Combine
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "HistoryService")
 
 @MainActor
 final class HistoryService: ObservableObject {
@@ -143,7 +146,7 @@ final class HistoryService: ObservableObject {
         do {
             try modelContext.save()
         } catch {
-            print("HistoryService save error: \(error)")
+            logger.error("Save failed: \(error.localizedDescription)")
         }
     }
 

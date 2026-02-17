@@ -1,6 +1,9 @@
 import Foundation
 import SwiftData
 import Combine
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "ProfileService")
 
 @MainActor
 final class ProfileService: ObservableObject {
@@ -157,7 +160,7 @@ final class ProfileService: ObservableObject {
         do {
             try modelContext.save()
         } catch {
-            print("ProfileService save error: \(error)")
+            logger.error("Save failed: \(error.localizedDescription)")
         }
     }
 }
