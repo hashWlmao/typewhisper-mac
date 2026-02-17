@@ -58,8 +58,10 @@ jobs:
           APPSTORE_PROVISIONING_PROFILE: ${{ secrets.APPSTORE_PROVISIONING_PROFILE }}
         run: |
           mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$APPSTORE_PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/appstore.provisionprofile
-          echo "Installed provisioning profile"
+          echo "$APPSTORE_PROVISIONING_PROFILE" | base64 --decode > /tmp/appstore.provisionprofile
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c "Print :UUID" /dev/stdin <<< "$(security cms -D -i /tmp/appstore.provisionprofile)")
+          cp /tmp/appstore.provisionprofile ~/Library/MobileDevice/Provisioning\ Profiles/${PROFILE_UUID}.provisionprofile
+          echo "Installed provisioning profile with UUID: $PROFILE_UUID"
 
       - name: Archive App
         run: |
