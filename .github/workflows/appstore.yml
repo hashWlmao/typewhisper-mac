@@ -89,9 +89,8 @@ jobs:
           # Remove empty Frameworks directory if present
           rmdir "$APP_PATH/Contents/Frameworks" 2>/dev/null || true
 
-          pkgbuild \
-            --component "$APP_PATH" \
-            --install-location /Applications \
+          productbuild \
+            --component "$APP_PATH" /Applications \
             --sign "3rd Party Mac Developer Installer" \
             build/TypeWhisper.pkg
 
