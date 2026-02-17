@@ -20,8 +20,9 @@ Package.resolved
 *~.nib
 xcuserdata/
 
-# Xcode Scheme
-*.xcscheme
+# Xcode Schemes (keep shared, ignore user-specific)
+*.xcodeproj/xcuserdata/**/*.xcscheme
+!*.xcodeproj/xcshareddata/xcschemes/*.xcscheme
 
 # CocoaPods (if used)
 Pods/
