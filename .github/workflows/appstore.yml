@@ -11,7 +11,8 @@ on:
 env:
   SCHEME: "TypeWhisper AppStore"
   PROJECT: TypeWhisper.xcodeproj
-  PROFILE_NAME: "match AppStore com.typewhisper.typewhisper-mac macos"
+  BUNDLE_ID: com.typewhisper.typewhisper-mac
+  APPLE_APP_ID: "6759301174"
 
 jobs:
   build:
@@ -44,7 +45,7 @@ jobs:
           security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security import /tmp/cert.p12 -k "$KEYCHAIN_PATH" -P "$MACOS_SIGNING_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security import /tmp/cert.p12 -k "$KEYCHAIN_PATH" -P "$MACOS_SIGNING_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/pkgbuild
           security list-keychains -d user -s "$KEYCHAIN_PATH"
           security default-keychain -s "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
@@ -60,9 +61,6 @@ jobs:
           echo "$APPSTORE_PROVISIONING_PROFILE" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/appstore.provisionprofile
           echo "Installed provisioning profile"
 
-      - name: List signing identities
-        run: security find-identity -v -p codesigning
-
       - name: Archive App
         run: |
           VERSION="${{ inputs.version }}"
@@ -75,18 +73,20 @@ jobs:
             -archivePath build/TypeWhisper.xcarchive \
             -destination 'generic/platform=macOS' \
             MARKETING_VERSION="$VERSION" \
-            CURRENT_PROJECT_VERSION="$VERSION" \
-            CODE_SIGN_STYLE=Manual \
-            "CODE_SIGN_IDENTITY=Apple Distribution" \
-            DEVELOPMENT_TEAM=2D8ALY3LCL \
-            "PROVISIONING_PROFILE_SPECIFIER=$PROFILE_NAME"
+            CURRENT_PROJECT_VERSION="$VERSION"
 
-      - name: Export for App Store
+      - name: Build Package
         run: |
-          xcodebuild -exportArchive \
-            -archivePath build/TypeWhisper.xcarchive \
-            -exportPath build/export \
-            -exportOptionsPlist ExportOptions.plist
+          APP_PATH="build/TypeWhisper.xcarchive/Products/Applications/TypeWhisper.app"
+
+          # Remove empty Frameworks directory if present
+          rmdir "$APP_PATH/Contents/Frameworks" 2>/dev/null || true
+
+          pkgbuild \
+            --component "$APP_PATH" \
+            --install-location /Applications \
+            --sign "3rd Party Mac Developer Installer" \
+            build/TypeWhisper.pkg
 
       - name: Upload to App Store Connect
         env:
@@ -94,16 +94,20 @@ jobs:
           APPLE_API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           APPLE_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
         run: |
-          mkdir -p ~/private_keys
-          printf '%s' "$APPLE_API_KEY_P8" > ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
-          chmod 600 ~/private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+          VERSION="${{ inputs.version }}"
 
-          xcrun altool --upload-app \
-            -f build/export/TypeWhisper.pkg \
-            --type macos \
+          mkdir -p ~/.private_keys
+          printf '%s' "$APPLE_API_KEY_P8" > ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+          chmod 600 ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
+
+          xcrun altool --upload-package build/TypeWhisper.pkg \
+            -t macos \
+            --apple-id "$APPLE_APP_ID" \
+            --bundle-id "$BUNDLE_ID" \
+            --bundle-version "$VERSION" \
+            --bundle-short-version-string "$VERSION" \
             --apiKey "$APPLE_API_KEY_ID" \
-            --apiIssuer "$APPLE_API_ISSUER_ID" \
-            || echo "Upload failed - check App Store Connect for details"
+            --apiIssuer "$APPLE_API_ISSUER_ID"
 
       - name: Cleanup Signing Assets
         if: always()
@@ -111,5 +115,5 @@ jobs:
           if [ -n "$KEYCHAIN_PATH" ]; then
             security delete-keychain "$KEYCHAIN_PATH" || true
           fi
-          rm -rf ~/private_keys /tmp/cert.p12
+          rm -rf ~/.private_keys /tmp/cert.p12
           rm -f ~/Library/MobileDevice/Provisioning\ Profiles/appstore.provisionprofile
