@@ -22,15 +22,21 @@ final class NotchGeometry: ObservableObject {
     }
 }
 
+/// Hosting view that accepts first mouse click without requiring a prior activation click.
+private class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
 /// Panel that visually extends the MacBook notch, centered over the hardware notch.
 /// Only shown on displays with a hardware notch - hidden on non-notch displays regardless of settings.
 class NotchIndicatorPanel: NSPanel {
     /// Large enough to accommodate the expanded (open) state. SwiftUI clips the visible area.
     private static let panelWidth: CGFloat = 500
-    private static let panelHeight: CGFloat = 200
+    private static let panelHeight: CGFloat = 500
 
     private let notchGeometry = NotchGeometry()
     private var cancellables = Set<AnyCancellable>()
+    private var keyMonitor: Any?
 
     init() {
         super.init(
@@ -51,7 +57,7 @@ class NotchIndicatorPanel: NSPanel {
         hidesOnDeactivate = false
         ignoresMouseEvents = true
 
-        let hostingView = NSHostingView(rootView: NotchIndicatorView(geometry: notchGeometry))
+        let hostingView = FirstMouseHostingView(rootView: NotchIndicatorView(geometry: notchGeometry))
         contentView = hostingView
     }
 
@@ -84,9 +90,11 @@ class NotchIndicatorPanel: NSPanel {
                 guard let self else { return }
                 if case .promptSelection = state {
                     self.ignoresMouseEvents = false
-                    self.makeKeyAndOrderFront(nil)
+                    self.orderFrontRegardless()
+                    self.installKeyMonitor()
                 } else {
                     self.ignoresMouseEvents = true
+                    self.removeKeyMonitor()
                 }
             }
             .store(in: &cancellables)
@@ -108,12 +116,25 @@ class NotchIndicatorPanel: NSPanel {
         }
     }
 
-    override func keyDown(with event: NSEvent) {
-        let vm = DictationViewModel.shared
-        guard case .promptSelection = vm.state else {
-            super.keyDown(with: event)
-            return
+    // MARK: - Global key monitor (captures keys without stealing focus)
+
+    private func installKeyMonitor() {
+        guard keyMonitor == nil else { return }
+        keyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            self?.handlePromptKey(event)
         }
+    }
+
+    private func removeKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
+        }
+    }
+
+    private func handlePromptKey(_ event: NSEvent) {
+        let vm = DictationViewModel.shared
+        guard case .promptSelection = vm.state else { return }
 
         switch event.keyCode {
         case 53: // Escape
@@ -125,15 +146,21 @@ class NotchIndicatorPanel: NSPanel {
         case 125: // Arrow Down
             vm.movePromptSelection(by: 1)
         default:
-            // Check for digit keys 1-9
             if let characters = event.charactersIgnoringModifiers,
                let digit = characters.first?.wholeNumberValue,
                digit >= 1, digit <= 9 {
                 vm.selectPromptByIndex(digit - 1)
-            } else {
-                super.keyDown(with: event)
             }
         }
+    }
+
+    override func keyDown(with event: NSEvent) {
+        let vm = DictationViewModel.shared
+        guard case .promptSelection = vm.state else {
+            super.keyDown(with: event)
+            return
+        }
+        handlePromptKey(event)
     }
 
     // MARK: - Notch geometry

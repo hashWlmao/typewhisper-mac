@@ -192,13 +192,7 @@ struct NotchIndicatorView: View {
                 Color.clear
             }
         case .promptSelection:
-            if side == .leading {
-                Image(systemName: "text.bubble.fill")
-                    .foregroundStyle(.blue)
-                    .font(.system(size: 11))
-            } else {
-                Color.clear
-            }
+            Color.clear
         case .promptProcessing:
             if side == .leading {
                 ProgressView()
@@ -296,35 +290,35 @@ struct NotchIndicatorView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Text preview
             Text(text)
-                .font(.system(size: 11))
+                .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.5))
-                .lineLimit(2)
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
+                .lineLimit(3)
+                .padding(.horizontal, 24)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
 
-            Divider()
-                .background(.white.opacity(0.15))
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
 
             // Prompt action list
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 0) {
-                    ForEach(Array(viewModel.availablePromptActions.enumerated()), id: \.element.id) { index, action in
-                        promptActionRow(action: action, index: index)
-                    }
+            VStack(spacing: 2) {
+                ForEach(Array(viewModel.availablePromptActions.enumerated()), id: \.element.id) { index, action in
+                    promptActionRow(action: action, index: index)
                 }
             }
-            .frame(maxHeight: 200)
+            .padding(.vertical, 8)
 
-            Divider()
-                .background(.white.opacity(0.15))
+            Rectangle()
+                .fill(.white.opacity(0.08))
+                .frame(height: 1)
 
             // Dismiss hint
-            Text("Esc")
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(.white.opacity(0.3))
+            Text("esc")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.25))
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 6)
+                .padding(.vertical, 8)
         }
     }
 
@@ -332,26 +326,30 @@ struct NotchIndicatorView: View {
     private func promptActionRow(action: PromptAction, index: Int) -> some View {
         let isSelected = index == viewModel.selectedPromptIndex
 
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Image(systemName: action.icon)
-                .font(.system(size: 12))
-                .frame(width: 16)
+                .font(.system(size: 13))
+                .frame(width: 18)
 
             Text(action.name)
-                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
 
             Spacer()
 
             if index < 9 {
                 Text("\(index + 1)")
-                    .font(.system(size: 10, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.3))
+                    .font(.system(size: 11, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.25))
             }
         }
-        .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.7))
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
-        .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
+        .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.65))
+        .padding(.horizontal, 24)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isSelected ? Color.white.opacity(0.1) : Color.clear)
+                .padding(.horizontal, 8)
+        )
         .contentShape(Rectangle())
         .onHover { hovering in
             if hovering {
