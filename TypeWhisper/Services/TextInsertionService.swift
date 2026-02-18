@@ -235,6 +235,24 @@ enum InsertionResult {
         return elementPosition(from: axElement)
     }
 
+    /// Checks if the currently focused UI element is a text input field.
+    func hasFocusedTextField() -> Bool {
+        guard isAccessibilityGranted else { return false }
+
+        let systemWide = AXUIElementCreateSystemWide()
+        var focusedElement: AnyObject?
+        let result = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+        guard result == .success, let element = focusedElement else { return false }
+
+        let axElement = element as! AXUIElement
+        var roleValue: AnyObject?
+        let roleResult = AXUIElementCopyAttributeValue(axElement, kAXRoleAttribute as CFString, &roleValue)
+        guard roleResult == .success, let role = roleValue as? String else { return false }
+
+        let textRoles = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField", "AXWebArea"]
+        return textRoles.contains(role)
+    }
+
     private func caretRect(from element: AXUIElement) -> CGRect? {
         var selectedRangeValue: AnyObject?
         let rangeResult = AXUIElementCopyAttributeValue(
