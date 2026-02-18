@@ -1,5 +1,8 @@
 import Foundation
 import Combine
+import os
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "typewhisper-mac", category: "DictationViewModel")
 
 /// Orchestrates the dictation flow: recording → transcription → text insertion.
 @MainActor
@@ -17,7 +20,6 @@ final class DictationViewModel: ObservableObject {
         case recording
         case processing
         case inserting
-        case copiedToClipboard
         case error(String)
     }
 
@@ -28,22 +30,22 @@ final class DictationViewModel: ObservableObject {
     @Published var partialText: String = ""
     @Published var isStreaming: Bool = false
     @Published var whisperModeEnabled: Bool {
-        didSet { UserDefaults.standard.set(whisperModeEnabled, forKey: "whisperModeEnabled") }
+        didSet { UserDefaults.standard.set(whisperModeEnabled, forKey: UserDefaultsKeys.whisperModeEnabled) }
     }
     @Published var audioDuckingEnabled: Bool {
-        didSet { UserDefaults.standard.set(audioDuckingEnabled, forKey: "audioDuckingEnabled") }
+        didSet { UserDefaults.standard.set(audioDuckingEnabled, forKey: UserDefaultsKeys.audioDuckingEnabled) }
     }
     @Published var audioDuckingLevel: Double {
-        didSet { UserDefaults.standard.set(audioDuckingLevel, forKey: "audioDuckingLevel") }
+        didSet { UserDefaults.standard.set(audioDuckingLevel, forKey: UserDefaultsKeys.audioDuckingLevel) }
     }
     @Published var mediaPauseEnabled: Bool {
-        didSet { UserDefaults.standard.set(mediaPauseEnabled, forKey: "mediaPauseEnabled") }
+        didSet { UserDefaults.standard.set(mediaPauseEnabled, forKey: UserDefaultsKeys.mediaPauseEnabled) }
     }
     @Published var soundFeedbackEnabled: Bool {
-        didSet { UserDefaults.standard.set(soundFeedbackEnabled, forKey: "soundFeedbackEnabled") }
+        didSet { UserDefaults.standard.set(soundFeedbackEnabled, forKey: UserDefaultsKeys.soundFeedbackEnabled) }
     }
     @Published var singleKeyMode: Bool {
-        didSet { UserDefaults.standard.set(singleKeyMode, forKey: "hotkeyUseSingleKey") }
+        didSet { UserDefaults.standard.set(singleKeyMode, forKey: UserDefaultsKeys.hotkeyUseSingleKey) }
     }
     @Published var singleKeyLabel: String
     @Published var activeProfileName: String?
@@ -53,8 +55,35 @@ final class DictationViewModel: ObservableObject {
         case bottom
     }
 
+    enum NotchIndicatorVisibility: String, CaseIterable {
+        case always
+        case duringActivity
+        case never
+    }
+
+    enum NotchIndicatorContent: String, CaseIterable {
+        case indicator
+        case timer
+        case waveform
+        case clock
+        case battery
+        case none
+    }
+
     @Published var overlayPosition: OverlayPosition {
-        didSet { UserDefaults.standard.set(overlayPosition.rawValue, forKey: "overlayPosition") }
+        didSet { UserDefaults.standard.set(overlayPosition.rawValue, forKey: UserDefaultsKeys.overlayPosition) }
+    }
+
+    @Published var notchIndicatorVisibility: NotchIndicatorVisibility {
+        didSet { UserDefaults.standard.set(notchIndicatorVisibility.rawValue, forKey: UserDefaultsKeys.notchIndicatorVisibility) }
+    }
+
+    @Published var notchIndicatorLeftContent: NotchIndicatorContent {
+        didSet { UserDefaults.standard.set(notchIndicatorLeftContent.rawValue, forKey: UserDefaultsKeys.notchIndicatorLeftContent) }
+    }
+
+    @Published var notchIndicatorRightContent: NotchIndicatorContent {
+        didSet { UserDefaults.standard.set(notchIndicatorRightContent.rawValue, forKey: UserDefaultsKeys.notchIndicatorRightContent) }
     }
 
     private let audioRecordingService: AudioRecordingService
@@ -82,6 +111,8 @@ final class DictationViewModel: ObservableObject {
     private var streamingTask: Task<Void, Never>?
     private var transcriptionTask: Task<Void, Never>?
     private var silenceCancellable: AnyCancellable?
+    private var errorResetTask: Task<Void, Never>?
+    private var urlResolutionTask: Task<Void, Never>?
 
     init(
         audioRecordingService: AudioRecordingService,
@@ -117,20 +148,26 @@ final class DictationViewModel: ObservableObject {
         self.audioDeviceService = audioDeviceService
         self.promptActionService = promptActionService
         self.promptProcessingService = promptProcessingService
-        self.whisperModeEnabled = UserDefaults.standard.bool(forKey: "whisperModeEnabled")
-        self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: "audioDuckingEnabled")
-        self.audioDuckingLevel = UserDefaults.standard.object(forKey: "audioDuckingLevel") as? Double ?? 0.2
-        self.mediaPauseEnabled = UserDefaults.standard.bool(forKey: "mediaPauseEnabled")
-        self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: "soundFeedbackEnabled") as? Bool ?? true
-        let useSingleKey = UserDefaults.standard.bool(forKey: "hotkeyUseSingleKey")
+        self.whisperModeEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.whisperModeEnabled)
+        self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.audioDuckingEnabled)
+        self.audioDuckingLevel = UserDefaults.standard.object(forKey: UserDefaultsKeys.audioDuckingLevel) as? Double ?? 0.2
+        self.mediaPauseEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.mediaPauseEnabled)
+        self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: UserDefaultsKeys.soundFeedbackEnabled) as? Bool ?? true
+        let useSingleKey = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hotkeyUseSingleKey)
         self.singleKeyMode = useSingleKey
-        let isFn = UserDefaults.standard.bool(forKey: "singleKeyIsFn")
-        let code = UInt16(UserDefaults.standard.integer(forKey: "singleKeyCode"))
+        let isFn = UserDefaults.standard.bool(forKey: UserDefaultsKeys.singleKeyIsFn)
+        let code = UInt16(UserDefaults.standard.integer(forKey: UserDefaultsKeys.singleKeyCode))
         self.singleKeyLabel = useSingleKey
             ? HotkeyService.keyName(for: code, isFn: isFn)
             : ""
-        self.overlayPosition = UserDefaults.standard.string(forKey: "overlayPosition")
+        self.overlayPosition = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayPosition)
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
+        self.notchIndicatorVisibility = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorVisibility)
+            .flatMap { NotchIndicatorVisibility(rawValue: $0) } ?? .duringActivity
+        self.notchIndicatorLeftContent = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorLeftContent)
+            .flatMap { NotchIndicatorContent(rawValue: $0) } ?? .timer
+        self.notchIndicatorRightContent = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorRightContent)
+            .flatMap { NotchIndicatorContent(rawValue: $0) } ?? .waveform
 
         setupBindings()
     }
@@ -213,17 +250,32 @@ final class DictationViewModel: ObservableObject {
         // Resolve browser URL asynchronously to avoid blocking the main thread.
         // If a more specific URL profile matches, update the active profile on the fly.
         if let bundleId = activeApp.bundleId {
-            Task { [weak self] in
+            urlResolutionTask = Task { [weak self] in
                 guard let self else { return }
+                logger.info("URL resolution: starting for bundleId=\(bundleId)")
                 let resolvedURL = await textInsertionService.resolveBrowserURL(bundleId: bundleId)
-                guard state == .recording || state == .processing else { return }
-                guard let currentApp = capturedActiveApp, currentApp.bundleId == bundleId else { return }
+                logger.info("URL resolution: resolvedURL=\(resolvedURL ?? "nil"), state=\(String(describing: self.state))")
+                guard state == .recording || state == .processing else {
+                    logger.info("URL resolution: skipped - state is \(String(describing: self.state))")
+                    return
+                }
+                guard let currentApp = capturedActiveApp, currentApp.bundleId == bundleId else {
+                    logger.info("URL resolution: skipped - bundleId mismatch")
+                    return
+                }
 
                 capturedActiveApp = (name: currentApp.name, bundleId: currentApp.bundleId, url: resolvedURL)
 
-                guard let resolvedURL else { return }
-                guard let refinedProfile = profileService.matchProfile(bundleIdentifier: bundleId, url: resolvedURL) else { return }
+                guard let resolvedURL else {
+                    logger.info("URL resolution: no URL resolved")
+                    return
+                }
+                guard let refinedProfile = profileService.matchProfile(bundleIdentifier: bundleId, url: resolvedURL) else {
+                    logger.info("URL resolution: no profile matched for URL \(resolvedURL)")
+                    return
+                }
 
+                logger.info("URL resolution: matched profile '\(refinedProfile.name)'")
                 matchedProfile = refinedProfile
                 activeProfileName = refinedProfile.name
                 let refinedWhisperMode = refinedProfile.whisperModeOverride ?? whisperModeEnabled
@@ -317,20 +369,21 @@ final class DictationViewModel: ObservableObject {
             return
         }
 
-        // Reuse the active app captured at recording start — avoids blocking
-        // the main thread with a second AppleScript call (up to 2.5s for browsers)
-        let activeApp = capturedActiveApp ?? textInsertionService.captureActiveApp()
-        let language = effectiveLanguage
-        let task = effectiveTask
-        let engineOverride = effectiveEngineOverride
-        let cloudModelOverride = effectiveCloudModelOverride
-        let translationTarget = effectiveTranslationTarget
-        let termsPrompt = dictionaryService.getTermsForPrompt()
-
         state = .processing
 
         transcriptionTask = Task {
             do {
+                // Wait for browser URL resolution so URL-based profile overrides apply
+                await urlResolutionTask?.value
+
+                let activeApp = capturedActiveApp ?? textInsertionService.captureActiveApp()
+                let language = effectiveLanguage
+                let task = effectiveTask
+                let engineOverride = effectiveEngineOverride
+                let cloudModelOverride = effectiveCloudModelOverride
+                let translationTarget = effectiveTranslationTarget
+                let termsPrompt = dictionaryService.getTermsForPrompt()
+
                 let result = try await modelManager.transcribe(
                     audioSamples: samples,
                     language: language,
@@ -369,10 +422,7 @@ final class DictationViewModel: ObservableObject {
                 text = dictionaryService.applyCorrections(to: text)
 
                 partialText = ""
-                let insertionResult = try await textInsertionService.insertText(
-                    text,
-                    forcePaste: matchedProfile?.alwaysPaste == true
-                )
+                _ = try await textInsertionService.insertText(text)
 
                 let modelDisplayName = modelManager.resolvedModelDisplayName(
                     engineOverride: engineOverride,
@@ -393,12 +443,7 @@ final class DictationViewModel: ObservableObject {
 
                 soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
 
-                switch insertionResult {
-                case .pasted:
-                    state = .inserting
-                case .copiedToClipboard:
-                    state = .copiedToClipboard
-                }
+                state = .inserting
 
                 try? await Task.sleep(for: .seconds(1.5))
                 guard !Task.isCancelled else { return }
@@ -460,6 +505,9 @@ final class DictationViewModel: ObservableObject {
     }
 
     private func resetDictationState() {
+        errorResetTask?.cancel()
+        urlResolutionTask?.cancel()
+        urlResolutionTask = nil
         state = .idle
         partialText = ""
         matchedProfile = nil
@@ -469,7 +517,8 @@ final class DictationViewModel: ObservableObject {
 
     private func showError(_ message: String) {
         state = .error(message)
-        Task {
+        errorResetTask?.cancel()
+        errorResetTask = Task {
             try? await Task.sleep(for: .seconds(3))
             if case .error = state {
                 state = .idle
@@ -481,7 +530,6 @@ final class DictationViewModel: ObservableObject {
 
     /// Text confirmed from previous streaming passes — never changes once set.
     private var confirmedStreamingText = ""
-    private var streamingWindowActive = false
 
     private func startStreamingIfSupported() {
         let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverride, cloudModelOverride: effectiveCloudModelOverride)
@@ -489,7 +537,6 @@ final class DictationViewModel: ObservableObject {
 
         isStreaming = true
         confirmedStreamingText = ""
-        streamingWindowActive = false
         let streamLanguage = effectiveLanguage
         let streamTask = effectiveTask
         let streamEngineOverride = effectiveEngineOverride
@@ -501,17 +548,8 @@ final class DictationViewModel: ObservableObject {
             try? await Task.sleep(for: .seconds(1.5))
 
             while !Task.isCancelled, self.state == .recording {
-                let maxStreamSeconds: TimeInterval = 28
-                let buffer = self.audioRecordingService.getRecentBuffer(maxDuration: maxStreamSeconds)
+                let buffer = self.audioRecordingService.getRecentBuffer(maxDuration: 3600)
                 let bufferDuration = Double(buffer.count) / 16000.0
-
-                // When buffer exceeds window, reset confirmed text so stabilization
-                // works against the windowed transcript instead of the full one.
-                let totalDuration = self.audioRecordingService.totalBufferDuration
-                if totalDuration > maxStreamSeconds, !self.streamingWindowActive {
-                    self.streamingWindowActive = true
-                    self.confirmedStreamingText = ""
-                }
 
                 if bufferDuration > 0.5 {
                     do {
@@ -557,7 +595,6 @@ final class DictationViewModel: ObservableObject {
         streamingTask = nil
         isStreaming = false
         confirmedStreamingText = ""
-        streamingWindowActive = false
     }
 
     /// Keeps confirmed text stable and only appends new content.

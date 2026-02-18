@@ -32,7 +32,7 @@ struct TypeWhisperApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private var overlayPanel: DictationOverlayPanel?
+    private var notchIndicatorPanel: NotchIndicatorPanel?
     private var translationHostWindow: TranslationHostWindow?
     private var paletteController: PromptPaletteController?
 
@@ -49,9 +49,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UpdateChecker.shared = updateChecker
         #endif
 
-        let panel = DictationOverlayPanel()
-        panel.startObserving()
-        overlayPanel = panel
+        let notchPanel = NotchIndicatorPanel()
+        notchPanel.startObserving()
+        notchIndicatorPanel = notchPanel
 
         translationHostWindow = TranslationHostWindow(
             translationService: ServiceContainer.shared.translationService

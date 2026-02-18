@@ -37,13 +37,18 @@ class DictationOverlayPanel: NSPanel {
         stateObservation = vm.$state
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
-                switch state {
-                case .recording, .processing, .inserting, .copiedToClipboard, .error:
-                    self?.show()
-                case .idle:
-                    self?.dismiss()
-                }
+                self?.updateVisibility(state: state, vm: vm)
             }
+
+    }
+
+    private func updateVisibility(state: DictationViewModel.State, vm: DictationViewModel) {
+        switch state {
+        case .recording, .processing, .inserting, .error:
+            show()
+        case .idle:
+            dismiss()
+        }
     }
 
     func show() {

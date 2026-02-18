@@ -4,7 +4,7 @@ import ServiceManagement
 struct GeneralSettingsView: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var appLanguage: String = {
-        if let lang = UserDefaults.standard.string(forKey: "preferredAppLanguage") {
+        if let lang = UserDefaults.standard.string(forKey: UserDefaultsKeys.preferredAppLanguage) {
             return lang
         }
         return Locale.preferredLanguages.first?.hasPrefix("de") == true ? "de" : "en"
@@ -74,9 +74,8 @@ struct GeneralSettingsView: View {
                     Text("Deutsch").tag("de")
                 }
                 .onChange(of: appLanguage) {
-                    UserDefaults.standard.set(appLanguage, forKey: "preferredAppLanguage")
+                    UserDefaults.standard.set(appLanguage, forKey: UserDefaultsKeys.preferredAppLanguage)
                     UserDefaults.standard.set([appLanguage], forKey: "AppleLanguages")
-                    UserDefaults.standard.synchronize()
                     showRestartAlert = true
                 }
             }
@@ -92,13 +91,22 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section(String(localized: "Overlay")) {
-                Picker(String(localized: "Position"), selection: $dictation.overlayPosition) {
-                    Text(String(localized: "Top")).tag(DictationViewModel.OverlayPosition.top)
-                    Text(String(localized: "Bottom")).tag(DictationViewModel.OverlayPosition.bottom)
+            Section(String(localized: "Notch Indicator")) {
+                Picker(String(localized: "Visibility"), selection: $dictation.notchIndicatorVisibility) {
+                    Text(String(localized: "Always visible")).tag(DictationViewModel.NotchIndicatorVisibility.always)
+                    Text(String(localized: "Only during activity")).tag(DictationViewModel.NotchIndicatorVisibility.duringActivity)
+                    Text(String(localized: "Never")).tag(DictationViewModel.NotchIndicatorVisibility.never)
                 }
 
-                Text(String(localized: "The overlay appears centered at the top or bottom of the active screen."))
+                Picker(String(localized: "Left Side"), selection: $dictation.notchIndicatorLeftContent) {
+                    notchContentPickerOptions
+                }
+
+                Picker(String(localized: "Right Side"), selection: $dictation.notchIndicatorRightContent) {
+                    notchContentPickerOptions
+                }
+
+                Text(String(localized: "The notch indicator extends the MacBook notch area to show recording status."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -226,6 +234,16 @@ struct GeneralSettingsView: View {
         } message: {
             Text(String(localized: "The language change will take effect after restarting TypeWhisper."))
         }
+    }
+
+    @ViewBuilder
+    private var notchContentPickerOptions: some View {
+        Text(String(localized: "Recording Indicator")).tag(DictationViewModel.NotchIndicatorContent.indicator)
+        Text(String(localized: "Timer")).tag(DictationViewModel.NotchIndicatorContent.timer)
+        Text(String(localized: "Waveform")).tag(DictationViewModel.NotchIndicatorContent.waveform)
+        Text(String(localized: "Clock")).tag(DictationViewModel.NotchIndicatorContent.clock)
+        Text(String(localized: "Battery")).tag(DictationViewModel.NotchIndicatorContent.battery)
+        Text(String(localized: "None")).tag(DictationViewModel.NotchIndicatorContent.none)
     }
 
     private func restartApp() {
