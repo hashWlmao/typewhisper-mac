@@ -32,7 +32,6 @@ struct TypeWhisperApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private var overlayPanel: DictationOverlayPanel?
     private var notchIndicatorPanel: NotchIndicatorPanel?
     private var translationHostWindow: TranslationHostWindow?
 
@@ -48,10 +47,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         #if !APPSTORE
         UpdateChecker.shared = updateChecker
         #endif
-
-        let panel = DictationOverlayPanel()
-        panel.startObserving()
-        overlayPanel = panel
 
         let notchPanel = NotchIndicatorPanel()
         notchPanel.startObserving()

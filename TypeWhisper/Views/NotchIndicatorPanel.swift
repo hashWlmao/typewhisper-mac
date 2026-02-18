@@ -31,7 +31,6 @@ class NotchIndicatorPanel: NSPanel {
 
     private let notchGeometry = NotchGeometry()
     private var stateObservation: AnyCancellable?
-    private var modeObservation: AnyCancellable?
     private var visibilityObservation: AnyCancellable?
 
     init() {
@@ -74,20 +73,9 @@ class NotchIndicatorPanel: NSPanel {
             .sink { [weak self] _ in
                 self?.updateVisibility(state: vm.state, vm: vm)
             }
-
-        modeObservation = vm.$overlayMode
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateVisibility(state: vm.state, vm: vm)
-            }
     }
 
     private func updateVisibility(state: DictationViewModel.State, vm: DictationViewModel) {
-        guard vm.overlayMode == .notchOnly || vm.overlayMode == .both else {
-            dismiss()
-            return
-        }
-
         switch vm.notchIndicatorVisibility {
         case .always:
             show()

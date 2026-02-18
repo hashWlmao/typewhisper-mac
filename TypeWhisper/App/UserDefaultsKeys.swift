@@ -42,7 +42,8 @@ enum UserDefaultsKeys {
     // MARK: - Dictionary
     static let activatedTermPacks = "activatedTermPacks"
 
-    // MARK: - Overlay
-    static let overlayMode = "overlayMode"
+    // MARK: - Notch Indicator
     static let notchIndicatorVisibility = "notchIndicatorVisibility"
+    static let notchIndicatorLeftContent = "notchIndicatorLeftContent"
+    static let notchIndicatorRightContent = "notchIndicatorRightContent"
 }

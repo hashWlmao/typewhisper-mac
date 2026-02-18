@@ -9,7 +9,6 @@ class DictationOverlayPanel: NSPanel {
     private static let panelHeight: CGFloat = 280
 
     private var stateObservation: AnyCancellable?
-    private var modeObservation: AnyCancellable?
 
     init() {
         super.init(
@@ -41,19 +40,9 @@ class DictationOverlayPanel: NSPanel {
                 self?.updateVisibility(state: state, vm: vm)
             }
 
-        modeObservation = vm.$overlayMode
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateVisibility(state: vm.state, vm: vm)
-            }
     }
 
     private func updateVisibility(state: DictationViewModel.State, vm: DictationViewModel) {
-        guard vm.overlayMode == .classicOnly || vm.overlayMode == .both else {
-            dismiss()
-            return
-        }
-
         switch state {
         case .recording, .processing, .inserting, .error:
             show()

@@ -7,10 +7,10 @@ struct AudioWaveformView: View {
     var compact: Bool = false
 
     private var barCount: Int { compact ? 5 : 8 }
-    private var barWidth: CGFloat { compact ? 2 : 3 }
-    private var barSpacing: CGFloat { compact ? 1.5 : 2 }
+    private var barWidth: CGFloat { compact ? 3 : 3 }
+    private var barSpacing: CGFloat { compact ? 2 : 2 }
     private let minHeight: CGFloat = 2
-    private var maxHeight: CGFloat { compact ? 10 : 16 }
+    private var maxHeight: CGFloat { compact ? 16 : 16 }
 
     @State private var bounceIndex = 0
     @State private var bounceTimer: Timer?

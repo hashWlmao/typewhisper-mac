@@ -91,29 +91,22 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section(String(localized: "Overlay")) {
-                Picker(String(localized: "Display Mode"), selection: $dictation.overlayMode) {
-                    Text(String(localized: "Classic Overlay Only")).tag(DictationViewModel.OverlayMode.classicOnly)
-                    Text(String(localized: "Notch Indicator Only")).tag(DictationViewModel.OverlayMode.notchOnly)
-                    Text(String(localized: "Both")).tag(DictationViewModel.OverlayMode.both)
+            Section(String(localized: "Notch Indicator")) {
+                Picker(String(localized: "Visibility"), selection: $dictation.notchIndicatorVisibility) {
+                    Text(String(localized: "Always visible")).tag(DictationViewModel.NotchIndicatorVisibility.always)
+                    Text(String(localized: "Only during activity")).tag(DictationViewModel.NotchIndicatorVisibility.duringActivity)
+                    Text(String(localized: "Never")).tag(DictationViewModel.NotchIndicatorVisibility.never)
                 }
 
-                if dictation.overlayMode != .notchOnly {
-                    Picker(String(localized: "Classic Position"), selection: $dictation.overlayPosition) {
-                        Text(String(localized: "Top")).tag(DictationViewModel.OverlayPosition.top)
-                        Text(String(localized: "Bottom")).tag(DictationViewModel.OverlayPosition.bottom)
-                    }
+                Picker(String(localized: "Left Side"), selection: $dictation.notchIndicatorLeftContent) {
+                    notchContentPickerOptions
                 }
 
-                if dictation.overlayMode != .classicOnly {
-                    Picker(String(localized: "Notch Indicator"), selection: $dictation.notchIndicatorVisibility) {
-                        Text(String(localized: "Always visible")).tag(DictationViewModel.NotchIndicatorVisibility.always)
-                        Text(String(localized: "Only during activity")).tag(DictationViewModel.NotchIndicatorVisibility.duringActivity)
-                        Text(String(localized: "Never")).tag(DictationViewModel.NotchIndicatorVisibility.never)
-                    }
+                Picker(String(localized: "Right Side"), selection: $dictation.notchIndicatorRightContent) {
+                    notchContentPickerOptions
                 }
 
-                Text(String(localized: "The classic overlay shows full status. The notch indicator is a compact pill near the MacBook notch."))
+                Text(String(localized: "The notch indicator extends the MacBook notch area to show recording status."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -241,6 +234,16 @@ struct GeneralSettingsView: View {
         } message: {
             Text(String(localized: "The language change will take effect after restarting TypeWhisper."))
         }
+    }
+
+    @ViewBuilder
+    private var notchContentPickerOptions: some View {
+        Text(String(localized: "Recording Indicator")).tag(DictationViewModel.NotchIndicatorContent.indicator)
+        Text(String(localized: "Timer")).tag(DictationViewModel.NotchIndicatorContent.timer)
+        Text(String(localized: "Waveform")).tag(DictationViewModel.NotchIndicatorContent.waveform)
+        Text(String(localized: "Clock")).tag(DictationViewModel.NotchIndicatorContent.clock)
+        Text(String(localized: "Battery")).tag(DictationViewModel.NotchIndicatorContent.battery)
+        Text(String(localized: "None")).tag(DictationViewModel.NotchIndicatorContent.none)
     }
 
     private func restartApp() {

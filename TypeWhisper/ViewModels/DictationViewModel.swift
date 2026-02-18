@@ -55,28 +55,35 @@ final class DictationViewModel: ObservableObject {
         case bottom
     }
 
-    enum OverlayMode: String, CaseIterable {
-        case classicOnly
-        case notchOnly
-        case both
-    }
-
     enum NotchIndicatorVisibility: String, CaseIterable {
         case always
         case duringActivity
         case never
     }
 
+    enum NotchIndicatorContent: String, CaseIterable {
+        case indicator
+        case timer
+        case waveform
+        case clock
+        case battery
+        case none
+    }
+
     @Published var overlayPosition: OverlayPosition {
         didSet { UserDefaults.standard.set(overlayPosition.rawValue, forKey: UserDefaultsKeys.overlayPosition) }
     }
 
-    @Published var overlayMode: OverlayMode {
-        didSet { UserDefaults.standard.set(overlayMode.rawValue, forKey: UserDefaultsKeys.overlayMode) }
-    }
-
     @Published var notchIndicatorVisibility: NotchIndicatorVisibility {
         didSet { UserDefaults.standard.set(notchIndicatorVisibility.rawValue, forKey: UserDefaultsKeys.notchIndicatorVisibility) }
+    }
+
+    @Published var notchIndicatorLeftContent: NotchIndicatorContent {
+        didSet { UserDefaults.standard.set(notchIndicatorLeftContent.rawValue, forKey: UserDefaultsKeys.notchIndicatorLeftContent) }
+    }
+
+    @Published var notchIndicatorRightContent: NotchIndicatorContent {
+        didSet { UserDefaults.standard.set(notchIndicatorRightContent.rawValue, forKey: UserDefaultsKeys.notchIndicatorRightContent) }
     }
 
     private let audioRecordingService: AudioRecordingService
@@ -149,10 +156,12 @@ final class DictationViewModel: ObservableObject {
             : ""
         self.overlayPosition = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayPosition)
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
-        self.overlayMode = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayMode)
-            .flatMap { OverlayMode(rawValue: $0) } ?? .both
         self.notchIndicatorVisibility = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorVisibility)
             .flatMap { NotchIndicatorVisibility(rawValue: $0) } ?? .duringActivity
+        self.notchIndicatorLeftContent = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorLeftContent)
+            .flatMap { NotchIndicatorContent(rawValue: $0) } ?? .indicator
+        self.notchIndicatorRightContent = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorRightContent)
+            .flatMap { NotchIndicatorContent(rawValue: $0) } ?? .timer
 
         setupBindings()
     }

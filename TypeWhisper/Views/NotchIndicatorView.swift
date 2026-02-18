@@ -1,7 +1,9 @@
 import SwiftUI
+import IOKit.ps
 
 /// Notch-extending indicator that visually expands the MacBook notch area.
-/// Three-zone layout: left ear (indicator) | center (notch spacer) | right ear (timer).
+/// Three-zone layout: left ear | center (notch spacer) | right ear.
+/// Both sides are configurable (indicator, timer, waveform, clock, battery).
 /// Expands wider and downward to show streaming partial text.
 /// Blue glow emanates from the notch shape, reacting to audio level.
 struct NotchIndicatorView: View {
@@ -95,7 +97,7 @@ struct NotchIndicatorView: View {
     @ViewBuilder
     private var statusBar: some View {
         HStack(spacing: 0) {
-            leftContent
+            contentView(for: viewModel.notchIndicatorLeftContent, side: .leading)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 .padding(.leading, 34)
 
@@ -105,47 +107,120 @@ struct NotchIndicatorView: View {
                     .frame(width: geometry.notchWidth)
             }
 
-            rightContent
+            contentView(for: viewModel.notchIndicatorRightContent, side: .trailing)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
                 .padding(.trailing, 34)
         }
     }
 
+    // MARK: - Configurable content
+
+    private enum Side {
+        case leading, trailing
+    }
+
     @ViewBuilder
-    private var leftContent: some View {
+    private func contentView(for content: DictationViewModel.NotchIndicatorContent, side: Side) -> some View {
         switch viewModel.state {
         case .idle:
             Color.clear
         case .recording:
+            recordingContent(for: content)
+        case .processing:
+            if side == .leading {
+                ProgressView()
+                    .controlSize(.mini)
+                    .tint(.white)
+            } else {
+                Color.clear
+            }
+        case .inserting:
+            if side == .leading {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.system(size: 11))
+            } else {
+                Color.clear
+            }
+        case .error:
+            if side == .leading {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(.red)
+                    .font(.system(size: 11))
+            } else {
+                Color.clear
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func recordingContent(for content: DictationViewModel.NotchIndicatorContent) -> some View {
+        switch content {
+        case .indicator:
             Circle()
                 .fill(.red)
                 .frame(width: 6, height: 6)
                 .scaleEffect(1.0 + CGFloat(viewModel.audioLevel) * 0.8)
                 .shadow(color: .yellow.opacity(dotPulse ? 0.8 : 0.2), radius: dotPulse ? 6 : 2)
-        case .processing:
-            ProgressView()
-                .controlSize(.mini)
-                .tint(.white)
-        case .inserting:
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-                .font(.system(size: 11))
-        case .error:
-            Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(.red)
-                .font(.system(size: 11))
-        }
-    }
-
-    @ViewBuilder
-    private var rightContent: some View {
-        switch viewModel.state {
-        case .recording:
+        case .timer:
             Text(formatDuration(viewModel.recordingDuration))
                 .font(.system(size: 10, weight: .medium).monospacedDigit())
                 .foregroundStyle(.white.opacity(0.6))
-        default:
+        case .waveform:
+            AudioWaveformView(
+                audioLevel: viewModel.audioLevel,
+                isSetup: viewModel.recordingDuration < 0.5 && viewModel.audioLevel < 0.05,
+                compact: true
+            )
+        case .clock:
+            TimelineView(.periodic(from: .now, by: 1)) { context in
+                Text(context.date, format: .dateTime.hour().minute())
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+        case .battery:
+            batteryView
+        case .none:
             Color.clear
+        }
+    }
+
+    // MARK: - Battery
+
+    @ViewBuilder
+    private var batteryView: some View {
+        TimelineView(.periodic(from: .now, by: 60)) { _ in
+            if let level = Self.readBatteryLevel() {
+                HStack(spacing: 3) {
+                    Image(systemName: Self.batteryIconName(level: level))
+                        .font(.system(size: 10))
+                    Text("\(level)%")
+                        .font(.system(size: 10, weight: .medium).monospacedDigit())
+                }
+                .foregroundStyle(.white.opacity(0.6))
+            }
+        }
+    }
+
+    nonisolated private static func readBatteryLevel() -> Int? {
+        let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
+        let sources = IOPSCopyPowerSourcesList(snapshot).takeRetainedValue() as Array
+        for source in sources {
+            if let info = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
+               let capacity = info[kIOPSCurrentCapacityKey] as? Int {
+                return capacity
+            }
+        }
+        return nil
+    }
+
+    nonisolated private static func batteryIconName(level: Int) -> String {
+        switch level {
+        case 0..<13: return "battery.0percent"
+        case 13..<38: return "battery.25percent"
+        case 38..<63: return "battery.50percent"
+        case 63..<88: return "battery.75percent"
+        default: return "battery.100percent"
         }
     }
 
