@@ -92,12 +92,28 @@ struct GeneralSettingsView: View {
             }
 
             Section(String(localized: "Overlay")) {
-                Picker(String(localized: "Position"), selection: $dictation.overlayPosition) {
-                    Text(String(localized: "Top")).tag(DictationViewModel.OverlayPosition.top)
-                    Text(String(localized: "Bottom")).tag(DictationViewModel.OverlayPosition.bottom)
+                Picker(String(localized: "Display Mode"), selection: $dictation.overlayMode) {
+                    Text(String(localized: "Classic Overlay Only")).tag(DictationViewModel.OverlayMode.classicOnly)
+                    Text(String(localized: "Notch Indicator Only")).tag(DictationViewModel.OverlayMode.notchOnly)
+                    Text(String(localized: "Both")).tag(DictationViewModel.OverlayMode.both)
                 }
 
-                Text(String(localized: "The overlay appears centered at the top or bottom of the active screen."))
+                if dictation.overlayMode != .notchOnly {
+                    Picker(String(localized: "Classic Position"), selection: $dictation.overlayPosition) {
+                        Text(String(localized: "Top")).tag(DictationViewModel.OverlayPosition.top)
+                        Text(String(localized: "Bottom")).tag(DictationViewModel.OverlayPosition.bottom)
+                    }
+                }
+
+                if dictation.overlayMode != .classicOnly {
+                    Picker(String(localized: "Notch Indicator"), selection: $dictation.notchIndicatorVisibility) {
+                        Text(String(localized: "Always visible")).tag(DictationViewModel.NotchIndicatorVisibility.always)
+                        Text(String(localized: "Only during activity")).tag(DictationViewModel.NotchIndicatorVisibility.duringActivity)
+                        Text(String(localized: "Never")).tag(DictationViewModel.NotchIndicatorVisibility.never)
+                    }
+                }
+
+                Text(String(localized: "The classic overlay shows full status. The notch indicator is a compact pill near the MacBook notch."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

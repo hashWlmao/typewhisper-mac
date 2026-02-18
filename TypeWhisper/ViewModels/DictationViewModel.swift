@@ -55,8 +55,28 @@ final class DictationViewModel: ObservableObject {
         case bottom
     }
 
+    enum OverlayMode: String, CaseIterable {
+        case classicOnly
+        case notchOnly
+        case both
+    }
+
+    enum NotchIndicatorVisibility: String, CaseIterable {
+        case always
+        case duringActivity
+        case never
+    }
+
     @Published var overlayPosition: OverlayPosition {
         didSet { UserDefaults.standard.set(overlayPosition.rawValue, forKey: UserDefaultsKeys.overlayPosition) }
+    }
+
+    @Published var overlayMode: OverlayMode {
+        didSet { UserDefaults.standard.set(overlayMode.rawValue, forKey: UserDefaultsKeys.overlayMode) }
+    }
+
+    @Published var notchIndicatorVisibility: NotchIndicatorVisibility {
+        didSet { UserDefaults.standard.set(notchIndicatorVisibility.rawValue, forKey: UserDefaultsKeys.notchIndicatorVisibility) }
     }
 
     private let audioRecordingService: AudioRecordingService
@@ -129,6 +149,10 @@ final class DictationViewModel: ObservableObject {
             : ""
         self.overlayPosition = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayPosition)
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
+        self.overlayMode = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayMode)
+            .flatMap { OverlayMode(rawValue: $0) } ?? .both
+        self.notchIndicatorVisibility = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorVisibility)
+            .flatMap { NotchIndicatorVisibility(rawValue: $0) } ?? .duringActivity
 
         setupBindings()
     }
@@ -478,7 +502,6 @@ final class DictationViewModel: ObservableObject {
 
     /// Text confirmed from previous streaming passes — never changes once set.
     private var confirmedStreamingText = ""
-    private var streamingWindowActive = false
 
     private func startStreamingIfSupported() {
         let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverride, cloudModelOverride: effectiveCloudModelOverride)
@@ -486,7 +509,6 @@ final class DictationViewModel: ObservableObject {
 
         isStreaming = true
         confirmedStreamingText = ""
-        streamingWindowActive = false
         let streamLanguage = effectiveLanguage
         let streamTask = effectiveTask
         let streamEngineOverride = effectiveEngineOverride
@@ -498,17 +520,8 @@ final class DictationViewModel: ObservableObject {
             try? await Task.sleep(for: .seconds(1.5))
 
             while !Task.isCancelled, self.state == .recording {
-                let maxStreamSeconds: TimeInterval = 28
-                let buffer = self.audioRecordingService.getRecentBuffer(maxDuration: maxStreamSeconds)
+                let buffer = self.audioRecordingService.getRecentBuffer(maxDuration: 3600)
                 let bufferDuration = Double(buffer.count) / 16000.0
-
-                // When buffer exceeds window, reset confirmed text so stabilization
-                // works against the windowed transcript instead of the full one.
-                let totalDuration = self.audioRecordingService.totalBufferDuration
-                if totalDuration > maxStreamSeconds, !self.streamingWindowActive {
-                    self.streamingWindowActive = true
-                    self.confirmedStreamingText = ""
-                }
 
                 if bufferDuration > 0.5 {
                     do {
@@ -554,7 +567,6 @@ final class DictationViewModel: ObservableObject {
         streamingTask = nil
         isStreaming = false
         confirmedStreamingText = ""
-        streamingWindowActive = false
     }
 
     /// Keeps confirmed text stable and only appends new content.

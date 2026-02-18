@@ -4,12 +4,13 @@ import SwiftUI
 struct AudioWaveformView: View {
     let audioLevel: Float
     let isSetup: Bool
+    var compact: Bool = false
 
-    private let barCount = 8
-    private let barWidth: CGFloat = 3
-    private let barSpacing: CGFloat = 2
+    private var barCount: Int { compact ? 5 : 8 }
+    private var barWidth: CGFloat { compact ? 2 : 3 }
+    private var barSpacing: CGFloat { compact ? 1.5 : 2 }
     private let minHeight: CGFloat = 2
-    private let maxHeight: CGFloat = 16
+    private var maxHeight: CGFloat { compact ? 10 : 16 }
 
     @State private var bounceIndex = 0
     @State private var bounceTimer: Timer?
