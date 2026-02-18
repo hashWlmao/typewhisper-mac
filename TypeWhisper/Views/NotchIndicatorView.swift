@@ -18,20 +18,54 @@ struct NotchIndicatorView: View {
         geometry.hasNotch ? geometry.notchWidth + 2 * extensionWidth : 200
     }
 
+    private var isExpanded: Bool {
+        if textExpanded { return true }
+        switch viewModel.state {
+        case .promptSelection, .promptProcessing:
+            return true
+        default:
+            return false
+        }
+    }
+
     private var currentWidth: CGFloat {
-        textExpanded ? max(closedWidth, 400) : closedWidth
+        switch viewModel.state {
+        case .promptSelection, .promptProcessing:
+            return max(closedWidth, 420)
+        default:
+            return textExpanded ? max(closedWidth, 400) : closedWidth
+        }
     }
 
     // MARK: - Audio-reactive glow
 
+    private var glowColor: Color {
+        if case .promptProcessing = viewModel.state {
+            return Color(red: 0.6, green: 0.3, blue: 1.0) // purple
+        }
+        return Color(red: 0.3, green: 0.5, blue: 1.0) // blue
+    }
+
     private var glowOpacity: Double {
-        guard viewModel.state == .recording else { return 0 }
-        return max(0.25, min(Double(viewModel.audioLevel) * 2.5, 0.9))
+        switch viewModel.state {
+        case .recording:
+            return max(0.25, min(Double(viewModel.audioLevel) * 2.5, 0.9))
+        case .promptProcessing:
+            return 0.5
+        default:
+            return 0
+        }
     }
 
     private var glowRadius: CGFloat {
-        guard viewModel.state == .recording else { return 0 }
-        return max(6, CGFloat(viewModel.audioLevel) * 25 + 4)
+        switch viewModel.state {
+        case .recording:
+            return max(6, CGFloat(viewModel.audioLevel) * 25 + 4)
+        case .promptProcessing:
+            return 12
+        default:
+            return 0
+        }
     }
 
     var body: some View {
@@ -66,15 +100,25 @@ struct NotchIndicatorView: View {
                 }
                 .transaction { $0.disablesAnimations = true }
             }
+
+            // Prompt selection list
+            if case .promptSelection(let text) = viewModel.state {
+                promptSelectionView(text: text)
+            }
+
+            // Prompt processing status
+            if case .promptProcessing(let promptName) = viewModel.state {
+                promptProcessingView(promptName: promptName)
+            }
         }
         .frame(width: currentWidth)
         .background(.black)
         .clipShape(NotchShape(
-            topCornerRadius: textExpanded ? 19 : 6,
-            bottomCornerRadius: textExpanded ? 24 : 14
+            topCornerRadius: isExpanded ? 19 : 6,
+            bottomCornerRadius: isExpanded ? 24 : 14
         ))
         // Blue glow that reacts to audio level
-        .shadow(color: Color(red: 0.3, green: 0.5, blue: 1.0).opacity(glowOpacity), radius: glowRadius)
+        .shadow(color: glowColor.opacity(glowOpacity), radius: glowRadius)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.3), value: textExpanded)
@@ -87,7 +131,12 @@ struct NotchIndicatorView: View {
                 }
             } else {
                 dotPulse = false
-                textExpanded = false
+                switch viewModel.state {
+                case .promptSelection, .promptProcessing:
+                    break // keep expanded
+                default:
+                    textExpanded = false
+                }
             }
         }
     }
@@ -237,6 +286,99 @@ struct NotchIndicatorView: View {
         case 38..<63: return "battery.50percent"
         case 63..<88: return "battery.75percent"
         default: return "battery.100percent"
+        }
+    }
+
+    // MARK: - Prompt Selection
+
+    @ViewBuilder
+    private func promptSelectionView(text: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Text preview
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.5))
+                .lineLimit(2)
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            Divider()
+                .background(.white.opacity(0.15))
+
+            // Prompt action list
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    ForEach(Array(viewModel.availablePromptActions.enumerated()), id: \.element.id) { index, action in
+                        promptActionRow(action: action, index: index)
+                    }
+                }
+            }
+            .frame(maxHeight: 200)
+
+            Divider()
+                .background(.white.opacity(0.15))
+
+            // Dismiss hint
+            Text("Esc")
+                .font(.system(size: 9, weight: .medium))
+                .foregroundStyle(.white.opacity(0.3))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 6)
+        }
+    }
+
+    @ViewBuilder
+    private func promptActionRow(action: PromptAction, index: Int) -> some View {
+        let isSelected = index == viewModel.selectedPromptIndex
+
+        HStack(spacing: 8) {
+            Image(systemName: action.icon)
+                .font(.system(size: 12))
+                .frame(width: 16)
+
+            Text(action.name)
+                .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+
+            Spacer()
+
+            if index < 9 {
+                Text("\(index + 1)")
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.3))
+            }
+        }
+        .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.7))
+        .padding(.horizontal, 20)
+        .padding(.vertical, 6)
+        .background(isSelected ? Color.white.opacity(0.1) : Color.clear)
+        .contentShape(Rectangle())
+        .onHover { hovering in
+            if hovering {
+                viewModel.selectedPromptIndex = index
+            }
+        }
+        .onTapGesture {
+            viewModel.selectPromptAction(action)
+        }
+    }
+
+    // MARK: - Prompt Processing
+
+    @ViewBuilder
+    private func promptProcessingView(promptName: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                ProgressView()
+                    .controlSize(.mini)
+                    .tint(.white)
+                Text(promptName + "...")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.7))
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 12)
         }
     }
 
