@@ -623,6 +623,22 @@ final class DictationViewModel: ObservableObject {
         resetDictationState()
     }
 
+    func triggerStandalonePromptSelection() {
+        guard state == .idle else { return }
+
+        // Try to get selected text, fall back to clipboard
+        let text: String
+        if let selected = textInsertionService.getSelectedText(), !selected.isEmpty {
+            text = selected
+        } else if let clipboard = NSPasteboard.general.string(forType: .string), !clipboard.isEmpty {
+            text = clipboard
+        } else {
+            return // nothing to process
+        }
+
+        enterPromptSelection(with: text)
+    }
+
     private func showError(_ message: String) {
         state = .error(message)
         errorResetTask?.cancel()
