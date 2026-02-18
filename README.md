@@ -4,7 +4,7 @@
 [![macOS](https://img.shields.io/badge/macOS-15.0%2B-black.svg)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-6-orange.svg)](https://swift.org)
 
-Speech-to-text for macOS. Transcribe audio using on-device AI models or cloud APIs (Groq, OpenAI). Your voice data stays on your Mac with local models - or use cloud APIs for faster processing.
+Speech-to-text and AI text processing for macOS. Transcribe audio using on-device AI models or cloud APIs (Groq, OpenAI), then process the result with custom LLM prompts. Your voice data stays on your Mac with local models - or use cloud APIs for faster processing.
 
 <p align="center">
   <video src="https://github.com/user-attachments/assets/98e1aef9-de31-434b-aa13-cfd36c0f3155" autoplay loop muted playsinline width="700"></video>
@@ -29,9 +29,10 @@ Speech-to-text for macOS. Transcribe audio using on-device AI models or cloud AP
 
 - **On-device transcription** - All processing happens locally on your Mac
 - **Cloud transcription** - Optional Groq and OpenAI Whisper APIs for faster processing. Dictionary terms are sent as prompt hints for better recognition
-- **Five AI engines** - WhisperKit (99+ languages, streaming, translation), Parakeet TDT v3 (25 European languages, extremely fast), Apple SpeechAnalyzer (macOS 26+, no model download needed), Groq Whisper, and OpenAI Whisper
+- **Five transcription engines** - WhisperKit (99+ languages, streaming, translation), Parakeet TDT v3 (25 European languages, extremely fast), Apple SpeechAnalyzer (macOS 26+, no model download needed), Groq Whisper, and OpenAI Whisper
 - **System-wide dictation** - Push-to-talk or toggle mode via global hotkey, auto-pastes into any app
 - **Streaming preview** - See partial transcription in real-time while speaking (WhisperKit)
+- **Custom prompts** - Process transcriptions (or any text) with LLM prompts. 8 presets included (Translate, Formal, Summarize, Fix Grammar, Email, List, Shorter, Explain). Supports Apple Intelligence (macOS 26+), Groq, and OpenAI as LLM providers with per-prompt provider and model override. Assign prompts to profiles for automatic post-processing. Standalone Prompt Palette via global hotkey for text processing without dictation
 - **Translation** - Translate transcriptions on-device using Apple Translate
 - **File transcription** - Batch-process multiple audio/video files with drag & drop
 - **Subtitle export** - Export transcriptions as SRT or WebVTT with timestamps
@@ -198,7 +199,7 @@ Profiles let you configure transcription settings per application or website. Fo
 - **github.com** - English language (matches in any browser)
 - **docs.google.com** - German language, translate to English
 
-Create profiles in Settings > Profiles. Assign apps and/or URL patterns, set language/task/engine overrides, and adjust priority. URL patterns support subdomain matching - e.g. `google.com` also matches `docs.google.com`. The domain autocomplete suggests domains from your transcription history.
+Create profiles in Settings > Profiles. Assign apps and/or URL patterns, set language/task/engine overrides, assign a custom prompt for automatic post-processing, and adjust priority. URL patterns support subdomain matching - e.g. `google.com` also matches `docs.google.com`. The domain autocomplete suggests domains from your transcription history.
 
 When you start dictating, TypeWhisper matches the active app and browser URL against your profiles with the following priority:
 1. **App + URL match** - highest specificity (e.g. Chrome + github.com)
@@ -219,6 +220,7 @@ TypeWhisper/
 ├── Services/
 │   ├── Engine/             # WhisperEngine, ParakeetEngine, SpeechAnalyzerEngine, TranscriptionEngine protocol
 │   ├── Cloud/              # CloudTranscriptionEngine, GroqEngine, OpenAIEngine
+│   ├── LLM/               # LLM providers (Apple Intelligence, Groq, OpenAI) for custom prompts
 │   ├── HTTPServer/         # Local REST API (HTTPServer, APIRouter, APIHandlers)
 │   ├── SubtitleExporter    # SRT/VTT export
 │   ├── ModelManagerService # Model download, loading, transcription dispatch
@@ -230,6 +232,8 @@ TypeWhisper/
 │   ├── HistoryService      # Transcription history persistence (SwiftData)
 │   ├── DictionaryService   # Custom term corrections
 │   ├── SnippetService      # Text snippets with placeholders
+│   ├── PromptActionService # Custom prompt management (SwiftData)
+│   ├── PromptProcessingService # LLM orchestration for prompt execution
 │   ├── TranslationService  # On-device translation via Apple Translate
 │   ├── MediaPlaybackService # Pause/resume media during recording
 │   └── SoundService        # Audio feedback for recording events
