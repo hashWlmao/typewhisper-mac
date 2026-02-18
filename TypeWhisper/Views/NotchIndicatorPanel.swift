@@ -30,8 +30,7 @@ class NotchIndicatorPanel: NSPanel {
     private static let panelHeight: CGFloat = 200
 
     private let notchGeometry = NotchGeometry()
-    private var stateObservation: AnyCancellable?
-    private var visibilityObservation: AnyCancellable?
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         super.init(
@@ -56,23 +55,41 @@ class NotchIndicatorPanel: NSPanel {
         contentView = hostingView
     }
 
-    override var canBecomeKey: Bool { false }
+    override var canBecomeKey: Bool {
+        if case .promptSelection = DictationViewModel.shared.state { return true }
+        return false
+    }
     override var canBecomeMain: Bool { false }
 
     func startObserving() {
         let vm = DictationViewModel.shared
 
-        stateObservation = vm.$state
+        vm.$state
             .receive(on: DispatchQueue.main)
             .sink { [weak self] state in
                 self?.updateVisibility(state: state, vm: vm)
             }
+            .store(in: &cancellables)
 
-        visibilityObservation = vm.$notchIndicatorVisibility
+        vm.$notchIndicatorVisibility
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateVisibility(state: vm.state, vm: vm)
             }
+            .store(in: &cancellables)
+
+        vm.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self else { return }
+                if case .promptSelection = state {
+                    self.ignoresMouseEvents = false
+                    self.makeKeyAndOrderFront(nil)
+                } else {
+                    self.ignoresMouseEvents = true
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func updateVisibility(state: DictationViewModel.State, vm: DictationViewModel) {
@@ -88,6 +105,34 @@ class NotchIndicatorPanel: NSPanel {
             }
         case .never:
             dismiss()
+        }
+    }
+
+    override func keyDown(with event: NSEvent) {
+        let vm = DictationViewModel.shared
+        guard case .promptSelection = vm.state else {
+            super.keyDown(with: event)
+            return
+        }
+
+        switch event.keyCode {
+        case 53: // Escape
+            vm.dismissPromptSelection()
+        case 36: // Enter/Return
+            vm.confirmPromptSelection()
+        case 126: // Arrow Up
+            vm.movePromptSelection(by: -1)
+        case 125: // Arrow Down
+            vm.movePromptSelection(by: 1)
+        default:
+            // Check for digit keys 1-9
+            if let characters = event.charactersIgnoringModifiers,
+               let digit = characters.first?.wholeNumberValue,
+               digit >= 1, digit <= 9 {
+                vm.selectPromptByIndex(digit - 1)
+            } else {
+                super.keyDown(with: event)
+            }
         }
     }
 
