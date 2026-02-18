@@ -1,0 +1,326 @@
+import SwiftUI
+import AppKit
+
+// MARK: - SwiftUI View
+
+struct PromptPaletteContentView: View {
+    let actions: [PromptAction]
+    let onSelect: (PromptAction) -> Void
+    let onDismiss: () -> Void
+
+    @State private var searchText = ""
+    @State private var selectedIndex = 0
+
+    private var filteredActions: [PromptAction] {
+        if searchText.isEmpty {
+            return actions
+        }
+        return actions.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Search field
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+
+                TextField(String(localized: "Search prompts..."), text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 15))
+                    .onSubmit {
+                        if let action = filteredActions[safe: selectedIndex] {
+                            onSelect(action)
+                        }
+                    }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+
+            Divider()
+
+            // Actions list
+            if filteredActions.isEmpty {
+                VStack(spacing: 8) {
+                    Text(String(localized: "No matching prompts"))
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 2) {
+                            ForEach(Array(filteredActions.enumerated()), id: \.element.id) { index, action in
+                                PromptPaletteRow(
+                                    action: action,
+                                    isSelected: index == selectedIndex
+                                )
+                                .id(index)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    onSelect(action)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .padding(.horizontal, 6)
+                    }
+                    .onChange(of: selectedIndex) { _, newValue in
+                        proxy.scrollTo(newValue, anchor: .center)
+                    }
+                }
+            }
+        }
+        .frame(width: 380, height: 400)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
+        .onKeyPress(.upArrow) {
+            if selectedIndex > 0 {
+                selectedIndex -= 1
+            }
+            return .handled
+        }
+        .onKeyPress(.downArrow) {
+            if selectedIndex < filteredActions.count - 1 {
+                selectedIndex += 1
+            }
+            return .handled
+        }
+        .onKeyPress(.escape) {
+            onDismiss()
+            return .handled
+        }
+        .onChange(of: searchText) { _, _ in
+            selectedIndex = 0
+        }
+    }
+}
+
+private struct PromptPaletteRow: View {
+    let action: PromptAction
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: action.icon)
+                .font(.system(size: 14))
+                .foregroundColor(isSelected ? .white : .accentColor)
+                .frame(width: 24, height: 24)
+
+            Text(action.name)
+                .font(.system(size: 13))
+                .foregroundColor(isSelected ? .white : .primary)
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isSelected ? Color.accentColor : Color.clear)
+        )
+    }
+}
+
+// MARK: - NSPanel
+
+class PromptPalettePanel: NSPanel {
+    init() {
+        super.init(
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 300),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+
+        self.level = .floating
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        self.isOpaque = false
+        self.backgroundColor = .clear
+        self.hasShadow = false
+        self.isMovableByWindowBackground = false
+    }
+
+    override var canBecomeKey: Bool { true }
+
+    func positionOnActiveScreen() {
+        let screen = activeScreen() ?? NSScreen.main ?? NSScreen.screens.first
+        guard let screen = screen else { return }
+
+        let screenFrame = screen.visibleFrame
+        let x = screenFrame.midX - frame.width / 2
+        let y = screenFrame.midY + 60
+
+        setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    private func activeScreen() -> NSScreen? {
+        let mouseLocation = NSEvent.mouseLocation
+        for screen in NSScreen.screens {
+            if screen.frame.contains(mouseLocation) {
+                return screen
+            }
+        }
+        return nil
+    }
+}
+
+// MARK: - Controller
+
+@MainActor
+class PromptPaletteController {
+    private var panel: PromptPalettePanel?
+    private var hostingView: NSHostingView<PromptPaletteContentView>?
+    private var onActionSelected: ((PromptAction) -> Void)?
+    private var localClickMonitor: Any?
+    private var globalClickMonitor: Any?
+
+    func show(actions: [PromptAction], onSelect: @escaping (PromptAction) -> Void) {
+        hide()
+
+        let enabledActions = actions.filter { $0.isEnabled }
+        guard !enabledActions.isEmpty else { return }
+
+        self.onActionSelected = onSelect
+
+        let contentView = PromptPaletteContentView(
+            actions: enabledActions,
+            onSelect: { [weak self] action in
+                self?.hide()
+                onSelect(action)
+            },
+            onDismiss: { [weak self] in
+                self?.hide()
+            }
+        )
+
+        let hosting = NSHostingView(rootView: contentView)
+        hosting.translatesAutoresizingMaskIntoConstraints = true
+        hostingView = hosting
+
+        let panelSize = NSSize(width: 380, height: 400)
+
+        let palettePanel = PromptPalettePanel()
+        palettePanel.contentView = hosting
+        hosting.frame = NSRect(origin: .zero, size: panelSize)
+        palettePanel.setContentSize(panelSize)
+        palettePanel.positionOnActiveScreen()
+
+        panel = palettePanel
+        palettePanel.makeKeyAndOrderFront(nil)
+
+        localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: .leftMouseDown) { [weak self] event in
+            if let panel = self?.panel, !panel.frame.contains(NSEvent.mouseLocation) {
+                self?.hide()
+            }
+            return event
+        }
+        globalClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { [weak self] _ in
+            self?.hide()
+        }
+    }
+
+    func hide() {
+        if let monitor = localClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            localClickMonitor = nil
+        }
+        if let monitor = globalClickMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalClickMonitor = nil
+        }
+        panel?.orderOut(nil)
+        panel = nil
+        hostingView = nil
+        onActionSelected = nil
+    }
+
+    var isVisible: Bool {
+        panel?.isVisible ?? false
+    }
+
+    // MARK: - Toast
+
+    private var toastPanel: NSPanel?
+    private var toastWorkItem: DispatchWorkItem?
+
+    func showToast(message: String, icon: String = "text.cursor") {
+        dismissToast()
+
+        let toastView = PromptPaletteToastView(message: message, icon: icon)
+        let hosting = NSHostingView(rootView: toastView)
+        hosting.translatesAutoresizingMaskIntoConstraints = true
+        let toastSize = hosting.fittingSize
+
+        let toast = PromptPalettePanel()
+        toast.contentView = hosting
+        hosting.frame = NSRect(origin: .zero, size: toastSize)
+        toast.setContentSize(toastSize)
+
+        let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) })
+            ?? NSScreen.main ?? NSScreen.screens.first
+        if let screen {
+            let screenFrame = screen.visibleFrame
+            let x = screenFrame.midX - hosting.fittingSize.width / 2
+            let y = screenFrame.midY + 80
+            toast.setFrameOrigin(NSPoint(x: x, y: y))
+        }
+        toast.makeKeyAndOrderFront(nil)
+
+        toastPanel = toast
+
+        let work = DispatchWorkItem { [weak self] in
+            self?.dismissToast()
+        }
+        toastWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: work)
+    }
+
+    private func dismissToast() {
+        toastWorkItem?.cancel()
+        toastWorkItem = nil
+        toastPanel?.orderOut(nil)
+        toastPanel = nil
+    }
+}
+
+// MARK: - Toast View
+
+struct PromptPaletteToastView: View {
+    let message: String
+    let icon: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+            Text(message)
+                .font(.system(size: 13))
+                .foregroundColor(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+    }
+}
+
+// MARK: - Array Extension
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        indices.contains(index) ? self[index] : nil
+    }
+}

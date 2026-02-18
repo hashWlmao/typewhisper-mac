@@ -310,6 +310,19 @@ private struct ProfileEditorSheet: View {
                     Text(String(localized: "When enabled, always simulates Cmd+V to paste text, even if no text field is detected. Useful for terminal emulators."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    // Prompt action override
+                    Picker(String(localized: "Prompt"), selection: $viewModel.editorPromptActionId) {
+                        Text(String(localized: "None")).tag(nil as String?)
+                        Divider()
+                        ForEach(PromptActionsViewModel.shared.promptActions.filter(\.isEnabled)) { action in
+                            Label(action.name, systemImage: action.icon).tag(action.id.uuidString as String?)
+                        }
+                    }
+
+                    Text(String(localized: "When a prompt is assigned, dictated text will be processed by the LLM before insertion. This replaces translation."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
 
                 Section(String(localized: "Priority")) {

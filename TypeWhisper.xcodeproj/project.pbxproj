@@ -92,6 +92,15 @@
 		AA00000000000000000106 /* OutputFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000106 /* OutputFormatter.swift */; };
 		AA00000000000000000107 /* typewhisper-cli in CopyFiles */ = {isa = PBXBuildFile; fileRef = DD00000000000000000098 /* typewhisper-cli */; };
 		AA00000000000000000108 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000109 /* PrivacyInfo.xcprivacy */; };
+		AA00000000000000000110 /* PromptAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000110 /* PromptAction.swift */; };
+		AA00000000000000000111 /* PromptActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000111 /* PromptActionService.swift */; };
+		AA00000000000000000112 /* LLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000112 /* LLMProvider.swift */; };
+		AA00000000000000000113 /* FoundationModelsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000113 /* FoundationModelsProvider.swift */; };
+		AA00000000000000000114 /* CloudLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000114 /* CloudLLMProvider.swift */; };
+		AA00000000000000000115 /* PromptProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000115 /* PromptProcessingService.swift */; };
+		AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000116 /* PromptActionsViewModel.swift */; };
+		AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000117 /* PromptActionsSettingsView.swift */; };
+		AA00000000000000000118 /* PromptPalettePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000118 /* PromptPalettePanel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -181,6 +190,15 @@
 		BB00000000000000000107 /* TypeWhisper.AppStore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypeWhisper.AppStore.entitlements; sourceTree = "<group>"; };
 		BB00000000000000000108 /* Info.AppStore.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.AppStore.plist; sourceTree = "<group>"; };
 		BB00000000000000000109 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		BB00000000000000000110 /* PromptAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptAction.swift; sourceTree = "<group>"; };
+		BB00000000000000000111 /* PromptActionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionService.swift; sourceTree = "<group>"; };
+		BB00000000000000000112 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
+		BB00000000000000000113 /* FoundationModelsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsProvider.swift; sourceTree = "<group>"; };
+		BB00000000000000000114 /* CloudLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudLLMProvider.swift; sourceTree = "<group>"; };
+		BB00000000000000000115 /* PromptProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptProcessingService.swift; sourceTree = "<group>"; };
+		BB00000000000000000116 /* PromptActionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionsViewModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000117 /* PromptActionsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionsSettingsView.swift; sourceTree = "<group>"; };
+		BB00000000000000000118 /* PromptPalettePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptPalettePanel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +299,7 @@
 				BB00000000000000000078 /* TermPack.swift */,
 				BB00000000000000000080 /* Snippet.swift */,
 				BB00000000000000000100 /* CloudModelInfo.swift */,
+				BB00000000000000000110 /* PromptAction.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -290,6 +309,7 @@
 			children = (
 				CC00000000000000000006 /* Engine */,
 				CC00000000000000000012 /* Cloud */,
+				CC00000000000000000014 /* LLM */,
 				CC00000000000000000010 /* HTTPServer */,
 				BB00000000000000000009 /* ModelManagerService.swift */,
 				BB00000000000000000010 /* AudioFileService.swift */,
@@ -307,6 +327,8 @@
 				BB00000000000000000081 /* SnippetService.swift */,
 				BB00000000000000000086 /* SoundService.swift */,
 				BB00000000000000000102 /* AudioDeviceService.swift */,
+				BB00000000000000000111 /* PromptActionService.swift */,
+				BB00000000000000000115 /* PromptProcessingService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -322,6 +344,16 @@
 			path = Engine;
 			sourceTree = "<group>";
 		};
+		CC00000000000000000014 /* LLM */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000000000000000112 /* LLMProvider.swift */,
+				BB00000000000000000113 /* FoundationModelsProvider.swift */,
+				BB00000000000000000114 /* CloudLLMProvider.swift */,
+			);
+			path = LLM;
+			sourceTree = "<group>";
+		};
 		CC00000000000000000007 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -335,6 +367,7 @@
 				BB00000000000000000082 /* DictionaryViewModel.swift */,
 				BB00000000000000000084 /* SnippetsViewModel.swift */,
 				BB00000000000000000090 /* HomeViewModel.swift */,
+				BB00000000000000000116 /* PromptActionsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -359,6 +392,8 @@
 				BB00000000000000000092 /* SetupWizardView.swift */,
 				BB00000000000000000094 /* AudioWaveformView.swift */,
 				BB00000000000000000101 /* CloudProviderSection.swift */,
+				BB00000000000000000117 /* PromptActionsSettingsView.swift */,
+				BB00000000000000000118 /* PromptPalettePanel.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -633,6 +668,15 @@
 				AA00000000000000000100 /* CloudModelInfo.swift in Sources */,
 				AA00000000000000000101 /* CloudProviderSection.swift in Sources */,
 				AA00000000000000000102 /* AudioDeviceService.swift in Sources */,
+				AA00000000000000000110 /* PromptAction.swift in Sources */,
+				AA00000000000000000111 /* PromptActionService.swift in Sources */,
+				AA00000000000000000112 /* LLMProvider.swift in Sources */,
+				AA00000000000000000113 /* FoundationModelsProvider.swift in Sources */,
+				AA00000000000000000114 /* CloudLLMProvider.swift in Sources */,
+				AA00000000000000000115 /* PromptProcessingService.swift in Sources */,
+				AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */,
+				AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */,
+				AA00000000000000000118 /* PromptPalettePanel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -3,7 +3,7 @@ import KeyboardShortcuts
 
 enum SettingsTab: Hashable {
     case home, general, models, dictation
-    case fileTranscription, history, dictionary, snippets, profiles, advanced
+    case fileTranscription, history, dictionary, snippets, profiles, prompts, advanced
 }
 
 struct SettingsView: View {
@@ -64,6 +64,9 @@ private struct SettingsExtraTabs: TabContent {
         Tab(String(localized: "Profiles"), systemImage: "person.crop.rectangle.stack", value: SettingsTab.profiles) {
             ProfilesSettingsView()
         }
+        Tab(String(localized: "Prompts"), systemImage: "sparkles", value: SettingsTab.prompts) {
+            PromptActionsSettingsView()
+        }
         Tab(String(localized: "Advanced"), systemImage: "gearshape.2", value: SettingsTab.advanced) {
             AdvancedSettingsView()
         }
@@ -103,6 +106,14 @@ struct DictationSettingsView: View {
                 }
 
                 Text(String(localized: "Quick press: toggle mode (press again to stop). Hold 1+ seconds: push-to-talk (release to stop)."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section(String(localized: "Prompt Palette")) {
+                KeyboardShortcuts.Recorder(String(localized: "Palette shortcut"), name: .togglePromptPalette)
+
+                Text(String(localized: "Select text in any app, press the shortcut, and choose a prompt to process the text."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

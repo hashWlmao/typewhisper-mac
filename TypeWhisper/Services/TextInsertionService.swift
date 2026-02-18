@@ -160,6 +160,48 @@ enum InsertionResult {
         return trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") || trimmed.hasPrefix("file://")
     }
 
+    func getSelectedText() -> String? {
+        guard isAccessibilityGranted else { return nil }
+
+        // Save current clipboard
+        let pasteboard = NSPasteboard.general
+        let savedContents = pasteboard.pasteboardItems?.compactMap { item -> (NSPasteboard.PasteboardType, Data)? in
+            guard let type = item.types.first, let data = item.data(forType: type) else { return nil }
+            return (type, data)
+        }
+
+        // Simulate Cmd+C to copy selected text
+        pasteboard.clearContents()
+        simulateCopy()
+
+        // Brief wait for clipboard to update
+        usleep(100_000) // 100ms
+
+        let selectedText = pasteboard.string(forType: .string)
+
+        // Restore previous clipboard
+        pasteboard.clearContents()
+        if let savedContents {
+            for (type, data) in savedContents {
+                pasteboard.setData(data, forType: type)
+            }
+        }
+
+        guard let selectedText, !selectedText.isEmpty else { return nil }
+        return selectedText
+    }
+
+    private func simulateCopy() {
+        // Key code 0x08 = C
+        let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x08, keyDown: true)
+        keyDown?.flags = .maskCommand
+        keyDown?.post(tap: .cgSessionEventTap)
+
+        let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x08, keyDown: false)
+        keyUp?.flags = .maskCommand
+        keyUp?.post(tap: .cgSessionEventTap)
+    }
+
     func insertText(_ text: String, forcePaste: Bool = false) async throws -> InsertionResult {
         guard isAccessibilityGranted else {
             throw TextInsertionError.accessibilityNotGranted

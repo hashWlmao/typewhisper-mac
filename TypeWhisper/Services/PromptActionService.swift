@@ -1,0 +1,154 @@
+import Foundation
+import SwiftData
+import Combine
+import os.log
+
+private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "PromptActionService")
+
+@MainActor
+class PromptActionService: ObservableObject {
+    private var modelContainer: ModelContainer?
+    private var modelContext: ModelContext?
+
+    @Published private(set) var promptActions: [PromptAction] = []
+
+    init() {
+        setupModelContainer()
+    }
+
+    private func setupModelContainer() {
+        let schema = Schema([PromptAction.self])
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let storeDir = appSupport.appendingPathComponent("TypeWhisper", isDirectory: true)
+        try? FileManager.default.createDirectory(at: storeDir, withIntermediateDirectories: true)
+
+        let storeURL = storeDir.appendingPathComponent("prompt-actions.store")
+        let config = ModelConfiguration(url: storeURL)
+
+        do {
+            modelContainer = try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            // Incompatible schema - delete old store and retry
+            for suffix in ["", "-wal", "-shm"] {
+                let url = storeDir.appendingPathComponent("prompt-actions.store\(suffix)")
+                try? FileManager.default.removeItem(at: url)
+            }
+            do {
+                modelContainer = try ModelContainer(for: schema, configurations: [config])
+            } catch {
+                fatalError("Failed to create prompt-actions ModelContainer after reset: \(error)")
+            }
+        }
+        modelContext = ModelContext(modelContainer!)
+        modelContext?.autosaveEnabled = true
+
+        loadActions()
+    }
+
+    func loadActions() {
+        guard let context = modelContext else { return }
+
+        do {
+            let descriptor = FetchDescriptor<PromptAction>(
+                sortBy: [SortDescriptor(\.sortOrder, order: .forward)]
+            )
+            promptActions = try context.fetch(descriptor)
+        } catch {
+            logger.error("Failed to fetch prompt actions: \(error.localizedDescription)")
+        }
+    }
+
+    func seedPresetsIfNeeded() {
+        guard let context = modelContext else { return }
+
+        let existingNames = Set(promptActions.map(\.name))
+        let newPresets = PromptAction.presets.filter { !existingNames.contains($0.name) }
+        guard !newPresets.isEmpty else { return }
+
+        for preset in newPresets {
+            context.insert(preset)
+        }
+
+        do {
+            try context.save()
+            loadActions()
+        } catch {
+            logger.error("Failed to seed presets: \(error.localizedDescription)")
+        }
+    }
+
+    func addAction(name: String, prompt: String, icon: String = "sparkles", providerType: String? = nil, cloudModel: String? = nil) {
+        guard let context = modelContext else { return }
+
+        let maxOrder = promptActions.map(\.sortOrder).max() ?? -1
+        let action = PromptAction(
+            name: name,
+            prompt: prompt,
+            icon: icon,
+            sortOrder: maxOrder + 1,
+            providerType: providerType,
+            cloudModel: cloudModel
+        )
+
+        context.insert(action)
+
+        do {
+            try context.save()
+            loadActions()
+        } catch {
+            logger.error("Failed to save prompt action: \(error.localizedDescription)")
+        }
+    }
+
+    func updateAction(_ action: PromptAction, name: String, prompt: String, icon: String, providerType: String? = nil, cloudModel: String? = nil) {
+        guard let context = modelContext else { return }
+
+        action.name = name
+        action.prompt = prompt
+        action.icon = icon
+        action.providerType = providerType
+        action.cloudModel = cloudModel
+        action.updatedAt = Date()
+
+        do {
+            try context.save()
+            loadActions()
+        } catch {
+            logger.error("Failed to update prompt action: \(error.localizedDescription)")
+        }
+    }
+
+    func deleteAction(_ action: PromptAction) {
+        guard let context = modelContext else { return }
+
+        context.delete(action)
+
+        do {
+            try context.save()
+            loadActions()
+        } catch {
+            logger.error("Failed to delete prompt action: \(error.localizedDescription)")
+        }
+    }
+
+    func toggleAction(_ action: PromptAction) {
+        guard let context = modelContext else { return }
+
+        action.isEnabled.toggle()
+
+        do {
+            try context.save()
+            loadActions()
+        } catch {
+            logger.error("Failed to toggle prompt action: \(error.localizedDescription)")
+        }
+    }
+
+    func getEnabledActions() -> [PromptAction] {
+        promptActions.filter { $0.isEnabled }
+    }
+
+    func action(byId id: String) -> PromptAction? {
+        promptActions.first { $0.id.uuidString == id }
+    }
+}

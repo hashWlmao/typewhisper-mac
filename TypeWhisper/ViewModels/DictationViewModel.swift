@@ -71,6 +71,8 @@ final class DictationViewModel: ObservableObject {
     private let snippetService: SnippetService
     private let soundService: SoundService
     private let audioDeviceService: AudioDeviceService
+    private let promptActionService: PromptActionService
+    private let promptProcessingService: PromptProcessingService
     private var matchedProfile: Profile?
     private var capturedActiveApp: (name: String?, bundleId: String?, url: String?)?
 
@@ -95,7 +97,9 @@ final class DictationViewModel: ObservableObject {
         dictionaryService: DictionaryService,
         snippetService: SnippetService,
         soundService: SoundService,
-        audioDeviceService: AudioDeviceService
+        audioDeviceService: AudioDeviceService,
+        promptActionService: PromptActionService,
+        promptProcessingService: PromptProcessingService
     ) {
         self.audioRecordingService = audioRecordingService
         self.textInsertionService = textInsertionService
@@ -111,6 +115,8 @@ final class DictationViewModel: ObservableObject {
         self.snippetService = snippetService
         self.soundService = soundService
         self.audioDeviceService = audioDeviceService
+        self.promptActionService = promptActionService
+        self.promptProcessingService = promptProcessingService
         self.whisperModeEnabled = UserDefaults.standard.bool(forKey: "whisperModeEnabled")
         self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: "audioDuckingEnabled")
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: "audioDuckingLevel") as? Double ?? 0.2
@@ -284,6 +290,11 @@ final class DictationViewModel: ObservableObject {
         matchedProfile?.cloudModelOverride
     }
 
+    private var effectivePromptAction: PromptAction? {
+        guard let actionId = matchedProfile?.promptActionId else { return nil }
+        return promptActionService.action(byId: actionId)
+    }
+
     private func stopDictation() {
         guard state == .recording else { return }
 
@@ -338,7 +349,15 @@ final class DictationViewModel: ObservableObject {
                     return
                 }
 
-                if let targetCode = translationTarget {
+                // Prompt processing replaces translation when active
+                if let promptAction = self.effectivePromptAction {
+                    text = try await promptProcessingService.process(
+                        prompt: promptAction.prompt,
+                        text: text,
+                        providerOverride: promptAction.providerType.flatMap { LLMProviderType(rawValue: $0) },
+                        cloudModelOverride: promptAction.cloudModel
+                    )
+                } else if let targetCode = translationTarget {
                     let target = Locale.Language(identifier: targetCode)
                     text = try await translationService.translate(text: text, to: target)
                 }

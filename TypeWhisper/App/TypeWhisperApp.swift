@@ -34,6 +34,7 @@ struct TypeWhisperApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlayPanel: DictationOverlayPanel?
     private var translationHostWindow: TranslationHostWindow?
+    private var paletteController: PromptPaletteController?
 
     #if !APPSTORE
     private lazy var updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
@@ -56,6 +57,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             translationService: ServiceContainer.shared.translationService
         )
 
+        // Prompt palette
+        let palette = PromptPaletteController()
+        paletteController = palette
+        ServiceContainer.shared.hotkeyService.onPromptPaletteToggle = { [weak palette] in
+            guard let palette else { return }
+            if palette.isVisible {
+                palette.hide()
+            } else {
+                let actions = ServiceContainer.shared.promptActionService.getEnabledActions()
+                palette.show(actions: actions) { action in
+                    Task { @MainActor in
+                        await Self.executePromptOnSelectedText(action: action, palette: palette)
+                    }
+                }
+            }
+        }
+
         // Observe settings window lifecycle
         NotificationCenter.default.addObserver(
             self,
@@ -69,6 +87,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             name: NSWindow.willCloseNotification,
             object: nil
         )
+    }
+
+    @MainActor private static func executePromptOnSelectedText(action: PromptAction, palette: PromptPaletteController) async {
+        let container = ServiceContainer.shared
+        guard let selectedText = container.textInsertionService.getSelectedText() else {
+            palette.showToast(message: String(localized: "No text selected"), icon: "exclamationmark.triangle")
+            return
+        }
+
+        palette.showToast(message: String(localized: "Processing..."), icon: "sparkles")
+
+        do {
+            let result = try await container.promptProcessingService.process(
+                prompt: action.prompt,
+                text: selectedText,
+                providerOverride: action.providerType.flatMap { LLMProviderType(rawValue: $0) },
+                cloudModelOverride: action.cloudModel
+            )
+            _ = try await container.textInsertionService.insertText(result)
+            palette.showToast(message: String(localized: "Done"), icon: "checkmark.circle")
+        } catch {
+            palette.showToast(message: error.localizedDescription, icon: "exclamationmark.triangle")
+        }
     }
 
     @MainActor private func isSettingsWindow(_ window: NSWindow) -> Bool {

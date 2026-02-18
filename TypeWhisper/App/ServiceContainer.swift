@@ -21,6 +21,8 @@ final class ServiceContainer: ObservableObject {
     let snippetService: SnippetService
     let soundService: SoundService
     let audioDeviceService: AudioDeviceService
+    let promptActionService: PromptActionService
+    let promptProcessingService: PromptProcessingService
 
     // HTTP API
     let httpServer: HTTPServer
@@ -36,6 +38,7 @@ final class ServiceContainer: ObservableObject {
     let dictionaryViewModel: DictionaryViewModel
     let snippetsViewModel: SnippetsViewModel
     let homeViewModel: HomeViewModel
+    let promptActionsViewModel: PromptActionsViewModel
 
     private init() {
         // Services
@@ -54,6 +57,8 @@ final class ServiceContainer: ObservableObject {
         snippetService = SnippetService()
         soundService = SoundService()
         audioDeviceService = AudioDeviceService()
+        promptActionService = PromptActionService()
+        promptProcessingService = PromptProcessingService()
 
         // HTTP API
         let router = APIRouter()
@@ -83,7 +88,9 @@ final class ServiceContainer: ObservableObject {
             dictionaryService: dictionaryService,
             snippetService: snippetService,
             soundService: soundService,
-            audioDeviceService: audioDeviceService
+            audioDeviceService: audioDeviceService,
+            promptActionService: promptActionService,
+            promptProcessingService: promptProcessingService
         )
         historyViewModel = HistoryViewModel(
             historyService: historyService,
@@ -98,6 +105,10 @@ final class ServiceContainer: ObservableObject {
         dictionaryViewModel = DictionaryViewModel(dictionaryService: dictionaryService)
         snippetsViewModel = SnippetsViewModel(snippetService: snippetService)
         homeViewModel = HomeViewModel(historyService: historyService)
+        promptActionsViewModel = PromptActionsViewModel(
+            promptActionService: promptActionService,
+            promptProcessingService: promptProcessingService
+        )
 
         // Set shared references
         ModelManagerViewModel._shared = modelManagerViewModel
@@ -110,6 +121,7 @@ final class ServiceContainer: ObservableObject {
         DictionaryViewModel._shared = dictionaryViewModel
         SnippetsViewModel._shared = snippetsViewModel
         HomeViewModel._shared = homeViewModel
+        PromptActionsViewModel._shared = promptActionsViewModel
     }
 
     func initialize() async {

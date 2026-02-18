@@ -5,6 +5,7 @@ import Combine
 
 extension KeyboardShortcuts.Name {
     static let toggleDictation = Self("toggleDictation")
+    static let togglePromptPalette = Self("togglePromptPalette")
 }
 
 /// Manages global hotkey for dictation with push-to-talk / toggle dual-mode.
@@ -20,6 +21,7 @@ final class HotkeyService: ObservableObject {
 
     var onDictationStart: (() -> Void)?
     var onDictationStop: (() -> Void)?
+    var onPromptPaletteToggle: (() -> Void)?
 
     private var keyDownTime: Date?
     private var isActive = false
@@ -55,6 +57,13 @@ final class HotkeyService: ObservableObject {
         singleKeyCode = UInt16(UserDefaults.standard.integer(forKey: "singleKeyCode"))
         singleKeyIsFn = UserDefaults.standard.bool(forKey: "singleKeyIsFn")
         singleKeyIsModifier = UserDefaults.standard.bool(forKey: "singleKeyIsModifier")
+
+        // Prompt palette hotkey
+        KeyboardShortcuts.onKeyDown(for: .togglePromptPalette) { [weak self] in
+            Task { @MainActor [weak self] in
+                self?.onPromptPaletteToggle?()
+            }
+        }
 
         if !singleKeyMode {
             KeyboardShortcuts.onKeyDown(for: .toggleDictation) { [weak self] in
