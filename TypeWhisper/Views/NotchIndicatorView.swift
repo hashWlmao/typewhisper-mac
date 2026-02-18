@@ -194,7 +194,7 @@ struct NotchIndicatorView: View {
         case .promptSelection:
             Color.clear
         case .promptProcessing:
-            if side == .leading {
+            if side == .leading, viewModel.promptResultText.isEmpty {
                 ProgressView()
                     .controlSize(.mini)
                     .tint(.white)
@@ -435,17 +435,14 @@ struct NotchIndicatorView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 14)
 
-                ScrollView(.vertical, showsIndicators: true) {
-                    Text(viewModel.promptResultText)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 24)
-                        .padding(.top, 8)
-                        .padding(.bottom, 16)
-                        .textSelection(.enabled)
-                }
-                .frame(maxHeight: 200)
+                Text(viewModel.promptResultText)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(12)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 8)
+                    .padding(.bottom, 18)
             }
         }
     }
