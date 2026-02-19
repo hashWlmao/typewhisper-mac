@@ -2,7 +2,7 @@ import SwiftUI
 
 enum SettingsTab: Hashable {
     case home, general, models, dictation
-    case fileTranscription, history, dictionary, snippets, profiles, advanced
+    case fileTranscription, history, dictionary, snippets, profiles, prompts, advanced
 }
 
 struct SettingsView: View {
@@ -63,6 +63,9 @@ private struct SettingsExtraTabs: TabContent {
         Tab(String(localized: "Profiles"), systemImage: "person.crop.rectangle.stack", value: SettingsTab.profiles) {
             ProfilesSettingsView()
         }
+        Tab(String(localized: "Prompts"), systemImage: "sparkles", value: SettingsTab.prompts) {
+            PromptActionsSettingsView()
+        }
         Tab(String(localized: "Advanced"), systemImage: "gearshape.2", value: SettingsTab.advanced) {
             AdvancedSettingsView()
         }
@@ -119,6 +122,32 @@ struct DictationSettingsView: View {
                 Text(String(localized: "Press to start, press again to stop."))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            Section(String(localized: "Prompt Palette")) {
+                HotkeyRecorderView(
+                    label: dictation.promptPaletteHotkeyLabel,
+                    title: String(localized: "Palette shortcut"),
+                    onRecord: { hotkey in
+                        if let conflict = dictation.isHotkeyAssigned(hotkey, excluding: .promptPalette) {
+                            dictation.clearHotkey(for: conflict)
+                        }
+                        dictation.setHotkey(hotkey, for: .promptPalette)
+                    },
+                    onClear: { dictation.clearHotkey(for: .promptPalette) }
+                )
+
+                Text(String(localized: "Select text in any app, press the shortcut, and choose a prompt to process the text."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack {
+                    Text(String(localized: "Display duration"))
+                    Slider(value: $dictation.promptDisplayDuration, in: 3...30, step: 1)
+                    Text("\(Int(dictation.promptDisplayDuration))s")
+                        .monospacedDigit()
+                        .frame(width: 30, alignment: .trailing)
+                }
             }
 
             Section(String(localized: "Permissions")) {

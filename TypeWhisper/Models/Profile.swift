@@ -16,6 +16,7 @@ final class Profile {
     var engineOverride: String?
     var cloudModelOverride: String?
     var alwaysPaste: Bool?
+    var promptActionId: String?
     var createdAt: Date
     var updatedAt: Date
 
@@ -33,6 +34,7 @@ final class Profile {
         engineOverride: String? = nil,
         cloudModelOverride: String? = nil,
         alwaysPaste: Bool? = nil,
+        promptActionId: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -49,6 +51,7 @@ final class Profile {
         self.engineOverride = engineOverride
         self.cloudModelOverride = cloudModelOverride
         self.alwaysPaste = alwaysPaste
+        self.promptActionId = promptActionId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }

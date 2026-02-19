@@ -26,7 +26,6 @@
 		AA00000000000000000017 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000017 /* SettingsView.swift */; };
 		AA00000000000000000020 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000001 /* WhisperKit */; };
 		AA00000000000000000021 /* FluidAudio in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000002 /* FluidAudio */; };
-		AA00000000000000000022 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000003 /* KeyboardShortcuts */; };
 		AA00000000000000000030 /* AudioRecordingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000030 /* AudioRecordingService.swift */; };
 		AA00000000000000000031 /* HotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000031 /* HotkeyService.swift */; };
 		AA00000000000000000032 /* TextInsertionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000032 /* TextInsertionService.swift */; };
@@ -92,10 +91,19 @@
 		AA00000000000000000106 /* OutputFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000106 /* OutputFormatter.swift */; };
 		AA00000000000000000107 /* typewhisper-cli in CopyFiles */ = {isa = PBXBuildFile; fileRef = DD00000000000000000098 /* typewhisper-cli */; };
 		AA00000000000000000108 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000109 /* PrivacyInfo.xcprivacy */; };
-		AA00000000000000000110 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000110 /* UserDefaultsKeys.swift */; };
-		AA00000000000000000111 /* NotchIndicatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000111 /* NotchIndicatorPanel.swift */; };
-		AA00000000000000000112 /* NotchIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000112 /* NotchIndicatorView.swift */; };
-		AA00000000000000000113 /* NotchShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000113 /* NotchShape.swift */; };
+		AA00000000000000000110 /* PromptAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000110 /* PromptAction.swift */; };
+		AA00000000000000000111 /* PromptActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000111 /* PromptActionService.swift */; };
+		AA00000000000000000112 /* LLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000112 /* LLMProvider.swift */; };
+		AA00000000000000000113 /* FoundationModelsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000113 /* FoundationModelsProvider.swift */; };
+		AA00000000000000000114 /* CloudLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000114 /* CloudLLMProvider.swift */; };
+		AA00000000000000000115 /* PromptProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000115 /* PromptProcessingService.swift */; };
+		AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000116 /* PromptActionsViewModel.swift */; };
+		AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000117 /* PromptActionsSettingsView.swift */; };
+		AA00000000000000000118 /* PromptPalettePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000118 /* PromptPalettePanel.swift */; };
+		AA00000000000000000119 /* UserDefaultsKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000119 /* UserDefaultsKeys.swift */; };
+		AA00000000000000000120 /* NotchIndicatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000120 /* NotchIndicatorPanel.swift */; };
+		AA00000000000000000121 /* NotchIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000121 /* NotchIndicatorView.swift */; };
+		AA00000000000000000122 /* NotchShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000122 /* NotchShape.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -185,10 +193,19 @@
 		BB00000000000000000107 /* TypeWhisper.AppStore.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypeWhisper.AppStore.entitlements; sourceTree = "<group>"; };
 		BB00000000000000000108 /* Info.AppStore.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.AppStore.plist; sourceTree = "<group>"; };
 		BB00000000000000000109 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		BB00000000000000000110 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
-		BB00000000000000000111 /* NotchIndicatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIndicatorPanel.swift; sourceTree = "<group>"; };
-		BB00000000000000000112 /* NotchIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIndicatorView.swift; sourceTree = "<group>"; };
-		BB00000000000000000113 /* NotchShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchShape.swift; sourceTree = "<group>"; };
+		BB00000000000000000110 /* PromptAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptAction.swift; sourceTree = "<group>"; };
+		BB00000000000000000111 /* PromptActionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionService.swift; sourceTree = "<group>"; };
+		BB00000000000000000112 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
+		BB00000000000000000113 /* FoundationModelsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsProvider.swift; sourceTree = "<group>"; };
+		BB00000000000000000114 /* CloudLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudLLMProvider.swift; sourceTree = "<group>"; };
+		BB00000000000000000115 /* PromptProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptProcessingService.swift; sourceTree = "<group>"; };
+		BB00000000000000000116 /* PromptActionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionsViewModel.swift; sourceTree = "<group>"; };
+		BB00000000000000000117 /* PromptActionsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionsSettingsView.swift; sourceTree = "<group>"; };
+		BB00000000000000000118 /* PromptPalettePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptPalettePanel.swift; sourceTree = "<group>"; };
+		BB00000000000000000119 /* UserDefaultsKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsKeys.swift; sourceTree = "<group>"; };
+		BB00000000000000000120 /* NotchIndicatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIndicatorPanel.swift; sourceTree = "<group>"; };
+		BB00000000000000000121 /* NotchIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIndicatorView.swift; sourceTree = "<group>"; };
+		BB00000000000000000122 /* NotchShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchShape.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,7 +215,6 @@
 			files = (
 				AA00000000000000000020 /* WhisperKit in Frameworks */,
 				AA00000000000000000021 /* FluidAudio in Frameworks */,
-				AA00000000000000000022 /* KeyboardShortcuts in Frameworks */,
 				AA00000000000000000071 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -273,7 +289,7 @@
 				BB00000000000000000001 /* TypeWhisperApp.swift */,
 				BB00000000000000000002 /* ServiceContainer.swift */,
 				BB00000000000000000070 /* UpdateChecker.swift */,
-				BB00000000000000000110 /* UserDefaultsKeys.swift */,
+				BB00000000000000000119 /* UserDefaultsKeys.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -290,6 +306,7 @@
 				BB00000000000000000078 /* TermPack.swift */,
 				BB00000000000000000080 /* Snippet.swift */,
 				BB00000000000000000100 /* CloudModelInfo.swift */,
+				BB00000000000000000110 /* PromptAction.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -299,6 +316,7 @@
 			children = (
 				CC00000000000000000006 /* Engine */,
 				CC00000000000000000012 /* Cloud */,
+				CC00000000000000000014 /* LLM */,
 				CC00000000000000000010 /* HTTPServer */,
 				BB00000000000000000009 /* ModelManagerService.swift */,
 				BB00000000000000000010 /* AudioFileService.swift */,
@@ -316,6 +334,8 @@
 				BB00000000000000000081 /* SnippetService.swift */,
 				BB00000000000000000086 /* SoundService.swift */,
 				BB00000000000000000102 /* AudioDeviceService.swift */,
+				BB00000000000000000111 /* PromptActionService.swift */,
+				BB00000000000000000115 /* PromptProcessingService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -331,6 +351,16 @@
 			path = Engine;
 			sourceTree = "<group>";
 		};
+		CC00000000000000000014 /* LLM */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000000000000000112 /* LLMProvider.swift */,
+				BB00000000000000000113 /* FoundationModelsProvider.swift */,
+				BB00000000000000000114 /* CloudLLMProvider.swift */,
+			);
+			path = LLM;
+			sourceTree = "<group>";
+		};
 		CC00000000000000000007 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -344,6 +374,7 @@
 				BB00000000000000000082 /* DictionaryViewModel.swift */,
 				BB00000000000000000084 /* SnippetsViewModel.swift */,
 				BB00000000000000000090 /* HomeViewModel.swift */,
+				BB00000000000000000116 /* PromptActionsViewModel.swift */,
 			);
 			path = ViewModels;
 			sourceTree = "<group>";
@@ -368,9 +399,11 @@
 				BB00000000000000000092 /* SetupWizardView.swift */,
 				BB00000000000000000094 /* AudioWaveformView.swift */,
 				BB00000000000000000101 /* CloudProviderSection.swift */,
-				BB00000000000000000111 /* NotchIndicatorPanel.swift */,
-				BB00000000000000000112 /* NotchIndicatorView.swift */,
-				BB00000000000000000113 /* NotchShape.swift */,
+				BB00000000000000000117 /* PromptActionsSettingsView.swift */,
+				BB00000000000000000118 /* PromptPalettePanel.swift */,
+				BB00000000000000000120 /* NotchIndicatorPanel.swift */,
+				BB00000000000000000121 /* NotchIndicatorView.swift */,
+				BB00000000000000000122 /* NotchShape.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -487,7 +520,6 @@
 			packageProductDependencies = (
 				PP00000000000000000001 /* WhisperKit */,
 				PP00000000000000000002 /* FluidAudio */,
-				PP00000000000000000003 /* KeyboardShortcuts */,
 				PP00000000000000000004 /* Sparkle */,
 			);
 			productName = TypeWhisper;
@@ -541,7 +573,6 @@
 			packageReferences = (
 				RR00000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				RR00000000000000000002 /* XCRemoteSwiftPackageReference "FluidAudio" */,
-				RR00000000000000000003 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 				RR00000000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			productRefGroup = CC00000000000000000090 /* Products */;
@@ -637,10 +668,10 @@
 				AA00000000000000000092 /* SetupWizardView.swift in Sources */,
 				AA00000000000000000094 /* AudioWaveformView.swift in Sources */,
 				AA00000000000000000093 /* main.swift in Sources */,
-				AA00000000000000000110 /* UserDefaultsKeys.swift in Sources */,
-				AA00000000000000000111 /* NotchIndicatorPanel.swift in Sources */,
-				AA00000000000000000112 /* NotchIndicatorView.swift in Sources */,
-				AA00000000000000000113 /* NotchShape.swift in Sources */,
+				AA00000000000000000119 /* UserDefaultsKeys.swift in Sources */,
+				AA00000000000000000120 /* NotchIndicatorPanel.swift in Sources */,
+				AA00000000000000000121 /* NotchIndicatorView.swift in Sources */,
+				AA00000000000000000122 /* NotchShape.swift in Sources */,
 				AA00000000000000000095 /* WavEncoder.swift in Sources */,
 				AA00000000000000000096 /* KeychainService.swift in Sources */,
 				AA00000000000000000097 /* CloudTranscriptionEngine.swift in Sources */,
@@ -649,6 +680,15 @@
 				AA00000000000000000100 /* CloudModelInfo.swift in Sources */,
 				AA00000000000000000101 /* CloudProviderSection.swift in Sources */,
 				AA00000000000000000102 /* AudioDeviceService.swift in Sources */,
+				AA00000000000000000110 /* PromptAction.swift in Sources */,
+				AA00000000000000000111 /* PromptActionService.swift in Sources */,
+				AA00000000000000000112 /* LLMProvider.swift in Sources */,
+				AA00000000000000000113 /* FoundationModelsProvider.swift in Sources */,
+				AA00000000000000000114 /* CloudLLMProvider.swift in Sources */,
+				AA00000000000000000115 /* PromptProcessingService.swift in Sources */,
+				AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */,
+				AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */,
+				AA00000000000000000118 /* PromptPalettePanel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1144,14 +1184,6 @@
 				kind = branch;
 			};
 		};
-		RR00000000000000000003 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
 		RR00000000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle.git";
@@ -1172,11 +1204,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = RR00000000000000000002 /* XCRemoteSwiftPackageReference "FluidAudio" */;
 			productName = FluidAudio;
-		};
-		PP00000000000000000003 /* KeyboardShortcuts */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = RR00000000000000000003 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
-			productName = KeyboardShortcuts;
 		};
 		PP00000000000000000004 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -34,7 +34,6 @@ struct TypeWhisperApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var notchIndicatorPanel: NotchIndicatorPanel?
     private var translationHostWindow: TranslationHostWindow?
-
     #if !APPSTORE
     private lazy var updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
@@ -55,6 +54,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         translationHostWindow = TranslationHostWindow(
             translationService: ServiceContainer.shared.translationService
         )
+
+        // Prompt palette hotkey - triggers notch prompt selection
+        ServiceContainer.shared.hotkeyService.onPromptPaletteToggle = {
+            let vm = DictationViewModel.shared
+            if case .promptSelection = vm.state {
+                vm.dismissPromptSelection()
+            } else {
+                vm.triggerStandalonePromptSelection()
+            }
+        }
 
         // Observe settings window lifecycle
         NotificationCenter.default.addObserver(

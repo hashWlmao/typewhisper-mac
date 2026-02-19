@@ -18,12 +18,14 @@ enum HotkeySlotType: String, CaseIterable, Sendable {
     case hybrid
     case pushToTalk
     case toggle
+    case promptPalette
 
     var defaultsKey: String {
         switch self {
         case .hybrid: return UserDefaultsKeys.hybridHotkey
         case .pushToTalk: return UserDefaultsKeys.pttHotkey
         case .toggle: return UserDefaultsKeys.toggleHotkey
+        case .promptPalette: return UserDefaultsKeys.promptPaletteHotkey
         }
     }
 }
@@ -42,6 +44,7 @@ final class HotkeyService: ObservableObject {
 
     var onDictationStart: (() -> Void)?
     var onDictationStop: (() -> Void)?
+    var onPromptPaletteToggle: (() -> Void)?
 
     private var keyDownTime: Date?
     private var isActive = false
@@ -62,6 +65,7 @@ final class HotkeyService: ObservableObject {
         .hybrid: SlotState(),
         .pushToTalk: SlotState(),
         .toggle: SlotState(),
+        .promptPalette: SlotState(),
     ]
 
     private var globalMonitor: Any?
@@ -300,6 +304,11 @@ final class HotkeyService: ObservableObject {
     // MARK: - Key Down / Up
 
     private func handleKeyDown(slotType: HotkeySlotType) {
+        if slotType == .promptPalette {
+            onPromptPaletteToggle?()
+            return
+        }
+
         if isActive {
             // Any hotkey stops active recording
             isActive = false
@@ -339,6 +348,8 @@ final class HotkeyService: ObservableObject {
             onDictationStop?()
         case .toggle:
             break
+        case .promptPalette:
+            break // handled on keyDown only
         }
     }
 

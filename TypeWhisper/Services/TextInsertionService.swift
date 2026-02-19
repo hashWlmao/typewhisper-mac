@@ -159,7 +159,49 @@ enum InsertionResult {
         return trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") || trimmed.hasPrefix("file://")
     }
 
-    func insertText(_ text: String) async throws -> InsertionResult {
+    func getSelectedText() -> String? {
+        guard isAccessibilityGranted else { return nil }
+
+        // Save current clipboard
+        let pasteboard = NSPasteboard.general
+        let savedContents = pasteboard.pasteboardItems?.compactMap { item -> (NSPasteboard.PasteboardType, Data)? in
+            guard let type = item.types.first, let data = item.data(forType: type) else { return nil }
+            return (type, data)
+        }
+
+        // Simulate Cmd+C to copy selected text
+        pasteboard.clearContents()
+        simulateCopy()
+
+        // Brief wait for clipboard to update
+        usleep(100_000) // 100ms
+
+        let selectedText = pasteboard.string(forType: .string)
+
+        // Restore previous clipboard
+        pasteboard.clearContents()
+        if let savedContents {
+            for (type, data) in savedContents {
+                pasteboard.setData(data, forType: type)
+            }
+        }
+
+        guard let selectedText, !selectedText.isEmpty else { return nil }
+        return selectedText
+    }
+
+    private func simulateCopy() {
+        // Key code 0x08 = C
+        let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x08, keyDown: true)
+        keyDown?.flags = .maskCommand
+        keyDown?.post(tap: .cgSessionEventTap)
+
+        let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x08, keyDown: false)
+        keyUp?.flags = .maskCommand
+        keyUp?.post(tap: .cgSessionEventTap)
+    }
+
+    func insertText(_ text: String, forcePaste: Bool = false) async throws -> InsertionResult {
         guard isAccessibilityGranted else {
             throw TextInsertionError.accessibilityNotGranted
         }
@@ -191,6 +233,24 @@ enum InsertionResult {
 
         // Fallback: get position of focused element
         return elementPosition(from: axElement)
+    }
+
+    /// Checks if the currently focused UI element is a text input field.
+    func hasFocusedTextField() -> Bool {
+        guard isAccessibilityGranted else { return false }
+
+        let systemWide = AXUIElementCreateSystemWide()
+        var focusedElement: AnyObject?
+        let result = AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement)
+        guard result == .success, let element = focusedElement else { return false }
+
+        let axElement = element as! AXUIElement
+        var roleValue: AnyObject?
+        let roleResult = AXUIElementCopyAttributeValue(axElement, kAXRoleAttribute as CFString, &roleValue)
+        guard roleResult == .success, let role = roleValue as? String else { return false }
+
+        let textRoles = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField", "AXWebArea"]
+        return textRoles.contains(role)
     }
 
     private func caretRect(from element: AXUIElement) -> CGRect? {

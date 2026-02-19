@@ -15,6 +15,7 @@ enum UserDefaultsKeys {
     static let hybridHotkey = "hybridHotkey"
     static let pttHotkey = "pttHotkey"
     static let toggleHotkey = "toggleHotkey"
+    static let promptPaletteHotkey = "promptPaletteHotkey"
 
     // MARK: - Model / Engine
     static let selectedEngine = "selectedEngine"
@@ -40,6 +41,9 @@ enum UserDefaultsKeys {
 
     // MARK: - Dictionary
     static let activatedTermPacks = "activatedTermPacks"
+
+    // MARK: - Prompt Palette
+    static let promptDisplayDuration = "promptDisplayDuration"
 
     // MARK: - Notch Indicator
     static let notchIndicatorVisibility = "notchIndicatorVisibility"
