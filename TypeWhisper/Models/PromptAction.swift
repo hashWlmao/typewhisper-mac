@@ -50,60 +50,39 @@ final class PromptAction {
     static var presets: [PromptAction] {
         [
             PromptAction(
-                name: "Translate",
+                name: String(localized: "preset.translate"),
                 prompt: "Translate the following text to English. If it's already in English, translate it to German. Only return the translation, nothing else.",
                 icon: "globe",
                 isPreset: true,
                 sortOrder: 0
             ),
             PromptAction(
-                name: "Make Formal",
-                prompt: "Rewrite the following text in a more formal, professional tone. Keep the same meaning and language. Only return the rewritten text.",
-                icon: "textformat.abc",
+                name: String(localized: "preset.writeEmail"),
+                prompt: "Turn the following text into a well-structured, professional email. Respond in the same language as the input text. Only return the email text.",
+                icon: "envelope",
                 isPreset: true,
                 sortOrder: 1
             ),
             PromptAction(
-                name: "Summarize",
-                prompt: "Summarize the following text concisely. Keep the same language. Only return the summary.",
-                icon: "text.badge.minus",
+                name: String(localized: "preset.formatAsList"),
+                prompt: "Format the following text as a clean bullet-point list. Respond in the same language as the input text. Only return the formatted list.",
+                icon: "list.bullet",
                 isPreset: true,
                 sortOrder: 2
             ),
             PromptAction(
-                name: "Fix Grammar",
-                prompt: "Fix any grammar, spelling, and punctuation errors in the following text. Keep the same language and meaning. Only return the corrected text.",
-                icon: "checkmark.circle",
+                name: String(localized: "preset.actionItems"),
+                prompt: "Extract all action items, tasks, and to-dos from the following text. Format them as a checklist. Respond in the same language as the input text. Only return the checklist.",
+                icon: "checklist",
                 isPreset: true,
                 sortOrder: 3
             ),
             PromptAction(
-                name: "Write Email",
-                prompt: "Turn the following text into a well-structured, professional email. Keep the same language. Only return the email text.",
-                icon: "envelope",
+                name: String(localized: "preset.reply"),
+                prompt: "Write a concise, friendly reply to the following message. Respond in the same language as the input text. Only return the reply.",
+                icon: "arrowshape.turn.up.left",
                 isPreset: true,
                 sortOrder: 4
-            ),
-            PromptAction(
-                name: "Format as List",
-                prompt: "Format the following text as a clean bullet-point list. Keep the same language. Only return the formatted list.",
-                icon: "list.bullet",
-                isPreset: true,
-                sortOrder: 5
-            ),
-            PromptAction(
-                name: "Make Shorter",
-                prompt: "Rewrite the following text to be shorter and more concise while keeping the key information. Keep the same language. Only return the shortened text.",
-                icon: "scissors",
-                isPreset: true,
-                sortOrder: 6
-            ),
-            PromptAction(
-                name: "Explain",
-                prompt: "Explain the following text in simple, easy-to-understand terms. Keep the same language. Only return the explanation.",
-                icon: "lightbulb",
-                isPreset: true,
-                sortOrder: 7
             ),
         ]
     }
