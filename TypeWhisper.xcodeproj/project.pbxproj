@@ -30,8 +30,6 @@
 		AA00000000000000000031 /* HotkeyService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000031 /* HotkeyService.swift */; };
 		AA00000000000000000032 /* TextInsertionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000032 /* TextInsertionService.swift */; };
 		AA00000000000000000033 /* DictationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000033 /* DictationViewModel.swift */; };
-		AA00000000000000000034 /* DictationOverlayPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000034 /* DictationOverlayPanel.swift */; };
-		AA00000000000000000035 /* DictationOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000035 /* DictationOverlayView.swift */; };
 		AA00000000000000000040 /* HTTPResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000040 /* HTTPResponse.swift */; };
 		AA00000000000000000041 /* HTTPRequestParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000041 /* HTTPRequestParser.swift */; };
 		AA00000000000000000042 /* APIRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000042 /* APIRouter.swift */; };
@@ -130,8 +128,6 @@
 		BB00000000000000000031 /* HotkeyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyService.swift; sourceTree = "<group>"; };
 		BB00000000000000000032 /* TextInsertionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextInsertionService.swift; sourceTree = "<group>"; };
 		BB00000000000000000033 /* DictationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationViewModel.swift; sourceTree = "<group>"; };
-		BB00000000000000000034 /* DictationOverlayPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlayPanel.swift; sourceTree = "<group>"; };
-		BB00000000000000000035 /* DictationOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictationOverlayView.swift; sourceTree = "<group>"; };
 		BB00000000000000000040 /* HTTPResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPResponse.swift; sourceTree = "<group>"; };
 		BB00000000000000000041 /* HTTPRequestParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPRequestParser.swift; sourceTree = "<group>"; };
 		BB00000000000000000042 /* APIRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRouter.swift; sourceTree = "<group>"; };
@@ -386,8 +382,6 @@
 				BB00000000000000000015 /* ModelManagerView.swift */,
 				BB00000000000000000016 /* FileTranscriptionView.swift */,
 				BB00000000000000000017 /* SettingsView.swift */,
-				BB00000000000000000034 /* DictationOverlayPanel.swift */,
-				BB00000000000000000035 /* DictationOverlayView.swift */,
 				BB00000000000000000046 /* AdvancedSettingsView.swift */,
 				BB00000000000000000051 /* GeneralSettingsView.swift */,
 				BB00000000000000000064 /* HistoryView.swift */,
@@ -627,8 +621,6 @@
 				AA00000000000000000031 /* HotkeyService.swift in Sources */,
 				AA00000000000000000032 /* TextInsertionService.swift in Sources */,
 				AA00000000000000000033 /* DictationViewModel.swift in Sources */,
-				AA00000000000000000034 /* DictationOverlayPanel.swift in Sources */,
-				AA00000000000000000035 /* DictationOverlayView.swift in Sources */,
 				AA00000000000000000040 /* HTTPResponse.swift in Sources */,
 				AA00000000000000000041 /* HTTPRequestParser.swift in Sources */,
 				AA00000000000000000042 /* APIRouter.swift in Sources */,
