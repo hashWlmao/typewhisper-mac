@@ -44,10 +44,9 @@ final class DictationViewModel: ObservableObject {
     @Published var soundFeedbackEnabled: Bool {
         didSet { UserDefaults.standard.set(soundFeedbackEnabled, forKey: UserDefaultsKeys.soundFeedbackEnabled) }
     }
-    @Published var singleKeyMode: Bool {
-        didSet { UserDefaults.standard.set(singleKeyMode, forKey: UserDefaultsKeys.hotkeyUseSingleKey) }
-    }
-    @Published var singleKeyLabel: String
+    @Published var hybridHotkeyLabel: String
+    @Published var pttHotkeyLabel: String
+    @Published var toggleHotkeyLabel: String
     @Published var activeProfileName: String?
 
     enum OverlayPosition: String, CaseIterable {
@@ -147,13 +146,9 @@ final class DictationViewModel: ObservableObject {
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: UserDefaultsKeys.audioDuckingLevel) as? Double ?? 0.2
         self.mediaPauseEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.mediaPauseEnabled)
         self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: UserDefaultsKeys.soundFeedbackEnabled) as? Bool ?? true
-        let useSingleKey = UserDefaults.standard.bool(forKey: UserDefaultsKeys.hotkeyUseSingleKey)
-        self.singleKeyMode = useSingleKey
-        let isFn = UserDefaults.standard.bool(forKey: UserDefaultsKeys.singleKeyIsFn)
-        let code = UInt16(UserDefaults.standard.integer(forKey: UserDefaultsKeys.singleKeyCode))
-        self.singleKeyLabel = useSingleKey
-            ? HotkeyService.keyName(for: code, isFn: isFn)
-            : ""
+        self.hybridHotkeyLabel = Self.loadHotkeyLabel(for: .hybrid)
+        self.pttHotkeyLabel = Self.loadHotkeyLabel(for: .pushToTalk)
+        self.toggleHotkeyLabel = Self.loadHotkeyLabel(for: .toggle)
         self.overlayPosition = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayPosition)
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
         self.notchIndicatorVisibility = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorVisibility)
@@ -455,17 +450,35 @@ final class DictationViewModel: ObservableObject {
         pollPermissionStatus()
     }
 
-    func setSingleKey(code: UInt16, isFn: Bool) {
-        let label = HotkeyService.keyName(for: code, isFn: isFn)
-        singleKeyLabel = label
-        singleKeyMode = true
-        hotkeyService.updateSingleKey(code: code, isFn: isFn)
+    func setHotkey(_ hotkey: UnifiedHotkey, for slot: HotkeySlotType) {
+        let label = HotkeyService.displayName(for: hotkey)
+        switch slot {
+        case .hybrid: hybridHotkeyLabel = label
+        case .pushToTalk: pttHotkeyLabel = label
+        case .toggle: toggleHotkeyLabel = label
+        }
+        hotkeyService.updateHotkey(hotkey, for: slot)
     }
 
-    func disableSingleKey() {
-        singleKeyMode = false
-        singleKeyLabel = ""
-        hotkeyService.disableSingleKey()
+    func clearHotkey(for slot: HotkeySlotType) {
+        switch slot {
+        case .hybrid: hybridHotkeyLabel = ""
+        case .pushToTalk: pttHotkeyLabel = ""
+        case .toggle: toggleHotkeyLabel = ""
+        }
+        hotkeyService.clearHotkey(for: slot)
+    }
+
+    func isHotkeyAssigned(_ hotkey: UnifiedHotkey, excluding: HotkeySlotType) -> HotkeySlotType? {
+        hotkeyService.isHotkeyAssigned(hotkey, excluding: excluding)
+    }
+
+    private static func loadHotkeyLabel(for slotType: HotkeySlotType) -> String {
+        if let data = UserDefaults.standard.data(forKey: slotType.defaultsKey),
+           let hotkey = try? JSONDecoder().decode(UnifiedHotkey.self, from: data) {
+            return HotkeyService.displayName(for: hotkey)
+        }
+        return ""
     }
 
     private var permissionPollTask: Task<Void, Never>?
