@@ -10,6 +10,11 @@ final class WhisperEngine: TranscriptionEngine, @unchecked Sendable {
     private var whisperKit: WhisperKit?
     private var currentModelId: String?
 
+    static let downloadBase: URL = FileManager.default
+        .urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        .appending(component: "TypeWhisper")
+        .appending(component: "models")
+
     var supportedLanguages: [String] {
         // All 99+ languages supported by Whisper
         [
@@ -45,7 +50,10 @@ final class WhisperEngine: TranscriptionEngine, @unchecked Sendable {
 
             // Step 1: Download model with granular progress (0.05 → 0.80)
             var lastReportedProgress = 0.0
-            let modelFolder = try await WhisperKit.download(variant: model.id) { downloadProgress in
+            let modelFolder = try await WhisperKit.download(
+                variant: model.id,
+                downloadBase: Self.downloadBase
+            ) { downloadProgress in
                 let fraction = downloadProgress.fractionCompleted
                 let mapped = 0.05 + fraction * 0.75
                 guard mapped - lastReportedProgress >= 0.01 else { return }
@@ -99,6 +107,15 @@ final class WhisperEngine: TranscriptionEngine, @unchecked Sendable {
         whisperKit = nil
         currentModelId = nil
         isModelLoaded = false
+    }
+
+    func deleteModelFiles(for model: ModelInfo) {
+        let modelPath = Self.downloadBase
+            .appending(component: "argmaxinc")
+            .appending(component: "whisperkit-coreml")
+            .appending(component: model.id)
+
+        try? FileManager.default.removeItem(at: modelPath)
     }
 
     func transcribe(

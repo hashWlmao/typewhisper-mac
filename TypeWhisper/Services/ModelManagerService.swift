@@ -207,6 +207,12 @@ final class ModelManagerService: ObservableObject {
     func deleteModel(_ model: ModelInfo) {
         let engine = engine(for: model.engineType)
         engine.unloadModel()
+
+        // Delete model files from disk
+        if let whisperEngine = engine as? WhisperEngine {
+            whisperEngine.deleteModelFiles(for: model)
+        }
+
         modelStatuses[model.id] = .notDownloaded
         removeFromLoadedModels(model.id)
 
