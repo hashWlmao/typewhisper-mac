@@ -88,6 +88,22 @@ class PromptProcessingService: ObservableObject {
         }
     }
 
+    /// Validate and fix selectedProviderId and selectedCloudModel after plugins are loaded.
+    /// Called from ServiceContainer after scanAndLoadPlugins().
+    func validateSelectionAfterPluginLoad() {
+        // Normalize provider ID (e.g., "groq" -> "Groq")
+        let normalized = normalizeProviderId(selectedProviderId)
+        if normalized != selectedProviderId {
+            selectedProviderId = normalized
+        }
+
+        // Validate cloud model against available models for the selected provider
+        let models = modelsForProvider(selectedProviderId)
+        if !models.isEmpty && !models.contains(where: { $0.id == selectedCloudModel }) {
+            selectedCloudModel = models.first?.id ?? ""
+        }
+    }
+
     func process(prompt: String, text: String, providerOverride: String? = nil, cloudModelOverride: String? = nil) async throws -> String {
         let effectiveId = providerOverride ?? selectedProviderId
 

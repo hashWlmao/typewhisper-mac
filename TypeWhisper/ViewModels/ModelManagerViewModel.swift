@@ -25,6 +25,7 @@ final class ModelManagerViewModel: ObservableObject {
         self.selectedModelId = modelManager.selectedModelId
         self.selectedEngine = modelManager.selectedEngine
         self.models = ModelInfo.models(for: modelManager.selectedEngine)
+        self.modelStatuses = modelManager.modelStatuses
 
         modelManager.$selectedEngine
             .dropFirst()

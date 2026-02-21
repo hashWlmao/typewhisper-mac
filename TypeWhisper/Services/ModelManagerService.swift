@@ -104,6 +104,7 @@ final class ModelManagerService: ObservableObject {
             }
 
             modelStatuses[model.id] = .ready
+            (engine as? WhisperEngine)?.onPhaseChange = nil
             activeEngine = engine
             selectEngine(model.engineType)
             selectModel(model.id)
@@ -184,6 +185,9 @@ final class ModelManagerService: ObservableObject {
                 }
             }
             modelStatuses[model.id] = .ready
+            // Clear phase callback so WhisperKit state changes during transcription
+            // don't reset the model status from .ready back to .loading
+            (engine as? WhisperEngine)?.onPhaseChange = nil
         } catch {
             modelStatuses[model.id] = .error(error.localizedDescription)
             removeFromLoadedModels(model.id)
