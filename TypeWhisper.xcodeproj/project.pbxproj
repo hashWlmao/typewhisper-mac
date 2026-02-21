@@ -102,6 +102,16 @@
 		AA00000000000000000120 /* NotchIndicatorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000120 /* NotchIndicatorPanel.swift */; };
 		AA00000000000000000121 /* NotchIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000121 /* NotchIndicatorView.swift */; };
 		AA00000000000000000122 /* NotchShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000122 /* NotchShape.swift */; };
+		AA00000000000000000123 /* EventBus.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000123 /* EventBus.swift */; };
+		AA00000000000000000124 /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000124 /* PluginManager.swift */; };
+		AA00000000000000000125 /* HostServicesImpl.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000125 /* HostServicesImpl.swift */; };
+		AA00000000000000000126 /* PostProcessingPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000126 /* PostProcessingPipeline.swift */; };
+		AA00000000000000000127 /* PluginSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000127 /* PluginSettingsView.swift */; };
+		AA00000000000000000128 /* TypeWhisperPluginSDK in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000005 /* TypeWhisperPluginSDK */; };
+		AA00000000000000000131 /* WebhookPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000131 /* WebhookPlugin.swift */; };
+		AA00000000000000000132 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000132 /* manifest.json */; };
+		AA00000000000000000133 /* TypeWhisperPluginSDK in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000006 /* TypeWhisperPluginSDK */; };
+		AA00000000000000000134 /* TypeWhisperPluginSDK in Embed Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000005 /* TypeWhisperPluginSDK */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -202,6 +212,15 @@
 		BB00000000000000000120 /* NotchIndicatorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIndicatorPanel.swift; sourceTree = "<group>"; };
 		BB00000000000000000121 /* NotchIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchIndicatorView.swift; sourceTree = "<group>"; };
 		BB00000000000000000122 /* NotchShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchShape.swift; sourceTree = "<group>"; };
+		BB00000000000000000123 /* EventBus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBus.swift; sourceTree = "<group>"; };
+		BB00000000000000000124 /* PluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManager.swift; sourceTree = "<group>"; };
+		BB00000000000000000125 /* HostServicesImpl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HostServicesImpl.swift; sourceTree = "<group>"; };
+		BB00000000000000000126 /* PostProcessingPipeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostProcessingPipeline.swift; sourceTree = "<group>"; };
+		BB00000000000000000127 /* PluginSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginSettingsView.swift; sourceTree = "<group>"; };
+		BB00000000000000000128 /* TypeWhisperPluginSDK */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = TypeWhisperPluginSDK; sourceTree = "<group>"; };
+		BB00000000000000000131 /* WebhookPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebhookPlugin.swift; sourceTree = "<group>"; };
+		BB00000000000000000132 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		BB00000000000000000133 /* WebhookPlugin.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WebhookPlugin.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -212,6 +231,7 @@
 				AA00000000000000000020 /* WhisperKit in Frameworks */,
 				AA00000000000000000021 /* FluidAudio in Frameworks */,
 				AA00000000000000000071 /* Sparkle in Frameworks */,
+				AA00000000000000000128 /* TypeWhisperPluginSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -219,6 +239,14 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000034 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000133 /* TypeWhisperPluginSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,6 +261,17 @@
 			files = (
 				AA00000000000000000107 /* typewhisper-cli in CopyFiles */,
 			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000036 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				AA00000000000000000134 /* TypeWhisperPluginSDK in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -261,6 +300,7 @@
 			children = (
 				CC00000000000000000002 /* TypeWhisper */,
 				CC00000000000000000013 /* typewhisper-cli */,
+				CC00000000000000000015 /* WebhookPlugin */,
 				CC00000000000000000090 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -332,6 +372,10 @@
 				BB00000000000000000102 /* AudioDeviceService.swift */,
 				BB00000000000000000111 /* PromptActionService.swift */,
 				BB00000000000000000115 /* PromptProcessingService.swift */,
+				BB00000000000000000123 /* EventBus.swift */,
+				BB00000000000000000124 /* PluginManager.swift */,
+				BB00000000000000000125 /* HostServicesImpl.swift */,
+				BB00000000000000000126 /* PostProcessingPipeline.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -398,6 +442,7 @@
 				BB00000000000000000120 /* NotchIndicatorPanel.swift */,
 				BB00000000000000000121 /* NotchIndicatorView.swift */,
 				BB00000000000000000122 /* NotchShape.swift */,
+				BB00000000000000000127 /* PluginSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -467,8 +512,19 @@
 			children = (
 				DD00000000000000000098 /* typewhisper-cli */,
 				DD00000000000000000099 /* TypeWhisper.app */,
+				BB00000000000000000133 /* WebhookPlugin.bundle */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CC00000000000000000015 /* WebhookPlugin */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000000000000000131 /* WebhookPlugin.swift */,
+				BB00000000000000000132 /* manifest.json */,
+			);
+			name = WebhookPlugin;
+			path = Plugins/WebhookPlugin;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -503,6 +559,7 @@
 				FF00000000000000000001 /* Frameworks */,
 				FF00000000000000000003 /* Resources */,
 				FF00000000000000000004 /* CopyFiles */,
+				FF00000000000000000036 /* Embed Frameworks */,
 				FF00000000000000000007 /* Remove CLI for App Store */,
 			);
 			buildRules = (
@@ -515,6 +572,7 @@
 				PP00000000000000000001 /* WhisperKit */,
 				PP00000000000000000002 /* FluidAudio */,
 				PP00000000000000000004 /* Sparkle */,
+				PP00000000000000000005 /* TypeWhisperPluginSDK */,
 			);
 			productName = TypeWhisper;
 			productReference = DD00000000000000000099 /* TypeWhisper.app */;
@@ -535,6 +593,26 @@
 			productName = typewhisper;
 			productReference = DD00000000000000000098 /* typewhisper-cli */;
 			productType = "com.apple.product-type.tool";
+		};
+		DD00000000000000000003 /* WebhookPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF00000000000000000035 /* Build configuration list for PBXNativeTarget "WebhookPlugin" */;
+			buildPhases = (
+				FF00000000000000000032 /* Sources */,
+				FF00000000000000000034 /* Frameworks */,
+				FF00000000000000000033 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WebhookPlugin;
+			packageProductDependencies = (
+				PP00000000000000000006 /* TypeWhisperPluginSDK */,
+			);
+			productName = WebhookPlugin;
+			productReference = BB00000000000000000133 /* WebhookPlugin.bundle */;
+			productType = "com.apple.product-type.bundle";
 		};
 /* End PBXNativeTarget section */
 
@@ -568,6 +646,7 @@
 				RR00000000000000000001 /* XCRemoteSwiftPackageReference "WhisperKit" */,
 				RR00000000000000000002 /* XCRemoteSwiftPackageReference "FluidAudio" */,
 				RR00000000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				RR00000000000000000005 /* XCLocalSwiftPackageReference "TypeWhisperPluginSDK" */,
 			);
 			productRefGroup = CC00000000000000000090 /* Products */;
 			projectDirPath = "";
@@ -575,6 +654,7 @@
 			targets = (
 				DD00000000000000000001 /* TypeWhisper */,
 				DD00000000000000000002 /* typewhisper-cli */,
+				DD00000000000000000003 /* WebhookPlugin */,
 			);
 		};
 /* End PBXProject section */
@@ -590,6 +670,14 @@
 				AA00000000000000000088 /* transcription_success.wav in Resources */,
 				AA00000000000000000089 /* error.wav in Resources */,
 				AA00000000000000000108 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000033 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000132 /* manifest.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -681,6 +769,11 @@
 				AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */,
 				AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */,
 				AA00000000000000000118 /* PromptPalettePanel.swift in Sources */,
+				AA00000000000000000123 /* EventBus.swift in Sources */,
+				AA00000000000000000124 /* PluginManager.swift in Sources */,
+				AA00000000000000000125 /* HostServicesImpl.swift in Sources */,
+				AA00000000000000000126 /* PostProcessingPipeline.swift in Sources */,
+				AA00000000000000000127 /* PluginSettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -692,6 +785,14 @@
 				AA00000000000000000104 /* CLIClient.swift in Sources */,
 				AA00000000000000000105 /* PortDiscovery.swift in Sources */,
 				AA00000000000000000106 /* OutputFormatter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000032 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000131 /* WebhookPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1121,6 +1222,102 @@
 			};
 			name = AppStoreRelease;
 		};
+		XX00000000000000000013 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.webhook;
+				PRODUCT_NAME = WebhookPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		XX00000000000000000014 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.webhook;
+				PRODUCT_NAME = WebhookPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+		XX00000000000000000015 /* AppStoreDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.webhook;
+				PRODUCT_NAME = WebhookPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = AppStoreDebug;
+		};
+		XX00000000000000000016 /* AppStoreRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.webhook;
+				PRODUCT_NAME = WebhookPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = AppStoreRelease;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1157,6 +1354,17 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		FF00000000000000000035 /* Build configuration list for PBXNativeTarget "WebhookPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XX00000000000000000013 /* Debug */,
+				XX00000000000000000014 /* Release */,
+				XX00000000000000000015 /* AppStoreDebug */,
+				XX00000000000000000016 /* AppStoreRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1186,6 +1394,13 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		RR00000000000000000005 /* XCLocalSwiftPackageReference "TypeWhisperPluginSDK" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = TypeWhisperPluginSDK;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		PP00000000000000000001 /* WhisperKit */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -1201,6 +1416,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = RR00000000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		PP00000000000000000005 /* TypeWhisperPluginSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TypeWhisperPluginSDK;
+		};
+		PP00000000000000000006 /* TypeWhisperPluginSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TypeWhisperPluginSDK;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
