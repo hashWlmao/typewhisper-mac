@@ -137,6 +137,7 @@ final class DictationViewModel: ObservableObject {
     private var transcriptionTask: Task<Void, Never>?
     private var silenceTimer: Timer?
     private var errorResetTask: Task<Void, Never>?
+    private var insertingResetTask: Task<Void, Never>?
     private var urlResolutionTask: Task<Void, Never>?
 
     init(
@@ -280,6 +281,8 @@ final class DictationViewModel: ObservableObject {
         // Cancel any pending transcription from a previous recording
         transcriptionTask?.cancel()
         transcriptionTask = nil
+        insertingResetTask?.cancel()
+        insertingResetTask = nil
 
         // Match profile based on active app — store for reuse in stopDictation
         let activeApp = textInsertionService.captureActiveApp()
@@ -556,7 +559,8 @@ final class DictationViewModel: ObservableObject {
                 soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
 
                 state = .inserting
-                Task {
+                insertingResetTask?.cancel()
+                insertingResetTask = Task {
                     try? await Task.sleep(for: .seconds(1.5))
                     guard !Task.isCancelled else { return }
                     resetDictationState()
@@ -644,6 +648,8 @@ final class DictationViewModel: ObservableObject {
 
     private func resetDictationState() {
         errorResetTask?.cancel()
+        insertingResetTask?.cancel()
+        insertingResetTask = nil
         urlResolutionTask?.cancel()
         urlResolutionTask = nil
         state = .idle
