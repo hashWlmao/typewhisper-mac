@@ -51,7 +51,6 @@ final class ProfileService: ObservableObject {
         whisperModeOverride: Bool? = nil,
         engineOverride: String? = nil,
         cloudModelOverride: String? = nil,
-        alwaysPaste: Bool? = nil,
         promptActionId: String? = nil,
         priority: Int = 0
     ) {
@@ -66,7 +65,6 @@ final class ProfileService: ObservableObject {
             whisperModeOverride: whisperModeOverride,
             engineOverride: engineOverride,
             cloudModelOverride: cloudModelOverride,
-            alwaysPaste: alwaysPaste,
             promptActionId: promptActionId
         )
         modelContext.insert(profile)

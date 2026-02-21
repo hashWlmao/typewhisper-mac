@@ -298,16 +298,6 @@ private struct ProfileEditorSheet: View {
                         Text(String(localized: "Off")).tag(false as Bool?)
                     }
 
-                    // Always paste override
-                    Toggle(String(localized: "Always Paste"), isOn: Binding(
-                        get: { viewModel.editorAlwaysPaste == true },
-                        set: { viewModel.editorAlwaysPaste = $0 ? true : nil }
-                    ))
-
-                    Text(String(localized: "When enabled, always simulates Cmd+V to paste text, even if no text field is detected. Useful for terminal emulators."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
                     // Prompt action override
                     Picker(String(localized: "Prompt"), selection: $viewModel.editorPromptActionId) {
                         Text(String(localized: "None")).tag(nil as String?)

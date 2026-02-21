@@ -224,7 +224,7 @@ enum InsertionResult {
         return result == .success
     }
 
-    func insertText(_ text: String, forcePaste: Bool = false) async throws -> InsertionResult {
+    func insertText(_ text: String) async throws -> InsertionResult {
         guard isAccessibilityGranted else {
             throw TextInsertionError.accessibilityNotGranted
         }

@@ -429,16 +429,6 @@
         }
       }
     },
-    "Always Paste" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Immer einfügen"
-          }
-        }
-      }
-    },
     "Always visible" : {
       "localizations" : {
         "de" : {
@@ -4035,16 +4025,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wenn ein Prompt zugewiesen ist, wird diktierter Text vor dem Einfügen vom LLM verarbeitet. Dies ersetzt die Übersetzung."
-          }
-        }
-      }
-    },
-    "When enabled, always simulates Cmd+V to paste text, even if no text field is detected. Useful for terminal emulators." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wenn aktiviert, wird immer Cmd+V simuliert, auch wenn kein Textfeld erkannt wird. Nützlich für Terminal-Emulatoren."
           }
         }
       }

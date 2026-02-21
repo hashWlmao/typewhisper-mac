@@ -40,7 +40,6 @@ final class ProfilesViewModel: ObservableObject {
     @Published var editorWhisperModeOverride: Bool?
     @Published var editorEngineOverride: String?
     @Published var editorCloudModelOverride: String?
-    @Published var editorAlwaysPaste: Bool?
     @Published var editorPromptActionId: String?
     @Published var editorPriority: Int = 0
 
@@ -89,7 +88,6 @@ final class ProfilesViewModel: ObservableObject {
             whisperModeOverride: editorWhisperModeOverride,
             engineOverride: editorEngineOverride,
             cloudModelOverride: editorCloudModelOverride,
-            alwaysPaste: editorAlwaysPaste,
             promptActionId: editorPromptActionId,
             priority: editorPriority
         )
@@ -106,7 +104,6 @@ final class ProfilesViewModel: ObservableObject {
             profile.whisperModeOverride = editorWhisperModeOverride
             profile.engineOverride = editorEngineOverride
             profile.cloudModelOverride = editorCloudModelOverride
-            profile.alwaysPaste = editorAlwaysPaste
             profile.promptActionId = editorPromptActionId
             profile.priority = editorPriority
             profileService.updateProfile(profile)
@@ -137,7 +134,6 @@ final class ProfilesViewModel: ObservableObject {
         editorWhisperModeOverride = nil
         editorEngineOverride = nil
         editorCloudModelOverride = nil
-        editorAlwaysPaste = nil
         editorPromptActionId = nil
         editorPriority = 0
         urlPatternInput = ""
@@ -165,7 +161,6 @@ final class ProfilesViewModel: ObservableObject {
         } else {
             editorCloudModelOverride = profile.cloudModelOverride
         }
-        editorAlwaysPaste = profile.alwaysPaste
         editorPromptActionId = profile.promptActionId
         editorPriority = profile.priority
         urlPatternInput = ""
