@@ -240,6 +240,16 @@ final class ModelManagerService: ObservableObject {
         UserDefaults.standard.set(ids, forKey: loadedModelsKey)
     }
 
+    /// Re-restore cloud model selection after plugins have been loaded.
+    /// Called from ServiceContainer after scanAndLoadPlugins().
+    func restoreCloudModelSelection() {
+        guard let selectedId = selectedModelId, CloudProvider.isCloudModel(selectedId) else { return }
+        let (providerId, pluginModelId) = CloudProvider.parse(selectedId)
+        if let plugin = PluginManager.shared.transcriptionEngine(for: providerId), plugin.isConfigured {
+            plugin.selectModel(pluginModelId)
+        }
+    }
+
     func status(for model: ModelInfo) -> ModelStatus {
         modelStatuses[model.id] ?? .notDownloaded
     }

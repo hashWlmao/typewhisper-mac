@@ -222,6 +222,106 @@ public struct PluginOpenAITranscriptionHelper: Sendable {
     }
 }
 
+// MARK: - OpenAI-Compatible Chat Completion Helper
+
+public enum PluginChatError: LocalizedError, Sendable {
+    case notConfigured
+    case noModelSelected
+    case invalidApiKey
+    case rateLimited
+    case apiError(String)
+    case networkError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .notConfigured:
+            "LLM provider not configured. Please set an API key."
+        case .noModelSelected:
+            "No LLM model selected."
+        case .invalidApiKey:
+            "Invalid API key. Please check your API key and try again."
+        case .rateLimited:
+            "Rate limit exceeded. Please wait and try again."
+        case .apiError(let message):
+            "API error: \(message)"
+        case .networkError(let message):
+            "Network error: \(message)"
+        }
+    }
+}
+
+public struct PluginOpenAIChatHelper: Sendable {
+    public let baseURL: String
+    public let chatEndpoint: String
+
+    public init(baseURL: String, chatEndpoint: String = "/v1/chat/completions") {
+        self.baseURL = baseURL
+        self.chatEndpoint = chatEndpoint
+    }
+
+    public func process(
+        apiKey: String,
+        model: String,
+        systemPrompt: String,
+        userText: String
+    ) async throws -> String {
+        let endpoint = "\(baseURL)\(chatEndpoint)"
+        guard let url = URL(string: endpoint) else {
+            throw PluginChatError.apiError("Invalid URL: \(endpoint)")
+        }
+
+        let requestBody: [String: Any] = [
+            "model": model,
+            "messages": [
+                ["role": "system", "content": systemPrompt],
+                ["role": "user", "content": userText]
+            ],
+            "temperature": 0.3,
+            "max_tokens": 4096
+        ]
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 60
+        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw PluginChatError.networkError("Invalid response")
+        }
+
+        switch httpResponse.statusCode {
+        case 200:
+            break
+        case 401:
+            throw PluginChatError.invalidApiKey
+        case 429:
+            throw PluginChatError.rateLimited
+        default:
+            var displayMessage = "HTTP \(httpResponse.statusCode)"
+            if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let error = json["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                displayMessage = message
+            }
+            throw PluginChatError.apiError(displayMessage)
+        }
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let choices = json["choices"] as? [[String: Any]],
+              let first = choices.first,
+              let message = first["message"] as? [String: Any],
+              let content = message["content"] as? String else {
+            throw PluginChatError.apiError("Failed to parse response")
+        }
+
+        return content.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 private extension Data {
     mutating func appendFormField(boundary: String, name: String, value: String) {
         append("--\(boundary)\r\n".data(using: .utf8)!)

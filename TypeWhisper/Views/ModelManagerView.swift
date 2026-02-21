@@ -12,8 +12,7 @@ struct ModelManagerView: View {
     }
 
     private var hasPluginProviders: Bool {
-        !pluginManager.loadedPlugins.isEmpty &&
-        pluginManager.loadedPlugins.contains { $0.instance is TranscriptionEnginePlugin }
+        pluginManager.loadedPlugins.contains { $0.isEnabled && $0.instance is TranscriptionEnginePlugin }
     }
 
     var body: some View {

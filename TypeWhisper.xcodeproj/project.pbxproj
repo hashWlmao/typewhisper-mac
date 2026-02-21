@@ -88,7 +88,7 @@
 		AA00000000000000000111 /* PromptActionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000111 /* PromptActionService.swift */; };
 		AA00000000000000000112 /* LLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000112 /* LLMProvider.swift */; };
 		AA00000000000000000113 /* FoundationModelsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000113 /* FoundationModelsProvider.swift */; };
-		AA00000000000000000114 /* CloudLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000114 /* CloudLLMProvider.swift */; };
+
 		AA00000000000000000115 /* PromptProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000115 /* PromptProcessingService.swift */; };
 		AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000116 /* PromptActionsViewModel.swift */; };
 		AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000117 /* PromptActionsSettingsView.swift */; };
@@ -113,6 +113,9 @@
 		AA00000000000000000138 /* OpenAIPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000139 /* OpenAIPlugin.swift */; };
 		AA00000000000000000139 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000140 /* manifest.json */; };
 		AA00000000000000000140 /* TypeWhisperPluginSDK in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000008 /* TypeWhisperPluginSDK */; };
+		AA00000000000000000141 /* GeminiPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000141 /* GeminiPlugin.swift */; };
+		AA00000000000000000142 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BB00000000000000000142 /* manifest.json */; };
+		AA00000000000000000143 /* TypeWhisperPluginSDK in Frameworks */ = {isa = PBXBuildFile; productRef = PP00000000000000000009 /* TypeWhisperPluginSDK */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -199,7 +202,7 @@
 		BB00000000000000000111 /* PromptActionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionService.swift; sourceTree = "<group>"; };
 		BB00000000000000000112 /* LLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMProvider.swift; sourceTree = "<group>"; };
 		BB00000000000000000113 /* FoundationModelsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsProvider.swift; sourceTree = "<group>"; };
-		BB00000000000000000114 /* CloudLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudLLMProvider.swift; sourceTree = "<group>"; };
+
 		BB00000000000000000115 /* PromptProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptProcessingService.swift; sourceTree = "<group>"; };
 		BB00000000000000000116 /* PromptActionsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionsViewModel.swift; sourceTree = "<group>"; };
 		BB00000000000000000117 /* PromptActionsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptActionsSettingsView.swift; sourceTree = "<group>"; };
@@ -223,6 +226,9 @@
 		BB00000000000000000137 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
 		BB00000000000000000139 /* OpenAIPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIPlugin.swift; sourceTree = "<group>"; };
 		BB00000000000000000140 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
+		BB00000000000000000143 /* GeminiPlugin.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GeminiPlugin.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB00000000000000000141 /* GeminiPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiPlugin.swift; sourceTree = "<group>"; };
+		BB00000000000000000142 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = manifest.json; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -265,6 +271,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000140 /* TypeWhisperPluginSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000047 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000143 /* TypeWhisperPluginSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -321,6 +335,7 @@
 				CC00000000000000000015 /* WebhookPlugin */,
 				CC00000000000000000016 /* GroqPlugin */,
 				CC00000000000000000017 /* OpenAIPlugin */,
+				CC00000000000000000018 /* GeminiPlugin */,
 				CC00000000000000000090 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -415,7 +430,7 @@
 			children = (
 				BB00000000000000000112 /* LLMProvider.swift */,
 				BB00000000000000000113 /* FoundationModelsProvider.swift */,
-				BB00000000000000000114 /* CloudLLMProvider.swift */,
+
 			);
 			path = LLM;
 			sourceTree = "<group>";
@@ -530,6 +545,7 @@
 				BB00000000000000000133 /* WebhookPlugin.bundle */,
 				BB00000000000000000134 /* GroqPlugin.bundle */,
 				BB00000000000000000135 /* OpenAIPlugin.bundle */,
+				BB00000000000000000143 /* GeminiPlugin.bundle */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -562,6 +578,16 @@
 			);
 			name = OpenAIPlugin;
 			path = Plugins/OpenAIPlugin;
+			sourceTree = "<group>";
+		};
+		CC00000000000000000018 /* GeminiPlugin */ = {
+			isa = PBXGroup;
+			children = (
+				BB00000000000000000141 /* GeminiPlugin.swift */,
+				BB00000000000000000142 /* manifest.json */,
+			);
+			name = GeminiPlugin;
+			path = Plugins/GeminiPlugin;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -691,6 +717,26 @@
 			productReference = BB00000000000000000135 /* OpenAIPlugin.bundle */;
 			productType = "com.apple.product-type.bundle";
 		};
+		DD00000000000000000006 /* GeminiPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF00000000000000000048 /* Build configuration list for PBXNativeTarget "GeminiPlugin" */;
+			buildPhases = (
+				FF00000000000000000045 /* Sources */,
+				FF00000000000000000047 /* Frameworks */,
+				FF00000000000000000046 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GeminiPlugin;
+			packageProductDependencies = (
+				PP00000000000000000009 /* TypeWhisperPluginSDK */,
+			);
+			productName = GeminiPlugin;
+			productReference = BB00000000000000000143 /* GeminiPlugin.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -734,6 +780,7 @@
 				DD00000000000000000003 /* WebhookPlugin */,
 				DD00000000000000000004 /* GroqPlugin */,
 				DD00000000000000000005 /* OpenAIPlugin */,
+				DD00000000000000000006 /* GeminiPlugin */,
 			);
 		};
 /* End PBXProject section */
@@ -773,6 +820,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000139 /* manifest.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000046 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000142 /* manifest.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -854,7 +909,7 @@
 				AA00000000000000000111 /* PromptActionService.swift in Sources */,
 				AA00000000000000000112 /* LLMProvider.swift in Sources */,
 				AA00000000000000000113 /* FoundationModelsProvider.swift in Sources */,
-				AA00000000000000000114 /* CloudLLMProvider.swift in Sources */,
+
 				AA00000000000000000115 /* PromptProcessingService.swift in Sources */,
 				AA00000000000000000116 /* PromptActionsViewModel.swift in Sources */,
 				AA00000000000000000117 /* PromptActionsSettingsView.swift in Sources */,
@@ -899,6 +954,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA00000000000000000138 /* OpenAIPlugin.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF00000000000000000045 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000000000000000141 /* GeminiPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1608,6 +1671,98 @@
 			};
 			name = AppStoreRelease;
 		};
+		XX00000000000000000025 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Gemini;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = GeminiPlugin;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.gemini;
+				PRODUCT_NAME = GeminiPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Debug;
+		};
+		XX00000000000000000026 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Gemini;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = GeminiPlugin;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.gemini;
+				PRODUCT_NAME = GeminiPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = Release;
+		};
+		XX00000000000000000027 /* AppStoreDebug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Gemini;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = GeminiPlugin;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.gemini;
+				PRODUCT_NAME = GeminiPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = AppStoreDebug;
+		};
+		XX00000000000000000028 /* AppStoreRelease */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 2D8ALY3LCL;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Gemini;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSPrincipalClass = GeminiPlugin;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Bundles";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.typewhisper.gemini;
+				PRODUCT_NAME = GeminiPlugin;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				WRAPPER_EXTENSION = bundle;
+			};
+			name = AppStoreRelease;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1677,6 +1832,17 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		FF00000000000000000048 /* Build configuration list for PBXNativeTarget "GeminiPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				XX00000000000000000025 /* Debug */,
+				XX00000000000000000026 /* Release */,
+				XX00000000000000000027 /* AppStoreDebug */,
+				XX00000000000000000028 /* AppStoreRelease */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -1742,6 +1908,10 @@
 			productName = TypeWhisperPluginSDK;
 		};
 		PP00000000000000000008 /* TypeWhisperPluginSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TypeWhisperPluginSDK;
+		};
+		PP00000000000000000009 /* TypeWhisperPluginSDK */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TypeWhisperPluginSDK;
 		};

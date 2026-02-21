@@ -5,17 +5,22 @@ import TypeWhisperPluginSDK
 // MARK: - Plugin Entry Point
 
 @objc(OpenAIPlugin)
-final class OpenAIPlugin: NSObject, TranscriptionEnginePlugin, @unchecked Sendable {
+final class OpenAIPlugin: NSObject, TranscriptionEnginePlugin, LLMProviderPlugin, @unchecked Sendable {
     static let pluginId = "com.typewhisper.openai"
-    static let pluginName = "OpenAI Transcription"
+    static let pluginName = "OpenAI"
 
     fileprivate var host: HostServices?
     fileprivate var _apiKey: String?
     fileprivate var _selectedModelId: String?
+    fileprivate var _selectedLLMModelId: String?
 
-    private let helper = PluginOpenAITranscriptionHelper(
+    private let transcriptionHelper = PluginOpenAITranscriptionHelper(
         baseURL: "https://api.openai.com",
         responseFormat: "verbose_json"
+    )
+
+    private let chatHelper = PluginOpenAIChatHelper(
+        baseURL: "https://api.openai.com"
     )
 
     required override init() {
@@ -27,6 +32,8 @@ final class OpenAIPlugin: NSObject, TranscriptionEnginePlugin, @unchecked Sendab
         _apiKey = host.loadSecret(key: "api-key")
         _selectedModelId = host.userDefault(forKey: "selectedModel") as? String
             ?? transcriptionModels.first?.id
+        _selectedLLMModelId = host.userDefault(forKey: "selectedLLMModel") as? String
+            ?? supportedModels.first?.id
     }
 
     func deactivate() {
@@ -71,7 +78,7 @@ final class OpenAIPlugin: NSObject, TranscriptionEnginePlugin, @unchecked Sendab
         // GPT-4o models use "json" format, Whisper uses "verbose_json"
         let responseFormat = modelId.hasPrefix("gpt-4o") ? "json" : "verbose_json"
 
-        return try await helper.transcribe(
+        return try await transcriptionHelper.transcribe(
             audio: audio,
             apiKey: apiKey,
             modelName: modelId,
@@ -81,6 +88,43 @@ final class OpenAIPlugin: NSObject, TranscriptionEnginePlugin, @unchecked Sendab
             responseFormat: responseFormat
         )
     }
+
+    // MARK: - LLMProviderPlugin
+
+    var providerName: String { "OpenAI" }
+
+    var isAvailable: Bool { isConfigured }
+
+    var supportedModels: [PluginModelInfo] {
+        [
+            PluginModelInfo(id: "gpt-4.1-nano", displayName: "GPT-4.1 Nano"),
+            PluginModelInfo(id: "gpt-4.1-mini", displayName: "GPT-4.1 Mini"),
+            PluginModelInfo(id: "gpt-4.1", displayName: "GPT-4.1"),
+            PluginModelInfo(id: "gpt-4o", displayName: "GPT-4o"),
+            PluginModelInfo(id: "gpt-4o-mini", displayName: "GPT-4o Mini"),
+            PluginModelInfo(id: "o4-mini", displayName: "o4-mini"),
+        ]
+    }
+
+    func process(systemPrompt: String, userText: String, model: String?) async throws -> String {
+        guard let apiKey = _apiKey, !apiKey.isEmpty else {
+            throw PluginChatError.notConfigured
+        }
+        let modelId = model ?? _selectedLLMModelId ?? supportedModels.first!.id
+        return try await chatHelper.process(
+            apiKey: apiKey,
+            model: modelId,
+            systemPrompt: systemPrompt,
+            userText: userText
+        )
+    }
+
+    func selectLLMModel(_ modelId: String) {
+        _selectedLLMModelId = modelId
+        host?.setUserDefault(modelId, forKey: "selectedLLMModel")
+    }
+
+    var selectedLLMModelId: String? { _selectedLLMModelId }
 
     // MARK: - Settings View
 
@@ -100,7 +144,7 @@ final class OpenAIPlugin: NSObject, TranscriptionEnginePlugin, @unchecked Sendab
     }
 
     func validateApiKey(_ key: String) async -> Bool {
-        await helper.validateApiKey(key)
+        await transcriptionHelper.validateApiKey(key)
     }
 }
 

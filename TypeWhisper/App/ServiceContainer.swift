@@ -152,5 +152,8 @@ final class ServiceContainer: ObservableObject {
             self?.profileService.profiles.map(\.name) ?? []
         }
         pluginManager.scanAndLoadPlugins()
+
+        // Re-restore cloud model selection now that plugins are loaded
+        modelManagerService.restoreCloudModelSelection()
     }
 }

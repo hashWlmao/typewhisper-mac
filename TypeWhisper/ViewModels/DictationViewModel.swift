@@ -207,7 +207,15 @@ final class DictationViewModel: ObservableObject {
     }
 
     var canDictate: Bool {
-        modelManager.activeEngine?.isModelLoaded == true
+        if modelManager.activeEngine?.isModelLoaded == true {
+            return true
+        }
+        // Cloud models don't use activeEngine - check if plugin is configured
+        if let selectedId = modelManager.selectedModelId, CloudProvider.isCloudModel(selectedId) {
+            let (providerId, _) = CloudProvider.parse(selectedId)
+            return PluginManager.shared.transcriptionEngine(for: providerId)?.isConfigured ?? false
+        }
+        return false
     }
 
     var needsMicPermission: Bool {
@@ -470,7 +478,7 @@ final class DictationViewModel: ObservableObject {
                 let llmHandler: ((String) async throws -> String)?
                 if let promptAction = self.effectivePromptAction {
                     let pps = self.promptProcessingService
-                    let providerOverride = promptAction.providerType.flatMap { LLMProviderType(rawValue: $0) }
+                    let providerOverride = promptAction.providerType
                     let modelOverride = promptAction.cloudModel
                     let prompt = promptAction.prompt
                     llmHandler = { text in
@@ -701,7 +709,7 @@ final class DictationViewModel: ObservableObject {
                 let result = try await promptProcessingService.process(
                     prompt: action.prompt,
                     text: text,
-                    providerOverride: action.providerType.flatMap { LLMProviderType(rawValue: $0) },
+                    providerOverride: action.providerType,
                     cloudModelOverride: action.cloudModel
                 )
                 guard !Task.isCancelled else { return }

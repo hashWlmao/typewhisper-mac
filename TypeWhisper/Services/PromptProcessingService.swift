@@ -1,110 +1,121 @@
 import Foundation
+import TypeWhisperPluginSDK
 import os.log
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "TypeWhisper", category: "PromptProcessingService")
 
 @MainActor
 class PromptProcessingService: ObservableObject {
-    @Published var selectedProviderType: LLMProviderType {
-        didSet { UserDefaults.standard.set(selectedProviderType.rawValue, forKey: "llmProviderType") }
+    @Published var selectedProviderId: String {
+        didSet { UserDefaults.standard.set(selectedProviderId, forKey: "llmProviderType") }
     }
     @Published var selectedCloudModel: String {
         didSet { UserDefaults.standard.set(selectedCloudModel, forKey: "llmCloudModel") }
     }
 
-    private var providers: [LLMProviderType: LLMProvider] = [:]
+    private var appleIntelligenceProvider: LLMProvider?
+
+    static let appleIntelligenceId = "appleIntelligence"
 
     var isAppleIntelligenceAvailable: Bool {
         if #available(macOS 26, *) {
-            return providers[.appleIntelligence]?.isAvailable ?? false
+            return appleIntelligenceProvider?.isAvailable ?? false
         }
         return false
     }
 
-    var availableProviders: [LLMProviderType] {
-        LLMProviderType.allCases.filter { type in
-            if type == .appleIntelligence {
-                if #available(macOS 26, *) { return true }
-                return false
-            }
-            return true
+    /// Returns (id, displayName) pairs for all available providers
+    var availableProviders: [(id: String, displayName: String)] {
+        var result: [(id: String, displayName: String)] = []
+
+        if #available(macOS 26, *) {
+            result.append((id: Self.appleIntelligenceId, displayName: "Apple Intelligence"))
         }
+
+        for plugin in PluginManager.shared.llmProviders {
+            result.append((id: plugin.providerName, displayName: plugin.providerName))
+        }
+
+        return result
     }
 
     var isCurrentProviderReady: Bool {
-        providers[selectedProviderType]?.isAvailable ?? false
+        isProviderReady(selectedProviderId)
     }
 
-    func isProviderReady(_ type: LLMProviderType) -> Bool {
-        providers[type]?.isAvailable ?? false
+    func isProviderReady(_ providerId: String) -> Bool {
+        if providerId == Self.appleIntelligenceId {
+            return isAppleIntelligenceAvailable
+        }
+        return PluginManager.shared.llmProvider(for: providerId)?.isAvailable ?? false
+    }
+
+    /// Returns supported models for a given provider
+    func modelsForProvider(_ providerId: String) -> [PluginModelInfo] {
+        if providerId == Self.appleIntelligenceId {
+            return []
+        }
+        return PluginManager.shared.llmProvider(for: providerId)?.supportedModels ?? []
+    }
+
+    /// Returns display name for a provider ID
+    func displayName(for providerId: String) -> String {
+        if providerId == Self.appleIntelligenceId {
+            return "Apple Intelligence"
+        }
+        // Use the plugin's canonical providerName for display
+        return PluginManager.shared.llmProvider(for: providerId)?.providerName ?? providerId
+    }
+
+    /// Normalize a provider ID to match the plugin's canonical providerName.
+    /// Handles migration from old enum rawValues ("groq") to plugin names ("Groq").
+    func normalizeProviderId(_ id: String) -> String {
+        if id == Self.appleIntelligenceId { return id }
+        return PluginManager.shared.llmProvider(for: id)?.providerName ?? id
     }
 
     init() {
-        let savedType = UserDefaults.standard.string(forKey: "llmProviderType")
-            .flatMap { LLMProviderType(rawValue: $0) }
-        let providerType = savedType ?? .appleIntelligence
-        self.selectedProviderType = providerType
-
-        // Validate saved model matches current provider's known models
-        let savedModel = UserDefaults.standard.string(forKey: "llmCloudModel") ?? ""
-        if let config = providerType.cloudConfig {
-            self.selectedCloudModel = config.knownModels.contains(savedModel) ? savedModel : config.defaultModel
-        } else {
-            self.selectedCloudModel = ""
-        }
+        let savedId = UserDefaults.standard.string(forKey: "llmProviderType") ?? Self.appleIntelligenceId
+        self.selectedProviderId = savedId
+        self.selectedCloudModel = UserDefaults.standard.string(forKey: "llmCloudModel") ?? ""
 
         setupProviders()
     }
 
     private func setupProviders() {
-        for type in LLMProviderType.allCases {
-            if type == .appleIntelligence {
-                if #available(macOS 26, *) {
-                    providers[type] = FoundationModelsProvider()
-                }
-            } else if let config = type.cloudConfig {
-                let model = (selectedProviderType == type && !selectedCloudModel.isEmpty)
-                    ? selectedCloudModel
-                    : config.defaultModel
-                providers[type] = CloudLLMProvider(config: config, model: model)
+        if #available(macOS 26, *) {
+            appleIntelligenceProvider = FoundationModelsProvider()
+        }
+    }
+
+    func process(prompt: String, text: String, providerOverride: String? = nil, cloudModelOverride: String? = nil) async throws -> String {
+        let effectiveId = providerOverride ?? selectedProviderId
+
+        if effectiveId == Self.appleIntelligenceId {
+            guard let provider = appleIntelligenceProvider, provider.isAvailable else {
+                throw LLMError.notAvailable
             }
+            logger.info("Processing prompt with Apple Intelligence")
+            let result = try await provider.process(systemPrompt: prompt, userText: text)
+            logger.info("Prompt processing complete, result length: \(result.count)")
+            return result
         }
-    }
 
-    func refreshCloudProviders() {
-        for type in LLMProviderType.allCases {
-            guard let config = type.cloudConfig else { continue }
-            let model = (selectedProviderType == type && !selectedCloudModel.isEmpty)
-                ? selectedCloudModel
-                : config.defaultModel
-            providers[type] = CloudLLMProvider(config: config, model: model)
-        }
-    }
-
-    func process(prompt: String, text: String, providerOverride: LLMProviderType? = nil, cloudModelOverride: String? = nil) async throws -> String {
-        let effectiveType = providerOverride ?? selectedProviderType
-
-        let provider: LLMProvider
-        if let config = effectiveType.cloudConfig {
-            // Always create a fresh cloud provider with the current model selection
-            let model = cloudModelOverride ?? selectedCloudModel
-            provider = CloudLLMProvider(config: config, model: model.isEmpty ? config.defaultModel : model)
-        } else if let existing = providers[effectiveType] {
-            provider = existing
-        } else {
+        // Plugin provider
+        guard let plugin = PluginManager.shared.llmProvider(for: effectiveId) else {
             throw LLMError.noProviderConfigured
         }
-
-        guard provider.isAvailable else {
-            if effectiveType == .appleIntelligence {
-                throw LLMError.notAvailable
-            } else {
-                throw LLMError.noApiKey
-            }
+        guard plugin.isAvailable else {
+            throw LLMError.noApiKey
         }
 
-        logger.info("Processing prompt with \(effectiveType.rawValue)")
-        let result = try await provider.process(systemPrompt: prompt, userText: text)
+        let model = cloudModelOverride ?? selectedCloudModel
+        logger.info("Processing prompt with plugin \(effectiveId)")
+        let result = try await plugin.process(
+            systemPrompt: prompt,
+            userText: text,
+            model: model.isEmpty ? nil : model
+        )
         logger.info("Prompt processing complete, result length: \(result.count)")
         return result
     }

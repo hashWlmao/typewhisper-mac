@@ -75,7 +75,15 @@ final class ModelManagerViewModel: ObservableObject {
     }
 
     var isModelReady: Bool {
-        modelManager.activeEngine?.isModelLoaded ?? false
+        if modelManager.activeEngine?.isModelLoaded == true {
+            return true
+        }
+        // Cloud models don't use activeEngine - check if plugin is configured
+        if let selectedId = selectedModelId, CloudProvider.isCloudModel(selectedId) {
+            let (providerId, _) = CloudProvider.parse(selectedId)
+            return PluginManager.shared.transcriptionEngine(for: providerId)?.isConfigured ?? false
+        }
+        return false
     }
 
     var readyModels: [ModelInfo] {

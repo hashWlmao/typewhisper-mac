@@ -4,23 +4,18 @@ import TypeWhisperPluginSDK
 
 // MARK: - Plugin Entry Point
 
-@objc(GroqPlugin)
-final class GroqPlugin: NSObject, TranscriptionEnginePlugin, LLMProviderPlugin, @unchecked Sendable {
-    static let pluginId = "com.typewhisper.groq"
-    static let pluginName = "Groq"
+@objc(GeminiPlugin)
+final class GeminiPlugin: NSObject, LLMProviderPlugin, @unchecked Sendable {
+    static let pluginId = "com.typewhisper.gemini"
+    static let pluginName = "Gemini"
 
     fileprivate var host: HostServices?
     fileprivate var _apiKey: String?
-    fileprivate var _selectedModelId: String?
     fileprivate var _selectedLLMModelId: String?
 
-    private let transcriptionHelper = PluginOpenAITranscriptionHelper(
-        baseURL: "https://api.groq.com/openai",
-        responseFormat: "verbose_json"
-    )
-
     private let chatHelper = PluginOpenAIChatHelper(
-        baseURL: "https://api.groq.com/openai"
+        baseURL: "https://generativelanguage.googleapis.com/v1beta/openai",
+        chatEndpoint: "/chat/completions"
     )
 
     required override init() {
@@ -30,8 +25,6 @@ final class GroqPlugin: NSObject, TranscriptionEnginePlugin, LLMProviderPlugin, 
     func activate(host: HostServices) {
         self.host = host
         _apiKey = host.loadSecret(key: "api-key")
-        _selectedModelId = host.userDefault(forKey: "selectedModel") as? String
-            ?? transcriptionModels.first?.id
         _selectedLLMModelId = host.userDefault(forKey: "selectedLLMModel") as? String
             ?? supportedModels.first?.id
     }
@@ -40,62 +33,20 @@ final class GroqPlugin: NSObject, TranscriptionEnginePlugin, LLMProviderPlugin, 
         host = nil
     }
 
-    // MARK: - TranscriptionEnginePlugin
+    // MARK: - LLMProviderPlugin
 
-    var providerId: String { "groq" }
-    var providerDisplayName: String { "Groq" }
+    var providerName: String { "Gemini" }
 
-    var isConfigured: Bool {
+    var isAvailable: Bool {
         guard let key = _apiKey else { return false }
         return !key.isEmpty
     }
 
-    var transcriptionModels: [PluginModelInfo] {
-        [
-            PluginModelInfo(id: "whisper-large-v3", displayName: "Whisper Large V3"),
-            PluginModelInfo(id: "whisper-large-v3-turbo", displayName: "Whisper Large V3 Turbo"),
-        ]
-    }
-
-    var selectedModelId: String? { _selectedModelId }
-
-    func selectModel(_ modelId: String) {
-        _selectedModelId = modelId
-        host?.setUserDefault(modelId, forKey: "selectedModel")
-    }
-
-    var supportsTranslation: Bool { true }
-
-    func transcribe(audio: AudioData, language: String?, translate: Bool, prompt: String?) async throws -> PluginTranscriptionResult {
-        guard let apiKey = _apiKey, !apiKey.isEmpty else {
-            throw PluginTranscriptionError.notConfigured
-        }
-        guard let modelId = _selectedModelId else {
-            throw PluginTranscriptionError.noModelSelected
-        }
-
-        return try await transcriptionHelper.transcribe(
-            audio: audio,
-            apiKey: apiKey,
-            modelName: modelId,
-            language: language,
-            translate: translate,
-            prompt: prompt
-        )
-    }
-
-    // MARK: - LLMProviderPlugin
-
-    var providerName: String { "Groq" }
-
-    var isAvailable: Bool { isConfigured }
-
     var supportedModels: [PluginModelInfo] {
         [
-            PluginModelInfo(id: "llama-3.3-70b-versatile", displayName: "Llama 3.3 70B"),
-            PluginModelInfo(id: "llama-3.1-8b-instant", displayName: "Llama 3.1 8B"),
-            PluginModelInfo(id: "openai/gpt-oss-120b", displayName: "GPT-OSS 120B"),
-            PluginModelInfo(id: "openai/gpt-oss-20b", displayName: "GPT-OSS 20B"),
+            PluginModelInfo(id: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash"),
+            PluginModelInfo(id: "gemini-2.5-pro", displayName: "Gemini 2.5 Pro"),
+            PluginModelInfo(id: "gemini-2.5-flash-lite", displayName: "Gemini 2.5 Flash Lite"),
         ]
     }
 
@@ -122,7 +73,7 @@ final class GroqPlugin: NSObject, TranscriptionEnginePlugin, LLMProviderPlugin, 
     // MARK: - Settings View
 
     var settingsView: AnyView? {
-        AnyView(GroqSettingsView(plugin: self))
+        AnyView(GeminiSettingsView(plugin: self))
     }
 
     // Internal methods for settings
@@ -137,14 +88,27 @@ final class GroqPlugin: NSObject, TranscriptionEnginePlugin, LLMProviderPlugin, 
     }
 
     func validateApiKey(_ key: String) async -> Bool {
-        await transcriptionHelper.validateApiKey(key)
+        guard !key.isEmpty else { return false }
+        // Validate by listing models
+        guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models?key=\(key)") else { return false }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 10
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else { return false }
+            return httpResponse.statusCode == 200
+        } catch {
+            return false
+        }
     }
 }
 
 // MARK: - Settings View
 
-private struct GroqSettingsView: View {
-    let plugin: GroqPlugin
+private struct GeminiSettingsView: View {
+    let plugin: GeminiPlugin
     @State private var apiKeyInput = ""
     @State private var isValidating = false
     @State private var validationResult: Bool?
@@ -175,7 +139,7 @@ private struct GroqSettingsView: View {
                     }
                     .buttonStyle(.borderless)
 
-                    if plugin.isConfigured {
+                    if plugin.isAvailable {
                         Button("Remove") {
                             apiKeyInput = ""
                             validationResult = nil
@@ -212,22 +176,22 @@ private struct GroqSettingsView: View {
                 }
             }
 
-            if plugin.isConfigured {
+            if plugin.isAvailable {
                 Divider()
 
-                // Model Selection
+                // LLM Model Selection
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Model")
+                    Text("LLM Model")
                         .font(.headline)
 
                     Picker("Model", selection: $selectedModel) {
-                        ForEach(plugin.transcriptionModels, id: \.id) { model in
+                        ForEach(plugin.supportedModels, id: \.id) { model in
                             Text(model.displayName).tag(model.id)
                         }
                     }
                     .labelsHidden()
                     .onChange(of: selectedModel) {
-                        plugin.selectModel(selectedModel)
+                        plugin.selectLLMModel(selectedModel)
                     }
                 }
             }
@@ -241,7 +205,7 @@ private struct GroqSettingsView: View {
             if let key = plugin._apiKey, !key.isEmpty {
                 apiKeyInput = key
             }
-            selectedModel = plugin.selectedModelId ?? plugin.transcriptionModels.first?.id ?? ""
+            selectedModel = plugin.selectedLLMModelId ?? plugin.supportedModels.first?.id ?? ""
         }
     }
 

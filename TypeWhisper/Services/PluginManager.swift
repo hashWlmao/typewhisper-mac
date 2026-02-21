@@ -61,6 +61,10 @@ final class PluginManager: ObservableObject {
         transcriptionEngines.first { $0.providerId == providerId }
     }
 
+    func llmProvider(for providerName: String) -> LLMProviderPlugin? {
+        llmProviders.first { $0.providerName.caseInsensitiveCompare(providerName) == .orderedSame }
+    }
+
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         self.pluginsDirectory = appSupport

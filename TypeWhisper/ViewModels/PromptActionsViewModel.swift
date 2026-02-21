@@ -20,7 +20,7 @@ class PromptActionsViewModel: ObservableObject {
     @Published var editName = ""
     @Published var editPrompt = ""
     @Published var editIcon = "sparkles"
-    @Published var editProviderType: LLMProviderType?
+    @Published var editProviderId: String?
     @Published var editCloudModel = ""
 
     private let promptActionService: PromptActionService
@@ -57,7 +57,7 @@ class PromptActionsViewModel: ObservableObject {
         editName = ""
         editPrompt = ""
         editIcon = "sparkles"
-        editProviderType = nil
+        editProviderId = nil
         editCloudModel = ""
     }
 
@@ -68,7 +68,7 @@ class PromptActionsViewModel: ObservableObject {
         editName = action.name
         editPrompt = action.prompt
         editIcon = action.icon
-        editProviderType = action.providerType.flatMap { LLMProviderType(rawValue: $0) }
+        editProviderId = action.providerType
         editCloudModel = action.cloudModel ?? ""
     }
 
@@ -79,7 +79,7 @@ class PromptActionsViewModel: ObservableObject {
         editName = ""
         editPrompt = ""
         editIcon = "sparkles"
-        editProviderType = nil
+        editProviderId = nil
         editCloudModel = ""
     }
 
@@ -94,7 +94,7 @@ class PromptActionsViewModel: ObservableObject {
                 name: editName,
                 prompt: editPrompt,
                 icon: editIcon,
-                providerType: editProviderType?.rawValue,
+                providerType: editProviderId,
                 cloudModel: editCloudModel.isEmpty ? nil : editCloudModel
             )
         } else if let action = selectedAction {
@@ -103,7 +103,7 @@ class PromptActionsViewModel: ObservableObject {
                 name: editName,
                 prompt: editPrompt,
                 icon: editIcon,
-                providerType: editProviderType?.rawValue,
+                providerType: editProviderId,
                 cloudModel: editCloudModel.isEmpty ? nil : editCloudModel
             )
         }
