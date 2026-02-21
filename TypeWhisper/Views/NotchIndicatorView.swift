@@ -22,30 +22,16 @@ struct NotchIndicatorView: View {
     }
 
     private var isExpanded: Bool {
-        if textExpanded { return true }
-        switch viewModel.state {
-        case .promptSelection, .promptProcessing:
-            return true
-        default:
-            return false
-        }
+        textExpanded
     }
 
     private var currentWidth: CGFloat {
-        switch viewModel.state {
-        case .promptSelection, .promptProcessing:
-            return max(closedWidth, 420)
-        default:
-            return textExpanded ? max(closedWidth, 400) : closedWidth
-        }
+        textExpanded ? max(closedWidth, 400) : closedWidth
     }
 
     // MARK: - Audio-reactive glow
 
     private var glowColor: Color {
-        if case .promptProcessing = viewModel.state {
-            return Color(red: 0.6, green: 0.3, blue: 1.0) // purple
-        }
         if case .paused = viewModel.state {
             return Color(red: 1.0, green: 0.6, blue: 0.2) // amber/orange
         }
@@ -58,8 +44,6 @@ struct NotchIndicatorView: View {
             return max(0.4, min(Double(viewModel.audioLevel) * 3.5, 1.0))
         case .paused:
             return pausePulse ? 0.8 : 0.3
-        case .promptProcessing:
-            return 0.5
         default:
             return 0
         }
@@ -111,15 +95,6 @@ struct NotchIndicatorView: View {
                 .transaction { $0.disablesAnimations = true }
             }
 
-            // Prompt selection list
-            if case .promptSelection(let text) = viewModel.state {
-                promptSelectionView(text: text)
-            }
-
-            // Prompt processing status
-            if case .promptProcessing(let promptName) = viewModel.state {
-                promptProcessingView(promptName: promptName)
-            }
         }
         .frame(width: currentWidth)
         .background(.black)
@@ -148,12 +123,7 @@ struct NotchIndicatorView: View {
             } else {
                 dotPulse = false
                 pausePulse = false
-                switch viewModel.state {
-                case .promptSelection, .promptProcessing:
-                    break // keep expanded
-                default:
-                    textExpanded = false
-                }
+                textExpanded = false
             }
         }
         .animation(.easeInOut(duration: 1.5), value: pausePulse)
@@ -209,16 +179,8 @@ struct NotchIndicatorView: View {
             } else {
                 Color.clear
             }
-        case .promptSelection:
+        case .promptSelection, .promptProcessing:
             Color.clear
-        case .promptProcessing:
-            if side == .leading, viewModel.promptResultText.isEmpty {
-                ProgressView()
-                    .controlSize(.mini)
-                    .tint(.white)
-            } else {
-                Color.clear
-            }
         case .error:
             if side == .leading {
                 Image(systemName: "xmark.circle.fill")
@@ -301,170 +263,6 @@ struct NotchIndicatorView: View {
         case 38..<63: return "battery.50percent"
         case 63..<88: return "battery.75percent"
         default: return "battery.100percent"
-        }
-    }
-
-    // MARK: - Prompt Selection
-
-    @ViewBuilder
-    private func promptSelectionView(text: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Text preview
-            Text(text)
-                .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.5))
-                .lineLimit(3)
-                .padding(.horizontal, contentPadding)
-                .padding(.top, 20)
-                .padding(.bottom, 16)
-
-            Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 1)
-
-            // Action list: clipboard option + prompt actions
-            VStack(spacing: 4) {
-                // "Copy to Clipboard" as first option (index 0)
-                clipboardRow
-
-                ForEach(Array(viewModel.availablePromptActions.enumerated()), id: \.element.id) { index, action in
-                    promptActionRow(action: action, index: index + 1) // offset by 1
-                }
-            }
-            .padding(.vertical, 10)
-
-            Rectangle()
-                .fill(.white.opacity(0.08))
-                .frame(height: 1)
-
-            // Dismiss hint
-            Text("esc")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.white.opacity(0.25))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-        }
-    }
-
-    @ViewBuilder
-    private var clipboardRow: some View {
-        let isSelected = viewModel.selectedPromptIndex == 0
-
-        HStack(spacing: 10) {
-            Image(systemName: "doc.on.clipboard")
-                .font(.system(size: 13))
-                .frame(width: 18)
-
-            Text(String(localized: "Copy to Clipboard"))
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-
-            Spacer()
-
-            Text("1")
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                .foregroundStyle(.white.opacity(0.25))
-        }
-        .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.65))
-        .padding(.horizontal, contentPadding)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.white.opacity(0.1) : Color.clear)
-                .padding(.horizontal, 12)
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            if hovering { viewModel.selectedPromptIndex = 0 }
-        }
-        .onTapGesture {
-            viewModel.selectedPromptIndex = 0
-            viewModel.confirmPromptSelection()
-        }
-    }
-
-    @ViewBuilder
-    private func promptActionRow(action: PromptAction, index: Int) -> some View {
-        let isSelected = index == viewModel.selectedPromptIndex
-
-        HStack(spacing: 10) {
-            Image(systemName: action.icon)
-                .font(.system(size: 13))
-                .frame(width: 18)
-
-            Text(action.name)
-                .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
-
-            Spacer()
-
-            if index < 9 {  // index already includes clipboard offset
-                Text("\(index + 1)")  // clipboard=1, first action=2, etc.
-                    .font(.system(size: 11, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.25))
-            }
-        }
-        .foregroundStyle(.white.opacity(isSelected ? 1.0 : 0.65))
-        .padding(.horizontal, contentPadding)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.white.opacity(0.1) : Color.clear)
-                .padding(.horizontal, 12)
-        )
-        .contentShape(Rectangle())
-        .onHover { hovering in
-            if hovering {
-                viewModel.selectedPromptIndex = index
-            }
-        }
-        .onTapGesture {
-            viewModel.selectPromptAction(action)
-        }
-    }
-
-    // MARK: - Prompt Processing
-
-    @ViewBuilder
-    private func promptProcessingView(promptName: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if viewModel.promptResultText.isEmpty {
-                // Processing spinner
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(.white)
-                    Text(promptName + "...")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
-                }
-                .padding(.horizontal, contentPadding)
-                .padding(.top, 16)
-                .padding(.bottom, 16)
-            } else {
-                // Result display
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                        .font(.system(size: 11))
-                    Text(promptName)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
-                    Spacer()
-                    Text("esc")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.25))
-                }
-                .padding(.horizontal, contentPadding)
-                .padding(.top, 12)
-
-                Text(viewModel.promptResultText)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(12)
-                    .padding(.horizontal, contentPadding)
-                    .padding(.top, 12)
-                    .padding(.bottom, 24)
-            }
         }
     }
 

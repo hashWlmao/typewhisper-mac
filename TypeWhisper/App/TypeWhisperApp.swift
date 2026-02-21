@@ -55,14 +55,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             translationService: ServiceContainer.shared.translationService
         )
 
-        // Prompt palette hotkey - triggers notch prompt selection
+        // Prompt palette hotkey - opens standalone prompt palette panel
         ServiceContainer.shared.hotkeyService.onPromptPaletteToggle = {
-            let vm = DictationViewModel.shared
-            if case .promptSelection = vm.state {
-                vm.dismissPromptSelection()
-            } else {
-                vm.triggerStandalonePromptSelection()
-            }
+            DictationViewModel.shared.triggerStandalonePromptSelection()
         }
 
         // Observe settings window lifecycle

@@ -5,6 +5,7 @@ import AppKit
 
 struct PromptPaletteContentView: View {
     let actions: [PromptAction]
+    let sourceText: String
     let onSelect: (PromptAction) -> Void
     let onDismiss: () -> Void
 
@@ -20,6 +21,18 @@ struct PromptPaletteContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            // Source text preview
+            Text(sourceText)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+
+            Divider()
+
             // Search field
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
@@ -182,7 +195,7 @@ class PromptPaletteController {
     private var localClickMonitor: Any?
     private var globalClickMonitor: Any?
 
-    func show(actions: [PromptAction], onSelect: @escaping (PromptAction) -> Void) {
+    func show(actions: [PromptAction], sourceText: String, onSelect: @escaping (PromptAction) -> Void) {
         hide()
 
         let enabledActions = actions.filter { $0.isEnabled }
@@ -192,6 +205,7 @@ class PromptPaletteController {
 
         let contentView = PromptPaletteContentView(
             actions: enabledActions,
+            sourceText: sourceText,
             onSelect: { [weak self] action in
                 self?.hide()
                 onSelect(action)

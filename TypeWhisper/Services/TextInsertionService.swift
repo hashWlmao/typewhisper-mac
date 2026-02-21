@@ -159,46 +159,69 @@ enum InsertionResult {
         return trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://") || trimmed.hasPrefix("file://")
     }
 
-    func getSelectedText() -> String? {
-        guard isAccessibilityGranted else { return nil }
-
-        // Save current clipboard
-        let pasteboard = NSPasteboard.general
-        let savedContents = pasteboard.pasteboardItems?.compactMap { item -> (NSPasteboard.PasteboardType, Data)? in
-            guard let type = item.types.first, let data = item.data(forType: type) else { return nil }
-            return (type, data)
-        }
-
-        // Simulate Cmd+C to copy selected text
-        pasteboard.clearContents()
-        simulateCopy()
-
-        // Brief wait for clipboard to update
-        usleep(100_000) // 100ms
-
-        let selectedText = pasteboard.string(forType: .string)
-
-        // Restore previous clipboard
-        pasteboard.clearContents()
-        if let savedContents {
-            for (type, data) in savedContents {
-                pasteboard.setData(data, forType: type)
-            }
-        }
-
-        guard let selectedText, !selectedText.isEmpty else { return nil }
-        return selectedText
+    /// Captures the selected text and the AXUIElement it belongs to.
+    struct TextSelection: @unchecked Sendable {
+        let text: String
+        let element: AXUIElement
     }
 
-    private func simulateCopy() {
-        // Key code 0x08 = C
-        let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x08, keyDown: true)
-        keyDown?.flags = .maskCommand
-        keyDown?.post(tap: .cgSessionEventTap)
+    func getSelectedText() -> String? {
+        getTextSelection()?.text
+    }
 
-        let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x08, keyDown: false)
-        keyUp?.flags = .maskCommand
-        keyUp?.post(tap: .cgSessionEventTap)
+    /// Returns the selected text and the AXUIElement, so the selection can be replaced later.
+    func getTextSelection() -> TextSelection? {
+        guard isAccessibilityGranted else { return nil }
+
+        let systemWide = AXUIElementCreateSystemWide()
+        var focusedElement: AnyObject?
+        guard AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success else {
+            return nil
+        }
+
+        let element = focusedElement as! AXUIElement
+        var selectedText: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXSelectedTextAttribute as CFString, &selectedText) == .success else {
+            return nil
+        }
+
+        guard let text = selectedText as? String, !text.isEmpty else { return nil }
+        return TextSelection(text: text, element: element)
+    }
+
+    /// Returns the focused text element (even without selection), for later insertion.
+    func getFocusedTextElement() -> AXUIElement? {
+        guard isAccessibilityGranted else { return nil }
+
+        let systemWide = AXUIElementCreateSystemWide()
+        var focusedElement: AnyObject?
+        guard AXUIElementCopyAttributeValue(systemWide, kAXFocusedUIElementAttribute as CFString, &focusedElement) == .success else {
+            return nil
+        }
+
+        let element = focusedElement as! AXUIElement
+        var roleValue: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &roleValue) == .success,
+              let role = roleValue as? String else { return nil }
+
+        let textRoles = ["AXTextField", "AXTextArea", "AXComboBox", "AXSearchField", "AXWebArea"]
+        guard textRoles.contains(role) else { return nil }
+        return element
+    }
+
+    /// Replaces the selected text on a previously captured AXUIElement.
+    func replaceSelectedText(in selection: TextSelection, with text: String) -> Bool {
+        insertTextAt(element: selection.element, text: text)
+    }
+
+    /// Inserts text at the cursor position of a previously captured AXUIElement.
+    func insertTextAt(element: AXUIElement, text: String) -> Bool {
+        let result = AXUIElementSetAttributeValue(
+            element,
+            kAXSelectedTextAttribute as CFString,
+            text as CFTypeRef
+        )
+        return result == .success
     }
 
     func insertText(_ text: String, forcePaste: Bool = false) async throws -> InsertionResult {

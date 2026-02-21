@@ -1,4 +1,5 @@
 import AppKit
+import ApplicationServices
 import Foundation
 import Combine
 import os
@@ -71,9 +72,6 @@ final class DictationViewModel: ObservableObject {
     @Published var promptDisplayDuration: Double {
         didSet { UserDefaults.standard.set(promptDisplayDuration, forKey: UserDefaultsKeys.promptDisplayDuration) }
     }
-    @Published var availablePromptActions: [PromptAction] = []
-    @Published var selectedPromptIndex: Int = 0
-    @Published var promptResultText: String = ""
 
     enum OverlayPosition: String, CaseIterable {
         case top
@@ -138,7 +136,6 @@ final class DictationViewModel: ObservableObject {
     private var silenceTimer: Timer?
     private var errorResetTask: Task<Void, Never>?
     private var urlResolutionTask: Task<Void, Never>?
-    private var promptDismissTask: Task<Void, Never>?
 
     init(
         audioRecordingService: AudioRecordingService,
@@ -253,10 +250,8 @@ final class DictationViewModel: ObservableObject {
     }
 
     private func startRecording() {
-        // Dismiss prompt selection if active
-        if case .promptSelection = state {
-            resetDictationState()
-        }
+        // Dismiss prompt palette if active
+        promptPaletteController.hide()
 
         guard canDictate else {
             showError("No model loaded. Please download a model first.")
@@ -502,8 +497,12 @@ final class DictationViewModel: ObservableObject {
 
                 soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
 
-                // Always show prompt selection after dictation
-                enterPromptSelection(with: text)
+                state = .inserting
+                Task {
+                    try? await Task.sleep(for: .seconds(1.5))
+                    guard !Task.isCancelled else { return }
+                    resetDictationState()
+                }
             } catch {
                 guard !Task.isCancelled else { return }
                 soundService.play(.error, enabled: soundFeedbackEnabled)
@@ -581,7 +580,6 @@ final class DictationViewModel: ObservableObject {
     }
 
     private func resetDictationState() {
-        promptDismissTask?.cancel()
         errorResetTask?.cancel()
         urlResolutionTask?.cancel()
         urlResolutionTask = nil
@@ -592,124 +590,14 @@ final class DictationViewModel: ObservableObject {
         activeProfileName = nil
     }
 
-    // MARK: - Prompt Selection
+    // MARK: - Standalone Prompt Palette
 
-    func enterPromptSelection(with text: String, autoDismiss: Bool = true) {
-        let actions = promptProcessingService.isCurrentProviderReady
-            ? promptActionService.getEnabledActions()
-            : []
-        guard !actions.isEmpty else {
-            // No prompts configured, stay in clipboard-only mode
-            state = .inserting
-            Task {
-                try? await Task.sleep(for: .seconds(1.5))
-                guard !Task.isCancelled else { return }
-                resetDictationState()
-            }
-            return
-        }
-
-        // Ensure text is always in clipboard (getSelectedText restores old clipboard)
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(text, forType: .string)
-
-        availablePromptActions = actions
-        selectedPromptIndex = -1  // No pre-selection, user must choose
-        state = .promptSelection(text)
-
-        promptDismissTask?.cancel()
-        promptDismissTask = Task {
-            try? await Task.sleep(for: .seconds(promptDisplayDuration))
-            guard !Task.isCancelled else { return }
-            if case .promptSelection = state {
-                dismissPromptSelection()
-            }
-        }
-    }
-
-    func selectPromptAction(_ action: PromptAction) {
-        guard case .promptSelection(let text) = state else { return }
-
-        promptDismissTask?.cancel()
-        state = .promptProcessing(action.name)
-        promptResultText = ""
-
-        transcriptionTask = Task {
-            do {
-                let result = try await promptProcessingService.process(
-                    prompt: action.prompt,
-                    text: text,
-                    providerOverride: action.providerType.flatMap { LLMProviderType(rawValue: $0) },
-                    cloudModelOverride: action.cloudModel
-                )
-                guard !Task.isCancelled else { return }
-
-                promptResultText = result
-
-                // Copy result to clipboard
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(result, forType: .string)
-
-                soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
-
-                // Show result briefly, then auto-dismiss
-                promptDismissTask = Task {
-                    try? await Task.sleep(for: .seconds(promptDisplayDuration))
-                    guard !Task.isCancelled else { return }
-                    if case .promptProcessing = state {
-                        resetDictationState()
-                    }
-                }
-            } catch {
-                guard !Task.isCancelled else { return }
-                soundService.play(.error, enabled: soundFeedbackEnabled)
-                showError(error.localizedDescription)
-            }
-        }
-    }
-
-    /// Total options: 1 (clipboard) + prompt actions count
-    private var totalPromptOptions: Int {
-        1 + availablePromptActions.count
-    }
-
-    func selectPromptByIndex(_ index: Int) {
-        guard index >= 0, index < totalPromptOptions else { return }
-        selectedPromptIndex = index
-        confirmPromptSelection()
-    }
-
-    func movePromptSelection(by offset: Int) {
-        guard totalPromptOptions > 0 else { return }
-        selectedPromptIndex = max(0, min(totalPromptOptions - 1, selectedPromptIndex + offset))
-    }
-
-    func confirmPromptSelection() {
-        guard selectedPromptIndex >= 0 else {
-            resetDictationState()  // Enter with no selection = dismiss
-            return
-        }
-        if selectedPromptIndex == 0 {
-            // "Copy to Clipboard" - text is already in clipboard, just dismiss
-            resetDictationState()
-        } else {
-            let actionIndex = selectedPromptIndex - 1
-            guard actionIndex >= 0, actionIndex < availablePromptActions.count else { return }
-            selectPromptAction(availablePromptActions[actionIndex])
-        }
-    }
-
-    func dismissPromptSelection() {
-        // Works for both promptSelection and promptProcessing (result display)
-        resetDictationState()
-    }
+    private let promptPaletteController = PromptPaletteController()
 
     func triggerStandalonePromptSelection() {
-        // If already showing prompt selection, dismiss it (toggle behavior)
-        if case .promptSelection = state {
-            dismissPromptSelection()
+        // Toggle behavior
+        if promptPaletteController.isVisible {
+            promptPaletteController.hide()
             return
         }
         guard state == .idle else { return }
@@ -720,17 +608,101 @@ final class DictationViewModel: ObservableObject {
             return
         }
 
-        // Try to get selected text, fall back to clipboard
+        let actions = promptActionService.getEnabledActions()
+        guard !actions.isEmpty else { return }
+
+        // Try to get selected text (with element reference), fall back to clipboard
         let text: String
-        if let selected = textInsertionService.getSelectedText(), !selected.isEmpty {
-            text = selected
+        let selection: TextInsertionService.TextSelection?
+        let focusedElement: AXUIElement?
+        if let sel = textInsertionService.getTextSelection() {
+            text = sel.text
+            selection = sel
+            focusedElement = nil
+            logger.info("[PromptPalette] Got selected text: \(text.prefix(80))")
         } else if let clipboard = NSPasteboard.general.string(forType: .string), !clipboard.isEmpty {
             text = clipboard
+            selection = nil
+            focusedElement = textInsertionService.getFocusedTextElement()
+            logger.info("[PromptPalette] No selection, using clipboard: \(text.prefix(80))")
         } else {
-            return // nothing to process
+            logger.info("[PromptPalette] No text available, aborting")
+            return
         }
 
-        enterPromptSelection(with: text, autoDismiss: false)
+        promptPaletteController.show(actions: actions, sourceText: text) { [weak self] action in
+            self?.processStandalonePrompt(action: action, text: text, selection: selection, focusedElement: focusedElement)
+        }
+    }
+
+    private func processStandalonePrompt(action: PromptAction, text: String, selection: TextInsertionService.TextSelection?, focusedElement: AXUIElement? = nil) {
+        promptPaletteController.showToast(
+            message: action.name + "...",
+            icon: "ellipsis.circle"
+        )
+
+        Task {
+            do {
+                let result = try await promptProcessingService.process(
+                    prompt: action.prompt,
+                    text: text,
+                    providerOverride: action.providerType.flatMap { LLMProviderType(rawValue: $0) },
+                    cloudModelOverride: action.cloudModel
+                )
+                guard !Task.isCancelled else { return }
+
+                if let selection {
+                    logger.info("[PromptPalette] Replacing selection with result (\(result.count) chars): \(result.prefix(80))")
+                    let replaced = textInsertionService.replaceSelectedText(in: selection, with: result)
+                    logger.info("[PromptPalette] replaceSelectedText succeeded: \(replaced)")
+                    if !replaced {
+                        logger.info("[PromptPalette] Falling back to clipboard")
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(result, forType: .string)
+                    }
+                    soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
+                    promptPaletteController.showToast(
+                        message: replaced ? String(localized: "Text replaced") : String(localized: "Copied to clipboard"),
+                        icon: replaced ? "checkmark.circle" : "doc.on.clipboard"
+                    )
+                } else if let element = focusedElement {
+                    let inserted = textInsertionService.insertTextAt(element: element, text: result)
+                    if inserted {
+                        soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
+                        promptPaletteController.showToast(
+                            message: String(localized: "Text inserted"),
+                            icon: "checkmark.circle"
+                        )
+                    } else {
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(result, forType: .string)
+                        soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
+                        promptPaletteController.showToast(
+                            message: String(localized: "Copied to clipboard"),
+                            icon: "doc.on.clipboard"
+                        )
+                    }
+                } else {
+                    let pasteboard = NSPasteboard.general
+                    pasteboard.clearContents()
+                    pasteboard.setString(result, forType: .string)
+                    soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
+                    promptPaletteController.showToast(
+                        message: String(localized: "Copied to clipboard"),
+                        icon: "doc.on.clipboard"
+                    )
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                soundService.play(.error, enabled: soundFeedbackEnabled)
+                promptPaletteController.showToast(
+                    message: error.localizedDescription,
+                    icon: "xmark.circle"
+                )
+            }
+        }
     }
 
     private func showError(_ message: String) {
