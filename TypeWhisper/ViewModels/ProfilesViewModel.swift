@@ -156,7 +156,15 @@ final class ProfilesViewModel: ObservableObject {
         editorSelectedTask = profile.selectedTask
         editorWhisperModeOverride = profile.whisperModeOverride
         editorEngineOverride = profile.engineOverride
-        editorCloudModelOverride = profile.cloudModelOverride
+        // Validate cloudModelOverride against available plugin models
+        if let modelOverride = profile.cloudModelOverride,
+           let engineOverride = profile.engineOverride,
+           let plugin = PluginManager.shared.transcriptionEngine(for: engineOverride) {
+            let validIds = plugin.transcriptionModels.map(\.id)
+            editorCloudModelOverride = validIds.contains(modelOverride) ? modelOverride : nil
+        } else {
+            editorCloudModelOverride = profile.cloudModelOverride
+        }
         editorAlwaysPaste = profile.alwaysPaste
         editorPromptActionId = profile.promptActionId
         editorPriority = profile.priority

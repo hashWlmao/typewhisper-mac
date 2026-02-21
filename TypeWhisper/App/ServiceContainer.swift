@@ -23,6 +23,7 @@ final class ServiceContainer: ObservableObject {
     let audioDeviceService: AudioDeviceService
     let promptActionService: PromptActionService
     let promptProcessingService: PromptProcessingService
+    let pluginManager: PluginManager
 
     // HTTP API
     let httpServer: HTTPServer
@@ -59,6 +60,7 @@ final class ServiceContainer: ObservableObject {
         audioDeviceService = AudioDeviceService()
         promptActionService = PromptActionService()
         promptProcessingService = PromptProcessingService()
+        pluginManager = PluginManager()
 
         // HTTP API
         let router = APIRouter()
@@ -122,6 +124,10 @@ final class ServiceContainer: ObservableObject {
         SnippetsViewModel._shared = snippetsViewModel
         HomeViewModel._shared = homeViewModel
         PromptActionsViewModel._shared = promptActionsViewModel
+
+        // Plugin system
+        EventBus.shared = EventBus()
+        PluginManager.shared = pluginManager
     }
 
     func initialize() async {
@@ -141,5 +147,27 @@ final class ServiceContainer: ObservableObject {
         }
 
         await modelManagerService.loadAllSavedModels()
+
+        pluginManager.setProfileNamesProvider { [weak self] in
+            self?.profileService.profiles.map(\.name) ?? []
+        }
+        pluginManager.scanAndLoadPlugins()
+
+        // Re-restore cloud model selection now that plugins are loaded
+        modelManagerService.restoreCloudModelSelection()
+
+        // Validate LLM provider selection against loaded plugins
+        promptProcessingService.validateSelectionAfterPluginLoad()
+
+        // Migrate stale cloudModelOverride in profiles
+        for profile in profileService.profiles {
+            guard let modelOverride = profile.cloudModelOverride,
+                  let engineOverride = profile.engineOverride,
+                  let plugin = PluginManager.shared.transcriptionEngine(for: engineOverride) else { continue }
+            let validIds = plugin.transcriptionModels.map(\.id)
+            if !validIds.contains(modelOverride) {
+                profile.cloudModelOverride = nil
+            }
+        }
     }
 }

@@ -3,6 +3,7 @@ import ApplicationServices
 import Foundation
 import Combine
 import os
+import TypeWhisperPluginSDK
 
 private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "typewhisper-mac", category: "DictationViewModel")
 
@@ -125,6 +126,7 @@ final class DictationViewModel: ObservableObject {
     private let audioDeviceService: AudioDeviceService
     private let promptActionService: PromptActionService
     private let promptProcessingService: PromptProcessingService
+    private let postProcessingPipeline: PostProcessingPipeline
     private var matchedProfile: Profile?
     private var capturedActiveApp: (name: String?, bundleId: String?, url: String?)?
 
@@ -171,6 +173,10 @@ final class DictationViewModel: ObservableObject {
         self.audioDeviceService = audioDeviceService
         self.promptActionService = promptActionService
         self.promptProcessingService = promptProcessingService
+        self.postProcessingPipeline = PostProcessingPipeline(
+            snippetService: snippetService,
+            dictionaryService: dictionaryService
+        )
         self.whisperModeEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.whisperModeEnabled)
         self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.audioDuckingEnabled)
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: UserDefaultsKeys.audioDuckingLevel) as? Double ?? 0.2
@@ -201,7 +207,15 @@ final class DictationViewModel: ObservableObject {
     }
 
     var canDictate: Bool {
-        modelManager.activeEngine?.isModelLoaded == true
+        if modelManager.activeEngine?.isModelLoaded == true {
+            return true
+        }
+        // Cloud models don't use activeEngine - check if plugin is configured
+        if let selectedId = modelManager.selectedModelId, CloudProvider.isCloudModel(selectedId) {
+            let (providerId, _) = CloudProvider.parse(selectedId)
+            return PluginManager.shared.transcriptionEngine(for: providerId)?.isConfigured ?? false
+        }
+        return false
     }
 
     var needsMicPermission: Bool {
@@ -329,6 +343,10 @@ final class DictationViewModel: ObservableObject {
             startRecordingTimer()
             startStreamingIfSupported()
             startSilenceDetection()
+            EventBus.shared.emit(.recordingStarted(RecordingStartedPayload(
+                appName: capturedActiveApp?.name,
+                bundleIdentifier: capturedActiveApp?.bundleId
+            )))
         } catch {
             audioDuckingService.restoreAudio()
             mediaPlaybackService.resumePlayback()
@@ -363,9 +381,8 @@ final class DictationViewModel: ObservableObject {
         return nil
     }
 
-    private var effectiveEngineOverride: EngineType? {
-        guard let raw = matchedProfile?.engineOverride else { return nil }
-        return EngineType(rawValue: raw)
+    private var effectiveEngineOverrideId: String? {
+        matchedProfile?.engineOverride
     }
 
     private var effectiveCloudModelOverride: String? {
@@ -407,6 +424,11 @@ final class DictationViewModel: ObservableObject {
         let padCount = Int(0.3 * AudioRecordingService.targetSampleRate)
         samples.append(contentsOf: [Float](repeating: 0, count: padCount))
 
+        let audioDurationForEvent = Double(samples.count) / 16000.0
+        EventBus.shared.emit(.recordingStopped(RecordingStoppedPayload(
+            durationSeconds: audioDurationForEvent
+        )))
+
         guard !samples.isEmpty else {
             resetDictationState()
             return
@@ -429,7 +451,7 @@ final class DictationViewModel: ObservableObject {
                 let activeApp = capturedActiveApp ?? textInsertionService.captureActiveApp()
                 let language = effectiveLanguage
                 let task = effectiveTask
-                let engineOverride = effectiveEngineOverride
+                let engineOverride = effectiveEngineOverrideId
                 let cloudModelOverride = effectiveCloudModelOverride
                 let translationTarget = effectiveTranslationTarget
                 let termsPrompt = dictionaryService.getTermsForPrompt()
@@ -438,7 +460,7 @@ final class DictationViewModel: ObservableObject {
                     audioSamples: samples,
                     language: language,
                     task: task,
-                    engineOverride: engineOverride,
+                    engineOverrideId: engineOverride,
                     cloudModelOverride: cloudModelOverride,
                     prompt: termsPrompt
                 )
@@ -452,34 +474,57 @@ final class DictationViewModel: ObservableObject {
                     return
                 }
 
-                // Prompt processing replaces translation when active
+                // Build LLM/translation handler for pipeline
+                let llmHandler: ((String) async throws -> String)?
                 if let promptAction = self.effectivePromptAction {
-                    text = try await promptProcessingService.process(
-                        prompt: promptAction.prompt,
-                        text: text,
-                        providerOverride: promptAction.providerType.flatMap { LLMProviderType(rawValue: $0) },
-                        cloudModelOverride: promptAction.cloudModel
-                    )
+                    let pps = self.promptProcessingService
+                    let providerOverride = promptAction.providerType
+                    let modelOverride = promptAction.cloudModel
+                    let prompt = promptAction.prompt
+                    llmHandler = { text in
+                        try await pps.process(
+                            prompt: prompt, text: text,
+                            providerOverride: providerOverride,
+                            cloudModelOverride: modelOverride
+                        )
+                    }
                 } else if let targetCode = translationTarget {
-                    let target = Locale.Language(identifier: targetCode)
-                    text = try await translationService.translate(text: text, to: target)
+                    let ts = self.translationService
+                    llmHandler = { text in
+                        let target = Locale.Language(identifier: targetCode)
+                        return try await ts.translate(text: text, to: target)
+                    }
+                } else {
+                    llmHandler = nil
                 }
 
                 guard !Task.isCancelled else { return }
 
-                // Post-processing pipeline
-                text = snippetService.applySnippets(to: text)
-                text = dictionaryService.applyCorrections(to: text)
+                // Post-processing pipeline (priority-based)
+                let ppContext = PostProcessingContext(
+                    appName: activeApp.name,
+                    bundleIdentifier: activeApp.bundleId,
+                    url: activeApp.url,
+                    language: language
+                )
+                text = try await postProcessingPipeline.process(
+                    text: text, context: ppContext, llmHandler: llmHandler
+                )
 
                 partialText = ""
 
                 // Always insert text if there's a focused text field
                 if textInsertionService.hasFocusedTextField() {
                     _ = try await textInsertionService.insertText(text)
+                    EventBus.shared.emit(.textInserted(TextInsertedPayload(
+                        text: text,
+                        appName: activeApp.name,
+                        bundleIdentifier: activeApp.bundleId
+                    )))
                 }
 
                 let modelDisplayName = modelManager.resolvedModelDisplayName(
-                    engineOverride: engineOverride,
+                    engineOverrideId: engineOverride,
                     cloudModelOverride: cloudModelOverride
                 )
 
@@ -491,9 +536,22 @@ final class DictationViewModel: ObservableObject {
                     appURL: activeApp.url,
                     durationSeconds: audioDuration,
                     language: language,
-                    engineUsed: result.engineUsed.rawValue,
+                    engineUsed: result.engineUsed,
                     modelUsed: modelDisplayName
                 )
+
+                EventBus.shared.emit(.transcriptionCompleted(TranscriptionCompletedPayload(
+                    rawText: result.text,
+                    finalText: text,
+                    language: language,
+                    engineUsed: result.engineUsed,
+                    modelUsed: modelDisplayName,
+                    durationSeconds: audioDuration,
+                    appName: activeApp.name,
+                    bundleIdentifier: activeApp.bundleId,
+                    url: activeApp.url,
+                    profileName: self.matchedProfile?.name
+                )))
 
                 soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
 
@@ -505,6 +563,11 @@ final class DictationViewModel: ObservableObject {
                 }
             } catch {
                 guard !Task.isCancelled else { return }
+                EventBus.shared.emit(.transcriptionFailed(TranscriptionFailedPayload(
+                    error: error.localizedDescription,
+                    appName: capturedActiveApp?.name,
+                    bundleIdentifier: capturedActiveApp?.bundleId
+                )))
                 soundService.play(.error, enabled: soundFeedbackEnabled)
                 showError(error.localizedDescription)
                 matchedProfile = nil
@@ -646,7 +709,7 @@ final class DictationViewModel: ObservableObject {
                 let result = try await promptProcessingService.process(
                     prompt: action.prompt,
                     text: text,
-                    providerOverride: action.providerType.flatMap { LLMProviderType(rawValue: $0) },
+                    providerOverride: action.providerType,
                     cloudModelOverride: action.cloudModel
                 )
                 guard !Task.isCancelled else { return }
@@ -722,14 +785,18 @@ final class DictationViewModel: ObservableObject {
     private var confirmedStreamingText = ""
 
     private func startStreamingIfSupported() {
-        let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverride, cloudModelOverride: effectiveCloudModelOverride)
+        // Plugin engines don't support streaming
+        if let overrideId = effectiveEngineOverrideId, modelManager.isPluginEngine(overrideId) {
+            return
+        }
+        let resolvedEngine = modelManager.resolveEngine(override: effectiveEngineOverrideId, cloudModelOverride: effectiveCloudModelOverride)
         guard let engine = resolvedEngine, engine.supportsStreaming else { return }
 
         isStreaming = true
         confirmedStreamingText = ""
         let streamLanguage = effectiveLanguage
         let streamTask = effectiveTask
-        let streamEngineOverride = effectiveEngineOverride
+        let streamEngineOverride = effectiveEngineOverrideId
         let streamCloudModelOverride = effectiveCloudModelOverride
         let streamPrompt = dictionaryService.getTermsForPrompt()
         streamingTask = Task { [weak self] in
@@ -748,7 +815,7 @@ final class DictationViewModel: ObservableObject {
                             audioSamples: buffer,
                             language: streamLanguage,
                             task: streamTask,
-                            engineOverride: streamEngineOverride,
+                            engineOverrideId: streamEngineOverride,
                             cloudModelOverride: streamCloudModelOverride,
                             prompt: streamPrompt,
                             onProgress: { [weak self] text in

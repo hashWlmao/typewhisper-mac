@@ -1,4 +1,5 @@
 import SwiftUI
+import TypeWhisperPluginSDK
 
 struct PromptActionsSettingsView: View {
     @ObservedObject private var viewModel = PromptActionsViewModel.shared
@@ -42,7 +43,7 @@ struct PromptActionsSettingsView: View {
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(viewModel.promptActions) { action in
-                            PromptActionCardView(action: action, viewModel: viewModel)
+                            PromptActionCardView(action: action, viewModel: viewModel, processingService: processingService)
                         }
                     }
                     .padding(.horizontal, 2)
@@ -70,18 +71,19 @@ struct PromptActionsSettingsView: View {
     private var providerSection: some View {
         GroupBox(String(localized: "Default LLM Provider")) {
             VStack(alignment: .leading, spacing: 8) {
-                Picker(String(localized: "Provider"), selection: $processingService.selectedProviderType) {
-                    ForEach(processingService.availableProviders) { provider in
-                        Text(provider.displayName).tag(provider)
+                Picker(String(localized: "Provider"), selection: $processingService.selectedProviderId) {
+                    ForEach(processingService.availableProviders, id: \.id) { provider in
+                        Text(provider.displayName).tag(provider.id)
                     }
                 }
-                .onChange(of: processingService.selectedProviderType) { _, newType in
-                    processingService.selectedCloudModel = newType.cloudConfig?.defaultModel ?? ""
-                    processingService.refreshCloudProviders()
+                .onChange(of: processingService.selectedProviderId) { _, newId in
+                    // Reset cloud model when switching providers
+                    let models = processingService.modelsForProvider(newId)
+                    processingService.selectedCloudModel = models.first?.id ?? ""
                 }
 
                 ProviderStatusView(
-                    providerType: processingService.selectedProviderType,
+                    providerId: processingService.selectedProviderId,
                     processingService: processingService,
                     cloudModel: $processingService.selectedCloudModel
                 )
@@ -129,13 +131,12 @@ struct PromptActionsSettingsView: View {
 // MARK: - Provider Status (reused in main settings + editor)
 
 struct ProviderStatusView: View {
-    let providerType: LLMProviderType
+    let providerId: String
     let processingService: PromptProcessingService
     var cloudModel: Binding<String>?
 
     var body: some View {
-        switch providerType {
-        case .appleIntelligence:
+        if providerId == PromptProcessingService.appleIntelligenceId {
             if processingService.isAppleIntelligenceAvailable {
                 Label(String(localized: "Available"), systemImage: "checkmark.circle.fill")
                     .font(.caption)
@@ -145,26 +146,27 @@ struct ProviderStatusView: View {
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
-        default:
-            if processingService.isProviderReady(providerType) {
+        } else {
+            if processingService.isProviderReady(providerId) {
                 Label(String(localized: "API key configured"), systemImage: "checkmark.circle.fill")
                     .font(.caption)
                     .foregroundStyle(.green)
             } else {
-                Label(String(localized: "API key required - configure in Models tab"), systemImage: "exclamationmark.triangle.fill")
+                Label(String(localized: "API key required - configure in Integrations tab"), systemImage: "exclamationmark.triangle.fill")
                     .font(.caption)
                     .foregroundStyle(.orange)
             }
 
-            if let cloudModel, let config = providerType.cloudConfig {
+            let models = processingService.modelsForProvider(providerId)
+            if let cloudModel, !models.isEmpty {
                 Picker(String(localized: "Model"), selection: cloudModel) {
-                    ForEach(config.knownModels, id: \.self) { model in
-                        Text(model).tag(model)
+                    ForEach(models, id: \.id) { model in
+                        Text(model.displayName).tag(model.id)
                     }
                 }
                 .onAppear {
-                    if cloudModel.wrappedValue.isEmpty || !config.knownModels.contains(cloudModel.wrappedValue) {
-                        cloudModel.wrappedValue = config.defaultModel
+                    if cloudModel.wrappedValue.isEmpty || !models.contains(where: { $0.id == cloudModel.wrappedValue }) {
+                        cloudModel.wrappedValue = models.first?.id ?? ""
                     }
                 }
             }
@@ -177,6 +179,7 @@ struct ProviderStatusView: View {
 private struct PromptActionCardView: View {
     let action: PromptAction
     @ObservedObject var viewModel: PromptActionsViewModel
+    let processingService: PromptProcessingService
     @State private var isHovering = false
 
     var body: some View {
@@ -192,9 +195,8 @@ private struct PromptActionCardView: View {
                         .font(.callout)
                         .fontWeight(.medium)
 
-                    if let providerRaw = action.providerType,
-                       let provider = LLMProviderType(rawValue: providerRaw) {
-                        Text(provider.displayName)
+                    if let providerName = action.providerType {
+                        Text(processingService.displayName(for: providerName))
                             .font(.caption2)
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
@@ -346,24 +348,33 @@ private struct PromptActionEditorSheet: View {
 
                     GroupBox(String(localized: "LLM Provider")) {
                         VStack(alignment: .leading, spacing: 8) {
-                            Picker(String(localized: "Provider"), selection: $viewModel.editProviderType) {
-                                Text(String(localized: "Default")).tag(nil as LLMProviderType?)
-                                ForEach(viewModel.promptProcessingService.availableProviders) { provider in
-                                    Text(provider.displayName).tag(provider as LLMProviderType?)
+                            let providers = viewModel.promptProcessingService.availableProviders
+                            Picker(String(localized: "Provider"), selection: $viewModel.editProviderId) {
+                                Text(String(localized: "Default")).tag(nil as String?)
+                                ForEach(providers, id: \.id) { provider in
+                                    Text(provider.displayName).tag(provider.id as String?)
                                 }
                             }
-                            .onChange(of: viewModel.editProviderType) { _, newType in
-                                viewModel.editCloudModel = newType?.cloudConfig?.defaultModel ?? ""
+                            .onChange(of: viewModel.editProviderId) { _, newId in
+                                if let newId {
+                                    let models = viewModel.promptProcessingService.modelsForProvider(newId)
+                                    viewModel.editCloudModel = models.first?.id ?? ""
+                                } else {
+                                    viewModel.editCloudModel = ""
+                                }
                             }
 
                             Text(String(localized: "Override the default provider for this prompt. Leave on \"Default\" to use the global setting."))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
-                            if let selected = viewModel.editProviderType, let config = selected.cloudConfig {
-                                Picker(String(localized: "Model"), selection: $viewModel.editCloudModel) {
-                                    ForEach(config.knownModels, id: \.self) { model in
-                                        Text(model).tag(model)
+                            if let selectedId = viewModel.editProviderId {
+                                let models = viewModel.promptProcessingService.modelsForProvider(selectedId)
+                                if !models.isEmpty {
+                                    Picker(String(localized: "Model"), selection: $viewModel.editCloudModel) {
+                                        ForEach(models, id: \.id) { model in
+                                            Text(model.displayName).tag(model.id)
+                                        }
                                     }
                                 }
                             }

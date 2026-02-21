@@ -1,67 +1,15 @@
 import Foundation
 
-// MARK: - Cloud Provider Config
-
-/// Configuration for OpenAI-compatible cloud providers.
-/// To add a new provider: add a case to LLMProviderType, add its cloudConfig entry, done.
-struct CloudProviderConfig: Sendable {
-    let baseURL: String
-    let defaultModel: String
-    let keychainId: String
-    let knownModels: [String]
-}
-
 // MARK: - Provider Type
 
 enum LLMProviderType: String, CaseIterable, Identifiable {
     case appleIntelligence
-    case groq
-    case openai
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
         case .appleIntelligence: "Apple Intelligence"
-        case .groq: "Groq"
-        case .openai: "OpenAI"
-        }
-    }
-
-    var isCloudProvider: Bool { cloudConfig != nil }
-
-    /// Cloud provider configuration. Returns nil for non-cloud providers (Apple Intelligence).
-    var cloudConfig: CloudProviderConfig? {
-        switch self {
-        case .appleIntelligence:
-            nil
-        case .groq:
-            CloudProviderConfig(
-                baseURL: "https://api.groq.com/openai",
-                defaultModel: "llama-3.3-70b-versatile",
-                keychainId: "groq",
-                knownModels: [
-                    "llama-3.3-70b-versatile",
-                    "llama-3.1-8b-instant",
-                    "openai/gpt-oss-120b",
-                    "openai/gpt-oss-20b",
-                ]
-            )
-        case .openai:
-            CloudProviderConfig(
-                baseURL: "https://api.openai.com",
-                defaultModel: "gpt-4.1-nano",
-                keychainId: "openai",
-                knownModels: [
-                    "gpt-5",
-                    "gpt-5-mini",
-                    "gpt-5-nano",
-                    "gpt-4.1",
-                    "gpt-4.1-mini",
-                    "gpt-4.1-nano",
-                    "o4-mini",
-                ]
-            )
         }
     }
 }

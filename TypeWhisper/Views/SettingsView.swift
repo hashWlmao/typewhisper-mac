@@ -2,7 +2,7 @@ import SwiftUI
 
 enum SettingsTab: Hashable {
     case home, general, models, dictation
-    case fileTranscription, history, dictionary, snippets, profiles, prompts, advanced
+    case fileTranscription, history, dictionary, snippets, profiles, prompts, integrations, advanced
 }
 
 struct SettingsView: View {
@@ -65,6 +65,9 @@ private struct SettingsExtraTabs: TabContent {
         }
         Tab(String(localized: "Prompts"), systemImage: "sparkles", value: SettingsTab.prompts) {
             PromptActionsSettingsView()
+        }
+        Tab(String(localized: "Integrations"), systemImage: "puzzlepiece.extension", value: SettingsTab.integrations) {
+            PluginSettingsView()
         }
         Tab(String(localized: "Advanced"), systemImage: "gearshape.2", value: SettingsTab.advanced) {
             AdvancedSettingsView()
