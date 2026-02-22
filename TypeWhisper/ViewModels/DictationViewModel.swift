@@ -548,15 +548,13 @@ final class DictationViewModel: ObservableObject {
                                       userInfo: [NSLocalizedDescriptionKey: actionResult.message])
                     }
                 } else {
-                    // Default flow: insert text
-                    if textInsertionService.hasFocusedTextField() {
-                        _ = try await textInsertionService.insertText(text)
-                        EventBus.shared.emit(.textInserted(TextInsertedPayload(
-                            text: text,
-                            appName: activeApp.name,
-                            bundleIdentifier: activeApp.bundleId
-                        )))
-                    }
+                    // Default flow: always insert text (clipboard + Cmd+V)
+                    _ = try await textInsertionService.insertText(text)
+                    EventBus.shared.emit(.textInserted(TextInsertedPayload(
+                        text: text,
+                        appName: activeApp.name,
+                        bundleIdentifier: activeApp.bundleId
+                    )))
                 }
 
                 let modelDisplayName = modelManager.resolvedModelDisplayName(
