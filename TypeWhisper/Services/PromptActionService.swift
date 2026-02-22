@@ -77,7 +77,7 @@ class PromptActionService: ObservableObject {
         }
     }
 
-    func addAction(name: String, prompt: String, icon: String = "sparkles", providerType: String? = nil, cloudModel: String? = nil) {
+    func addAction(name: String, prompt: String, icon: String = "sparkles", providerType: String? = nil, cloudModel: String? = nil, targetActionPluginId: String? = nil) {
         guard let context = modelContext else { return }
 
         let maxOrder = promptActions.map(\.sortOrder).max() ?? -1
@@ -87,7 +87,8 @@ class PromptActionService: ObservableObject {
             icon: icon,
             sortOrder: maxOrder + 1,
             providerType: providerType,
-            cloudModel: cloudModel
+            cloudModel: cloudModel,
+            targetActionPluginId: targetActionPluginId
         )
 
         context.insert(action)
@@ -100,7 +101,7 @@ class PromptActionService: ObservableObject {
         }
     }
 
-    func updateAction(_ action: PromptAction, name: String, prompt: String, icon: String, providerType: String? = nil, cloudModel: String? = nil) {
+    func updateAction(_ action: PromptAction, name: String, prompt: String, icon: String, providerType: String? = nil, cloudModel: String? = nil, targetActionPluginId: String? = nil) {
         guard let context = modelContext else { return }
 
         action.name = name
@@ -108,6 +109,7 @@ class PromptActionService: ObservableObject {
         action.icon = icon
         action.providerType = providerType
         action.cloudModel = cloudModel
+        action.targetActionPluginId = targetActionPluginId
         action.updatedAt = Date()
 
         do {

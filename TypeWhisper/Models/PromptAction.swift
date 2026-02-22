@@ -14,6 +14,7 @@ final class PromptAction {
     var hotkeyModifiers: Int?
     var providerType: String?
     var cloudModel: String?
+    var targetActionPluginId: String?
     var createdAt: Date
     var updatedAt: Date
 
@@ -29,6 +30,7 @@ final class PromptAction {
         hotkeyModifiers: Int? = nil,
         providerType: String? = nil,
         cloudModel: String? = nil,
+        targetActionPluginId: String? = nil,
         createdAt: Date = Date(),
         updatedAt: Date? = nil
     ) {
@@ -43,6 +45,7 @@ final class PromptAction {
         self.hotkeyModifiers = hotkeyModifiers
         self.providerType = providerType
         self.cloudModel = cloudModel
+        self.targetActionPluginId = targetActionPluginId
         self.createdAt = createdAt
         self.updatedAt = updatedAt ?? createdAt
     }

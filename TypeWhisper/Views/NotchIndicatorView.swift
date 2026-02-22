@@ -21,12 +21,18 @@ struct NotchIndicatorView: View {
         geometry.hasNotch ? geometry.notchWidth + 2 * extensionWidth : 200
     }
 
+    private var hasActionFeedback: Bool {
+        viewModel.state == .inserting && viewModel.actionFeedbackMessage != nil
+    }
+
     private var isExpanded: Bool {
-        textExpanded
+        textExpanded || hasActionFeedback
     }
 
     private var currentWidth: CGFloat {
-        textExpanded ? max(closedWidth, 400) : closedWidth
+        if textExpanded { return max(closedWidth, 400) }
+        if hasActionFeedback { return max(closedWidth, 340) }
+        return closedWidth
     }
 
     // MARK: - Audio-reactive glow
@@ -93,6 +99,22 @@ struct NotchIndicatorView: View {
                     }
                 }
                 .transaction { $0.disablesAnimations = true }
+            }
+
+            // Action feedback banner
+            if hasActionFeedback {
+                HStack(spacing: 8) {
+                    Image(systemName: viewModel.actionFeedbackIcon ?? "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.system(size: 16))
+                    Text(viewModel.actionFeedbackMessage ?? "")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .padding(.horizontal, contentPadding)
             }
 
         }
@@ -172,7 +194,7 @@ struct NotchIndicatorView: View {
                 Color.clear
             }
         case .inserting:
-            if side == .leading {
+            if side == .leading, !hasActionFeedback {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .font(.system(size: 11))

@@ -265,12 +265,12 @@ class PromptPaletteController {
     private var toastPanel: NSPanel?
     private var toastWorkItem: DispatchWorkItem?
 
-    func showToast(message: String, icon: String = "text.cursor") {
+    func showToast(message: String, icon: String = "text.cursor", duration: TimeInterval = 2) {
         dismissToast()
 
         let toastView = PromptPaletteToastView(message: message, icon: icon)
         let hosting = NSHostingView(rootView: toastView)
-        hosting.translatesAutoresizingMaskIntoConstraints = true
+        hosting.sizingOptions = []
         let toastSize = hosting.fittingSize
 
         let toast = PromptPalettePanel()
@@ -294,7 +294,7 @@ class PromptPaletteController {
             self?.dismissToast()
         }
         toastWorkItem = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
     }
 
     private func dismissToast() {
@@ -311,23 +311,42 @@ struct PromptPaletteToastView: View {
     let message: String
     let icon: String
 
+    @State private var appeared = false
+    @State private var iconBounce = false
+
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14))
-                .foregroundColor(.secondary)
+                .font(.system(size: 18))
+                .foregroundColor(.white.opacity(0.9))
+                .scaleEffect(iconBounce ? 1.0 : 0.3)
             Text(message)
-                .font(.system(size: 13))
-                .foregroundColor(.primary)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(.white)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+        .background {
+            RoundedRectangle(cornerRadius: 12)
+                .fill(.black.opacity(0.7))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
         .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Color.primary.opacity(0.1), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+        .shadow(color: .black.opacity(0.4), radius: 16, y: 8)
+        .offset(y: appeared ? 0 : -20)
+        .opacity(appeared ? 1 : 0)
+        .task {
+            try? await Task.sleep(for: .milliseconds(50))
+            withAnimation(.spring(duration: 0.4, bounce: 0.3)) {
+                appeared = true
+            }
+            withAnimation(.spring(duration: 0.5, bounce: 0.4).delay(0.1)) {
+                iconBounce = true
+            }
+        }
     }
 }
 

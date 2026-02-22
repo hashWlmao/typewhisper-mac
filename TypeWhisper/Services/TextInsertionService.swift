@@ -59,6 +59,16 @@ enum InsertionResult {
         #endif
     }
 
+    func resolveBrowserInfo(bundleId: String) async -> (url: String?, title: String?) {
+        #if APPSTORE
+        return (nil, nil)
+        #else
+        await Task.detached(priority: .utility) {
+            Self.getBrowserURLAndTitle(bundleId: bundleId)
+        }.value
+        #endif
+    }
+
     // MARK: - Browser URL Detection
 
     private enum BrowserType: String {
@@ -126,7 +136,50 @@ enum InsertionResult {
         return executeAppleScript(script, timeout: 2.5)
     }
 
-    nonisolated private static func executeAppleScript(_ source: String, timeout: TimeInterval) -> String? {
+    nonisolated private static func getBrowserURLAndTitle(bundleId: String) -> (url: String?, title: String?) {
+        let browserType = identifyBrowser(bundleId)
+        guard browserType != .notABrowser, browserType != .firefox else { return (nil, nil) }
+
+        let appName = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId)
+            .flatMap { Bundle(url: $0)?.infoDictionary?["CFBundleName"] as? String }
+            ?? bundleId
+
+        let script: String
+        switch browserType {
+        case .safari:
+            script = """
+            tell application "\(appName)"
+                if (count of windows) > 0 then
+                    set tabURL to URL of current tab of front window
+                    set tabTitle to name of current tab of front window
+                    return tabURL & "\\n" & tabTitle
+                end if
+            end tell
+            return ""
+            """
+        case .arc, .chromiumBased:
+            script = """
+            tell application "\(appName)"
+                if (count of windows) > 0 then
+                    set tabURL to URL of active tab of front window
+                    set tabTitle to title of active tab of front window
+                    return tabURL & "\\n" & tabTitle
+                end if
+            end tell
+            return ""
+            """
+        default:
+            return (nil, nil)
+        }
+
+        guard let result = executeAppleScript(script, timeout: 2.5, validateURL: false) else { return (nil, nil) }
+        let parts = result.components(separatedBy: "\n")
+        let url = parts.first.flatMap { isValidURL($0) ? $0 : nil }
+        let title = parts.count > 1 ? parts.dropFirst().joined(separator: "\n") : nil
+        return (url, title?.isEmpty == true ? nil : title)
+    }
+
+    nonisolated private static func executeAppleScript(_ source: String, timeout: TimeInterval, validateURL: Bool = true) -> String? {
         var result: String?
         let semaphore = DispatchSemaphore(value: 0)
 
@@ -149,7 +202,10 @@ enum InsertionResult {
             return nil
         }
 
-        guard let result, !result.isEmpty, isValidURL(result) else { return nil }
+        guard let result, !result.isEmpty else { return nil }
+        if validateURL {
+            guard isValidURL(result) else { return nil }
+        }
         return result
     }
 

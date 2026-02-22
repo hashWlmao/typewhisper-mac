@@ -16,6 +16,7 @@ public enum TypeWhisperEvent: Sendable {
     case transcriptionCompleted(TranscriptionCompletedPayload)
     case transcriptionFailed(TranscriptionFailedPayload)
     case textInserted(TextInsertedPayload)
+    case actionCompleted(ActionCompletedPayload)
 }
 
 // MARK: - Payloads
@@ -105,6 +106,27 @@ public struct TextInsertedPayload: Sendable, Codable {
     public init(timestamp: Date = Date(), text: String, appName: String? = nil, bundleIdentifier: String? = nil) {
         self.timestamp = timestamp
         self.text = text
+        self.appName = appName
+        self.bundleIdentifier = bundleIdentifier
+    }
+}
+
+public struct ActionCompletedPayload: Sendable, Codable {
+    public let timestamp: Date
+    public let actionId: String
+    public let success: Bool
+    public let message: String
+    public let url: String?
+    public let appName: String?
+    public let bundleIdentifier: String?
+
+    public init(timestamp: Date = Date(), actionId: String, success: Bool, message: String,
+                url: String? = nil, appName: String? = nil, bundleIdentifier: String? = nil) {
+        self.timestamp = timestamp
+        self.actionId = actionId
+        self.success = success
+        self.message = message
+        self.url = url
         self.appName = appName
         self.bundleIdentifier = bundleIdentifier
     }

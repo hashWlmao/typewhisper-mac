@@ -57,8 +57,18 @@ final class PluginManager: ObservableObject {
             .compactMap { $0.instance as? TranscriptionEnginePlugin }
     }
 
+    var actionPlugins: [ActionPlugin] {
+        loadedPlugins
+            .filter { $0.isEnabled }
+            .compactMap { $0.instance as? ActionPlugin }
+    }
+
     func transcriptionEngine(for providerId: String) -> TranscriptionEnginePlugin? {
         transcriptionEngines.first { $0.providerId == providerId }
+    }
+
+    func actionPlugin(for actionId: String) -> ActionPlugin? {
+        actionPlugins.first { $0.actionId == actionId }
     }
 
     func llmProvider(for providerName: String) -> LLMProviderPlugin? {

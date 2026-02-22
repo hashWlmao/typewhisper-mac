@@ -289,6 +289,16 @@
         }
       }
     },
+    "Action Target" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktionsziel"
+          }
+        }
+      }
+    },
     "Active" : {
       "localizations" : {
         "de" : {
@@ -989,6 +999,17 @@
         }
       }
     },
+    "Copy Prompt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prompt kopieren"
+          }
+        }
+      }
+    },
     "Copy to Clipboard" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1050,6 +1071,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Korrekturen ersetzen Text nach der Transkription"
+          }
+        }
+      }
+    },
+    "Create a new PromptAction with this system prompt and set \"Create Linear Issue\" as the action target:" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstelle eine neue PromptAction mit diesem Prompt und setze \"Create Linear Issue\" als Aktionsziel:"
+          }
+        }
+      }
+    },
+    "Create a personal API key at linear.app/settings/api" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erstelle einen persönlichen API-Schlüssel unter linear.app/settings/api"
           }
         }
       }
@@ -1153,6 +1196,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Standard-Prompt"
+          }
+        }
+      }
+    },
+    "Defaults" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standardwerte"
           }
         }
       }
@@ -1733,6 +1787,16 @@
         }
       }
     },
+    "Insert Text" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text einfügen"
+          }
+        }
+      }
+    },
     "Install Command Line Tool" : {
       "localizations" : {
         "de" : {
@@ -1753,6 +1817,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Installiert unter /usr/local/bin/typewhisper"
+          }
+        }
+      }
+    },
+    "Instead of inserting the LLM result as text, send it to an action plugin." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anstatt das LLM-Ergebnis als Text einzufügen, wird es an ein Action-Plugin gesendet."
           }
         }
       }
@@ -1807,6 +1881,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tastenkombination"
+          }
+        }
+      }
+    },
+    "Labels" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Labels"
           }
         }
       }
@@ -1899,6 +1984,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modell wird geladen…"
+          }
+        }
+      }
+    },
+    "Loading projects & labels..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projekte & Labels werden geladen..."
+          }
+        }
+      }
+    },
+    "Loading teams..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teams werden geladen..."
           }
         }
       }
@@ -2876,6 +2983,17 @@
         }
       }
     },
+    "Recommended Prompt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empfohlener Prompt"
+          }
+        }
+      }
+    },
     "Record Key" : {
       "comment" : "A button label that prompts the user to record a key.",
       "extractionState" : "stale",
@@ -3178,6 +3296,17 @@
         }
       }
     },
+    "Select team..." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team auswählen..."
+          }
+        }
+      }
+    },
     "Select text in any app, press the shortcut, and choose a prompt to process the text." : {
       "localizations" : {
         "de" : {
@@ -3429,6 +3558,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Systemverwaltet"
+          }
+        }
+      }
+    },
+    "Target" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziel"
           }
         }
       }

@@ -92,3 +92,45 @@ public protocol TranscriptionEnginePlugin: TypeWhisperPlugin {
     var supportsTranslation: Bool { get }
     func transcribe(audio: AudioData, language: String?, translate: Bool, prompt: String?) async throws -> PluginTranscriptionResult
 }
+
+// MARK: - Action Plugin
+
+public struct ActionContext: Sendable {
+    public let appName: String?
+    public let bundleIdentifier: String?
+    public let url: String?
+    public let language: String?
+    public let originalText: String
+
+    public init(appName: String? = nil, bundleIdentifier: String? = nil,
+                url: String? = nil, language: String? = nil, originalText: String = "") {
+        self.appName = appName
+        self.bundleIdentifier = bundleIdentifier
+        self.url = url
+        self.language = language
+        self.originalText = originalText
+    }
+}
+
+public struct ActionResult: Sendable {
+    public let success: Bool
+    public let message: String
+    public let url: String?
+    public let icon: String?
+    public let displayDuration: TimeInterval?
+
+    public init(success: Bool, message: String, url: String? = nil, icon: String? = nil, displayDuration: TimeInterval? = nil) {
+        self.success = success
+        self.message = message
+        self.url = url
+        self.icon = icon
+        self.displayDuration = displayDuration
+    }
+}
+
+public protocol ActionPlugin: TypeWhisperPlugin {
+    var actionName: String { get }
+    var actionId: String { get }
+    var actionIcon: String { get }
+    func execute(input: String, context: ActionContext) async throws -> ActionResult
+}

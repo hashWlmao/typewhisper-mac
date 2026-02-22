@@ -70,6 +70,9 @@ final class DictationViewModel: ObservableObject {
     @Published var toggleHotkeyLabel: String
     @Published var promptPaletteHotkeyLabel: String
     @Published var activeProfileName: String?
+    @Published var actionFeedbackMessage: String?
+    @Published var actionFeedbackIcon: String?
+    private var actionDisplayDuration: TimeInterval = 3.5
     @Published var promptDisplayDuration: Double {
         didSet { UserDefaults.standard.set(promptDisplayDuration, forKey: UserDefaultsKeys.promptDisplayDuration) }
     }
@@ -516,14 +519,44 @@ final class DictationViewModel: ObservableObject {
 
                 partialText = ""
 
-                // Always insert text if there's a focused text field
-                if textInsertionService.hasFocusedTextField() {
-                    _ = try await textInsertionService.insertText(text)
-                    EventBus.shared.emit(.textInserted(TextInsertedPayload(
-                        text: text,
+                // Route to action plugin or insert text
+                if let actionPluginId = self.effectivePromptAction?.targetActionPluginId,
+                   let actionPlugin = PluginManager.shared.actionPlugin(for: actionPluginId) {
+                    let actionContext = ActionContext(
                         appName: activeApp.name,
-                        bundleIdentifier: activeApp.bundleId
-                    )))
+                        bundleIdentifier: activeApp.bundleId,
+                        url: activeApp.url,
+                        language: language,
+                        originalText: result.text
+                    )
+                    let actionResult = try await actionPlugin.execute(input: text, context: actionContext)
+
+                    if actionResult.success {
+                        if let url = actionResult.url {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(url, forType: .string)
+                        }
+                        self.actionFeedbackMessage = actionResult.message
+                        self.actionFeedbackIcon = actionResult.icon ?? "checkmark.circle.fill"
+                        self.actionDisplayDuration = actionResult.displayDuration ?? 3.5
+                        EventBus.shared.emit(.actionCompleted(ActionCompletedPayload(
+                            actionId: actionPluginId, success: true, message: actionResult.message,
+                            url: actionResult.url, appName: activeApp.name, bundleIdentifier: activeApp.bundleId
+                        )))
+                    } else {
+                        throw NSError(domain: "ActionPlugin", code: -1,
+                                      userInfo: [NSLocalizedDescriptionKey: actionResult.message])
+                    }
+                } else {
+                    // Default flow: insert text
+                    if textInsertionService.hasFocusedTextField() {
+                        _ = try await textInsertionService.insertText(text)
+                        EventBus.shared.emit(.textInserted(TextInsertedPayload(
+                            text: text,
+                            appName: activeApp.name,
+                            bundleIdentifier: activeApp.bundleId
+                        )))
+                    }
                 }
 
                 let modelDisplayName = modelManager.resolvedModelDisplayName(
@@ -560,8 +593,9 @@ final class DictationViewModel: ObservableObject {
 
                 state = .inserting
                 insertingResetTask?.cancel()
+                let resetDelay: Duration = actionFeedbackMessage != nil ? .seconds(actionDisplayDuration) : .seconds(1.5)
                 insertingResetTask = Task {
-                    try? await Task.sleep(for: .seconds(1.5))
+                    try? await Task.sleep(for: resetDelay)
                     guard !Task.isCancelled else { return }
                     resetDictationState()
                 }
@@ -657,11 +691,23 @@ final class DictationViewModel: ObservableObject {
         matchedProfile = nil
         capturedActiveApp = nil
         activeProfileName = nil
+        actionFeedbackMessage = nil
+        actionFeedbackIcon = nil
+        actionDisplayDuration = 3.5
     }
 
     // MARK: - Standalone Prompt Palette
 
     private let promptPaletteController = PromptPaletteController()
+
+    private struct PaletteContext {
+        let text: String
+        let selection: TextInsertionService.TextSelection?
+        let focusedElement: AXUIElement?
+        let activeApp: (name: String?, bundleId: String?, url: String?)
+        let browserInfoTask: Task<(url: String?, title: String?), Never>?
+    }
+    private var paletteContext: PaletteContext?
 
     func triggerStandalonePromptSelection() {
         // Toggle behavior
@@ -680,18 +726,28 @@ final class DictationViewModel: ObservableObject {
         let actions = promptActionService.getEnabledActions()
         guard !actions.isEmpty else { return }
 
+        // Capture active app BEFORE the palette steals focus
+        let activeApp = textInsertionService.captureActiveApp()
+
+        // Start resolving browser URL + title asynchronously
+        var browserInfoTask: Task<(url: String?, title: String?), Never>?
+        if let bundleId = activeApp.bundleId {
+            let tis = textInsertionService
+            browserInfoTask = Task {
+                await tis.resolveBrowserInfo(bundleId: bundleId)
+            }
+        }
+
         // Try to get selected text (with element reference), fall back to clipboard
         let text: String
-        let selection: TextInsertionService.TextSelection?
-        let focusedElement: AXUIElement?
+        var selection: TextInsertionService.TextSelection?
+        var focusedElement: AXUIElement?
         if let sel = textInsertionService.getTextSelection() {
             text = sel.text
             selection = sel
-            focusedElement = nil
             logger.info("[PromptPalette] Got selected text: \(text.prefix(80))")
         } else if let clipboard = NSPasteboard.general.string(forType: .string), !clipboard.isEmpty {
             text = clipboard
-            selection = nil
             focusedElement = textInsertionService.getFocusedTextElement()
             logger.info("[PromptPalette] No selection, using clipboard: \(text.prefix(80))")
         } else {
@@ -699,28 +755,66 @@ final class DictationViewModel: ObservableObject {
             return
         }
 
+        paletteContext = PaletteContext(
+            text: text,
+            selection: selection,
+            focusedElement: focusedElement,
+            activeApp: activeApp,
+            browserInfoTask: browserInfoTask
+        )
+
         promptPaletteController.show(actions: actions, sourceText: text) { [weak self] action in
-            self?.processStandalonePrompt(action: action, text: text, selection: selection, focusedElement: focusedElement)
+            self?.processStandalonePrompt(action: action)
         }
     }
 
-    private func processStandalonePrompt(action: PromptAction, text: String, selection: TextInsertionService.TextSelection?, focusedElement: AXUIElement? = nil) {
-        promptPaletteController.showToast(
-            message: action.name + "...",
-            icon: "ellipsis.circle"
-        )
+    private func processStandalonePrompt(action: PromptAction) {
+        guard let ctx = paletteContext else { return }
+        paletteContext = nil
+
+        showNotchFeedback(message: action.name + "...", icon: "ellipsis.circle", duration: 30)
 
         Task {
             do {
                 let result = try await promptProcessingService.process(
                     prompt: action.prompt,
-                    text: text,
+                    text: ctx.text,
                     providerOverride: action.providerType,
                     cloudModelOverride: action.cloudModel
                 )
                 guard !Task.isCancelled else { return }
 
-                if let selection {
+                // Route to action plugin if configured
+                if let actionPluginId = action.targetActionPluginId,
+                   let actionPlugin = PluginManager.shared.actionPlugin(for: actionPluginId) {
+                    let browserInfo = await ctx.browserInfoTask?.value
+                    let resolvedUrl = browserInfo?.url ?? ctx.activeApp.url
+                    let actionContext = ActionContext(
+                        appName: browserInfo?.title ?? ctx.activeApp.name,
+                        bundleIdentifier: ctx.activeApp.bundleId,
+                        url: resolvedUrl,
+                        originalText: ctx.text
+                    )
+                    let actionResult = try await actionPlugin.execute(input: result, context: actionContext)
+                    if actionResult.success {
+                        if let url = actionResult.url {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(url, forType: .string)
+                        }
+                        soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
+                        showNotchFeedback(
+                            message: actionResult.message,
+                            icon: actionResult.icon ?? "checkmark.circle.fill",
+                            duration: actionResult.displayDuration ?? 4
+                        )
+                    } else {
+                        throw NSError(domain: "ActionPlugin", code: -1,
+                                      userInfo: [NSLocalizedDescriptionKey: actionResult.message])
+                    }
+                    return
+                }
+
+                if let selection = ctx.selection {
                     logger.info("[PromptPalette] Replacing selection with result (\(result.count) chars): \(result.prefix(80))")
                     let replaced = textInsertionService.replaceSelectedText(in: selection, with: result)
                     logger.info("[PromptPalette] replaceSelectedText succeeded: \(replaced)")
@@ -731,46 +825,47 @@ final class DictationViewModel: ObservableObject {
                         pasteboard.setString(result, forType: .string)
                     }
                     soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
-                    promptPaletteController.showToast(
+                    showNotchFeedback(
                         message: replaced ? String(localized: "Text replaced") : String(localized: "Copied to clipboard"),
-                        icon: replaced ? "checkmark.circle" : "doc.on.clipboard"
+                        icon: replaced ? "checkmark.circle.fill" : "doc.on.clipboard.fill"
                     )
-                } else if let element = focusedElement {
+                } else if let element = ctx.focusedElement {
                     let inserted = textInsertionService.insertTextAt(element: element, text: result)
                     if inserted {
                         soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
-                        promptPaletteController.showToast(
-                            message: String(localized: "Text inserted"),
-                            icon: "checkmark.circle"
-                        )
+                        showNotchFeedback(message: String(localized: "Text inserted"), icon: "checkmark.circle.fill")
                     } else {
                         let pasteboard = NSPasteboard.general
                         pasteboard.clearContents()
                         pasteboard.setString(result, forType: .string)
                         soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
-                        promptPaletteController.showToast(
-                            message: String(localized: "Copied to clipboard"),
-                            icon: "doc.on.clipboard"
-                        )
+                        showNotchFeedback(message: String(localized: "Copied to clipboard"), icon: "doc.on.clipboard.fill")
                     }
                 } else {
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.setString(result, forType: .string)
                     soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
-                    promptPaletteController.showToast(
-                        message: String(localized: "Copied to clipboard"),
-                        icon: "doc.on.clipboard"
-                    )
+                    showNotchFeedback(message: String(localized: "Copied to clipboard"), icon: "doc.on.clipboard.fill")
                 }
             } catch {
                 guard !Task.isCancelled else { return }
                 soundService.play(.error, enabled: soundFeedbackEnabled)
-                promptPaletteController.showToast(
-                    message: error.localizedDescription,
-                    icon: "xmark.circle"
-                )
+                showNotchFeedback(message: error.localizedDescription, icon: "xmark.circle.fill", isError: true)
             }
+        }
+    }
+
+    private func showNotchFeedback(message: String, icon: String, duration: TimeInterval = 2.5, isError: Bool = false) {
+        actionFeedbackMessage = message
+        actionFeedbackIcon = icon
+        actionDisplayDuration = duration
+        state = isError ? .error(message) : .inserting
+        insertingResetTask?.cancel()
+        insertingResetTask = Task {
+            try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled else { return }
+            resetDictationState()
         }
     }
 
