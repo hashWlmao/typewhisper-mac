@@ -41,21 +41,54 @@ struct HistoryView: View {
                     }
                     .frame(maxHeight: .infinity)
                 } else {
-                    List(viewModel.filteredRecords, id: \.id, selection: Binding(
-                        get: { viewModel.selectedRecord?.id },
-                        set: { newId in
-                            viewModel.selectRecord(viewModel.filteredRecords.first { $0.id == newId })
-                        }
-                    )) { record in
+                    List(viewModel.filteredRecords, id: \.id, selection: $viewModel.selectedRecordIDs) { record in
                         RecordRow(record: record)
                             .tag(record.id)
                             .contextMenu {
-                                Button(String(localized: "Copy")) {
-                                    viewModel.copyToClipboard(record.finalText)
-                                }
-                                Divider()
-                                Button(String(localized: "Delete"), role: .destructive) {
-                                    viewModel.deleteRecord(record)
+                                if viewModel.selectedRecordIDs.count > 1 && viewModel.selectedRecordIDs.contains(record.id) {
+                                    let count = viewModel.selectedRecordIDs.count
+                                    Button(String(localized: "Copy")) {
+                                        let texts = viewModel.selectedRecords.map(\.finalText)
+                                        viewModel.copyToClipboard(texts.joined(separator: "\n\n"))
+                                    }
+
+                                    Menu(String(localized: "Export \(count) entries as...")) {
+                                        Button("Markdown (.md)") {
+                                            viewModel.exportSelectedRecords(format: .markdown)
+                                        }
+                                        Button("Plain Text (.txt)") {
+                                            viewModel.exportSelectedRecords(format: .plainText)
+                                        }
+                                        Button("JSON (.json)") {
+                                            viewModel.exportSelectedRecords(format: .json)
+                                        }
+                                    }
+
+                                    Divider()
+                                    Button(String(localized: "Delete \(count) entries"), role: .destructive) {
+                                        viewModel.deleteSelectedRecords()
+                                    }
+                                } else {
+                                    Button(String(localized: "Copy")) {
+                                        viewModel.copyToClipboard(record.finalText)
+                                    }
+
+                                    Menu(String(localized: "Export as...")) {
+                                        Button("Markdown (.md)") {
+                                            viewModel.exportRecord(record, format: .markdown)
+                                        }
+                                        Button("Plain Text (.txt)") {
+                                            viewModel.exportRecord(record, format: .plainText)
+                                        }
+                                        Button("JSON (.json)") {
+                                            viewModel.exportRecord(record, format: .json)
+                                        }
+                                    }
+
+                                    Divider()
+                                    Button(String(localized: "Delete"), role: .destructive) {
+                                        viewModel.deleteRecord(record)
+                                    }
                                 }
                             }
                     }
@@ -79,7 +112,14 @@ struct HistoryView: View {
             .frame(minWidth: 260, idealWidth: 300, maxWidth: 320)
 
             // MARK: - Right Panel: Detail
-            if let record = viewModel.selectedRecord {
+            if viewModel.selectedRecordIDs.count > 1 {
+                ContentUnavailableView {
+                    Label(String(localized: "\(viewModel.selectedRecordIDs.count) items selected"), systemImage: "checkmark.circle")
+                } description: {
+                    Text(String(localized: "Right-click to export or delete selected entries."))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let record = viewModel.selectedRecord {
                 RecordDetailView(record: record, viewModel: viewModel)
             } else {
                 ContentUnavailableView {

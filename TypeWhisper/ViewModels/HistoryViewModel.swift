@@ -13,7 +13,7 @@ final class HistoryViewModel: ObservableObject {
     }
 
     @Published var records: [TranscriptionRecord] = []
-    @Published var selectedRecord: TranscriptionRecord?
+    @Published var selectedRecordIDs: Set<UUID> = []
     @Published var searchQuery: String = ""
     @Published var isEditing: Bool = false
     @Published var editedText: String = ""
@@ -33,6 +33,18 @@ final class HistoryViewModel: ObservableObject {
         setupBindings()
     }
 
+    var selectedRecord: TranscriptionRecord? {
+        guard selectedRecordIDs.count == 1, let firstID = selectedRecordIDs.first else {
+            return nil
+        }
+        return records.first { $0.id == firstID }
+    }
+
+    var selectedRecords: [TranscriptionRecord] {
+        let ids = selectedRecordIDs
+        return records.filter { ids.contains($0.id) }
+    }
+
     var filteredRecords: [TranscriptionRecord] {
         guard !searchQuery.isEmpty else { return records }
         return historyService.searchRecords(query: searchQuery)
@@ -44,7 +56,11 @@ final class HistoryViewModel: ObservableObject {
 
     func selectRecord(_ record: TranscriptionRecord?) {
         cancelEditing()
-        selectedRecord = record
+        if let record {
+            selectedRecordIDs = [record.id]
+        } else {
+            selectedRecordIDs = []
+        }
     }
 
     func startEditing() {
@@ -86,15 +102,24 @@ final class HistoryViewModel: ObservableObject {
     }
 
     func deleteRecord(_ record: TranscriptionRecord) {
-        if selectedRecord?.id == record.id {
-            selectedRecord = nil
+        selectedRecordIDs.remove(record.id)
+        if selectedRecordIDs.isEmpty {
             cancelEditing()
         }
         historyService.deleteRecord(record)
     }
 
+    func deleteSelectedRecords() {
+        let toDelete = selectedRecords
+        selectedRecordIDs = []
+        cancelEditing()
+        for record in toDelete {
+            historyService.deleteRecord(record)
+        }
+    }
+
     func clearAll() {
-        selectedRecord = nil
+        selectedRecordIDs = []
         cancelEditing()
         historyService.clearAll()
     }
@@ -103,6 +128,20 @@ final class HistoryViewModel: ObservableObject {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+    }
+
+    func exportRecord(_ record: TranscriptionRecord, format: HistoryExportFormat) {
+        HistoryExporter.saveToFile(record, format: format)
+    }
+
+    func exportSelectedRecords(format: HistoryExportFormat) {
+        let records = selectedRecords
+        guard !records.isEmpty else { return }
+        if records.count == 1, let single = records.first {
+            HistoryExporter.saveToFile(single, format: format)
+        } else {
+            HistoryExporter.saveMultipleToFile(records, format: format)
+        }
     }
 
     func dismissCorrectionBanner() {
