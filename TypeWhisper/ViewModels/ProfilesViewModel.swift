@@ -41,6 +41,7 @@ final class ProfilesViewModel: ObservableObject {
     @Published var editorEngineOverride: String?
     @Published var editorCloudModelOverride: String?
     @Published var editorPromptActionId: String?
+    @Published var editorAutoSubmitEnabled: Bool?
     @Published var editorPriority: Int = 0
 
     // App picker
@@ -89,6 +90,7 @@ final class ProfilesViewModel: ObservableObject {
             engineOverride: editorEngineOverride,
             cloudModelOverride: editorCloudModelOverride,
             promptActionId: editorPromptActionId,
+            autoSubmitEnabled: editorAutoSubmitEnabled,
             priority: editorPriority
         )
     }
@@ -105,6 +107,7 @@ final class ProfilesViewModel: ObservableObject {
             profile.engineOverride = editorEngineOverride
             profile.cloudModelOverride = editorCloudModelOverride
             profile.promptActionId = editorPromptActionId
+            profile.autoSubmitEnabled = editorAutoSubmitEnabled
             profile.priority = editorPriority
             profileService.updateProfile(profile)
         } else {
@@ -135,6 +138,7 @@ final class ProfilesViewModel: ObservableObject {
         editorEngineOverride = nil
         editorCloudModelOverride = nil
         editorPromptActionId = nil
+        editorAutoSubmitEnabled = nil
         editorPriority = 0
         urlPatternInput = ""
         domainSuggestions = []
@@ -162,6 +166,7 @@ final class ProfilesViewModel: ObservableObject {
             editorCloudModelOverride = profile.cloudModelOverride
         }
         editorPromptActionId = profile.promptActionId
+        editorAutoSubmitEnabled = profile.autoSubmitEnabled
         editorPriority = profile.priority
         urlPatternInput = ""
         domainSuggestions = []

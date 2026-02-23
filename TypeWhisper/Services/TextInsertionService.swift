@@ -280,7 +280,7 @@ enum InsertionResult {
         return result == .success
     }
 
-    func insertText(_ text: String) async throws -> InsertionResult {
+    func insertText(_ text: String, autoSubmit: Bool = false) async throws -> InsertionResult {
         guard isAccessibilityGranted else {
             throw TextInsertionError.accessibilityNotGranted
         }
@@ -291,6 +291,12 @@ enum InsertionResult {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
         simulatePaste()
+
+        if autoSubmit {
+            try? await Task.sleep(for: .milliseconds(50))
+            simulateEnter()
+        }
+
         return .pasted
     }
 
@@ -371,6 +377,15 @@ enum InsertionResult {
 
         let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x09, keyDown: false)
         keyUp?.flags = .maskCommand
+        keyUp?.post(tap: .cgSessionEventTap)
+    }
+
+    private func simulateEnter() {
+        // Key code 0x24 = Return/Enter
+        let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: 0x24, keyDown: true)
+        keyDown?.post(tap: .cgSessionEventTap)
+
+        let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: 0x24, keyDown: false)
         keyUp?.post(tap: .cgSessionEventTap)
     }
 }

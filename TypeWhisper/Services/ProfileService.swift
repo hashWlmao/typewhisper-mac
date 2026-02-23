@@ -51,6 +51,7 @@ final class ProfileService: ObservableObject {
         engineOverride: String? = nil,
         cloudModelOverride: String? = nil,
         promptActionId: String? = nil,
+        autoSubmitEnabled: Bool? = nil,
         priority: Int = 0
     ) {
         let profile = Profile(
@@ -64,7 +65,8 @@ final class ProfileService: ObservableObject {
             whisperModeOverride: whisperModeOverride,
             engineOverride: engineOverride,
             cloudModelOverride: cloudModelOverride,
-            promptActionId: promptActionId
+            promptActionId: promptActionId,
+            autoSubmitEnabled: autoSubmitEnabled
         )
         modelContext.insert(profile)
         save()

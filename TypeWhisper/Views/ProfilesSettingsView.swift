@@ -310,6 +310,12 @@ private struct ProfileEditorSheet: View {
                     Text(String(localized: "When a prompt is assigned, dictated text will be processed by the LLM before insertion. This replaces translation."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
+
+                    Picker(String(localized: "Auto-Submit"), selection: $viewModel.editorAutoSubmitEnabled) {
+                        Text(String(localized: "Off")).tag(nil as Bool?)
+                        Divider()
+                        Text(String(localized: "On")).tag(true as Bool?)
+                    }
                 }
 
                 Section(String(localized: "Priority")) {

@@ -4192,6 +4192,16 @@
         }
       }
     },
+    "Auto-Submit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto-Senden"
+          }
+        }
+      }
+    },
     "Whisper Mode" : {
       "localizations" : {
         "de" : {
