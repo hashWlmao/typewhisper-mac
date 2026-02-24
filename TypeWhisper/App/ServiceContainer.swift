@@ -132,6 +132,7 @@ final class ServiceContainer: ObservableObject {
 
     func initialize() async {
         hotkeyService.setup()
+        dictationViewModel.registerInitialProfileHotkeys()
         historyService.purgeOldRecords()
 
         if apiServerViewModel.isEnabled {

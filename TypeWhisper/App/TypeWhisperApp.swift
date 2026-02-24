@@ -54,6 +54,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         translationHostWindow = TranslationHostWindow(
             translationService: ServiceContainer.shared.translationService
         )
+        ServiceContainer.shared.translationService.setInteractiveHostMode = { [weak self] enabled in
+            self?.translationHostWindow?.setInteractiveMode(enabled)
+            if enabled {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate(ignoringOtherApps: true)
+            } else if self?.hasVisibleSettingsWindow != true {
+                NSApp.setActivationPolicy(.accessory)
+            }
+        }
 
         // Prompt palette hotkey - opens standalone prompt palette panel
         ServiceContainer.shared.hotkeyService.onPromptPaletteToggle = {
@@ -77,6 +86,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor private func isSettingsWindow(_ window: NSWindow) -> Bool {
         window.identifier?.rawValue.localizedCaseInsensitiveContains("settings") == true
+    }
+
+    @MainActor private var hasVisibleSettingsWindow: Bool {
+        NSApp.windows.contains { isSettingsWindow($0) && $0.isVisible }
     }
 
     @MainActor @objc private func windowDidBecomeKey(_ notification: Notification) {
