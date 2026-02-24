@@ -26,45 +26,38 @@ struct HistoryView: View {
                 .padding(8)
                 .background(.bar)
 
-                // Filter chips
-                if !viewModel.availableApps.isEmpty {
-                    HStack(spacing: 6) {
-                        FilterChip(
-                            label: viewModel.selectedAppFilter.flatMap { bundleId in
-                                viewModel.availableApps.first { $0.bundleId == bundleId }?.name
-                            } ?? String(localized: "All Apps"),
-                            isActive: viewModel.selectedAppFilter != nil,
-                            onClear: { viewModel.selectedAppFilter = nil }
-                        ) {
-                            Button(String(localized: "All Apps")) {
-                                viewModel.selectedAppFilter = nil
-                            }
+                // Filter pickers
+                HStack(spacing: 6) {
+                    Picker(selection: Binding(
+                        get: { viewModel.selectedAppFilter ?? "" },
+                        set: { viewModel.selectedAppFilter = $0.isEmpty ? nil : $0 }
+                    )) {
+                        Text(String(localized: "All Apps")).tag("")
+                        if !viewModel.availableApps.isEmpty {
                             Divider()
                             ForEach(viewModel.availableApps) { app in
-                                Button(app.name) {
-                                    viewModel.selectedAppFilter = app.bundleId
-                                }
+                                Text(app.name).tag(app.bundleId)
                             }
                         }
-
-                        FilterChip(
-                            label: viewModel.selectedTimeRange.displayName,
-                            isActive: viewModel.selectedTimeRange != .all,
-                            onClear: { viewModel.selectedTimeRange = .all }
-                        ) {
-                            ForEach(HistoryTimeRange.allCases) { range in
-                                Button(range.displayName) {
-                                    viewModel.selectedTimeRange = range
-                                }
-                            }
-                        }
-
-                        Spacer()
+                    } label: {
+                        EmptyView()
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 6)
-                    .background(.bar)
+                    .fixedSize()
+
+                    Picker(selection: $viewModel.selectedTimeRange) {
+                        ForEach(HistoryTimeRange.allCases) { range in
+                            Text(range.displayName).tag(range)
+                        }
+                    } label: {
+                        EmptyView()
+                    }
+                    .fixedSize()
+
+                    Spacer()
                 }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(.bar)
 
                 Divider()
 
@@ -250,39 +243,6 @@ private struct SectionHeader: View {
             }
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Filter Chip
-
-private struct FilterChip<MenuContent: View>: View {
-    let label: String
-    let isActive: Bool
-    let onClear: () -> Void
-    @ViewBuilder let menuContent: () -> MenuContent
-
-    var body: some View {
-        Menu {
-            menuContent()
-        } label: {
-            HStack(spacing: 4) {
-                Text(label)
-                    .lineLimit(1)
-                if isActive {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .onTapGesture { onClear() }
-                }
-            }
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(isActive ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.1))
-            .clipShape(Capsule())
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
     }
 }
 

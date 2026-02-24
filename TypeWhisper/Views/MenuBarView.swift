@@ -92,6 +92,14 @@ struct MenuBarView: View {
         Button {
             NSApp.setActivationPolicy(.regular)
             NSApp.activate()
+            openWindow(id: "history")
+        } label: {
+            Label(String(localized: "History"), systemImage: "clock.arrow.circlepath")
+        }
+
+        Button {
+            NSApp.setActivationPolicy(.regular)
+            NSApp.activate()
             openWindow(id: "settings")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 FileTranscriptionViewModel.shared.showFilePickerFromMenu = true
