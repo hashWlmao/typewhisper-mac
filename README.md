@@ -63,7 +63,6 @@ Speech-to-text and AI text processing for macOS. Transcribe audio using on-devic
 - **Silence-pause mode** - Continuous dictation that automatically pauses when silence is detected
 - **Global default prompt** - Set a default LLM prompt that is applied to all transcriptions automatically
 - **Whisper mode** - Boosted microphone gain for quiet speech
-- **Media pause** - Automatically pauses media playback during recording
 - **Sound feedback** - Audio cues for recording start, transcription success, and errors
 - **Microphone selection** - Choose a specific input device with live preview
 
@@ -320,7 +319,6 @@ TypeWhisper/
 │   ├── PostProcessingPipeline # Priority-based text processing chain
 │   ├── EventBus            # Typed publish/subscribe event system
 │   ├── TranslationService  # On-device translation via Apple Translate
-│   ├── MediaPlaybackService # Pause/resume media during recording
 │   └── SoundService        # Audio feedback for recording events
 ├── ViewModels/             # MVVM view models with Combine
 ├── Views/                  # SwiftUI views
