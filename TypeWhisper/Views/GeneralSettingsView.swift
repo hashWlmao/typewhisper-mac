@@ -199,6 +199,7 @@ struct GeneralSettingsView: View {
                         audioDevice.startPreview()
                     }
                 }
+                .disabled(!audioDevice.isPreviewActive && dictation.needsMicPermission)
 
                 if let name = audioDevice.disconnectedDeviceName {
                     Label(
