@@ -8,9 +8,6 @@ enum UserDefaultsKeys {
     static let audioDuckingEnabled = "audioDuckingEnabled"
     static let audioDuckingLevel = "audioDuckingLevel"
     static let soundFeedbackEnabled = "soundFeedbackEnabled"
-    static let silencePauseEnabled = "silencePauseEnabled"
-    static let silenceAutoStopDuration = "silenceAutoStopDuration"
-    static let silenceThreshold = "silenceThreshold"
     static let overlayPosition = "overlayPosition"
 
     // MARK: - Hotkey (JSON-encoded UnifiedHotkey per slot)
