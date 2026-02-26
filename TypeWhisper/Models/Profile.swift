@@ -15,7 +15,6 @@ final class Profile {
     var engineOverride: String?
     var cloudModelOverride: String?
     var promptActionId: String?
-    var autoSubmitEnabled: Bool?
     var hotkeyData: Data?
     var createdAt: Date
     var updatedAt: Date
@@ -43,7 +42,6 @@ final class Profile {
         engineOverride: String? = nil,
         cloudModelOverride: String? = nil,
         promptActionId: String? = nil,
-        autoSubmitEnabled: Bool? = nil,
         hotkeyData: Data? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
@@ -60,7 +58,6 @@ final class Profile {
         self.engineOverride = engineOverride
         self.cloudModelOverride = cloudModelOverride
         self.promptActionId = promptActionId
-        self.autoSubmitEnabled = autoSubmitEnabled
         self.hotkeyData = hotkeyData
         self.createdAt = createdAt
         self.updatedAt = updatedAt

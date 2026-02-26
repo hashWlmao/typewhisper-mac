@@ -384,10 +384,6 @@ final class DictationViewModel: ObservableObject {
         matchedProfile?.cloudModelOverride
     }
 
-    private var effectiveAutoSubmit: Bool {
-        matchedProfile?.autoSubmitEnabled ?? false
-    }
-
     private var effectivePromptAction: PromptAction? {
         if let actionId = matchedProfile?.promptActionId {
             return promptActionService.action(byId: actionId)
@@ -486,7 +482,7 @@ final class DictationViewModel: ObservableObject {
                         activeApp: activeApp, language: language, originalText: result.text
                     )
                 } else {
-                    _ = try await textInsertionService.insertText(text, autoSubmit: effectiveAutoSubmit)
+                    _ = try await textInsertionService.insertText(text)
                     EventBus.shared.emit(.textInserted(TextInsertedPayload(
                         text: text,
                         appName: activeApp.name,

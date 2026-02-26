@@ -50,7 +50,6 @@ final class ProfileService: ObservableObject {
         engineOverride: String? = nil,
         cloudModelOverride: String? = nil,
         promptActionId: String? = nil,
-        autoSubmitEnabled: Bool? = nil,
         hotkeyData: Data? = nil,
         priority: Int = 0
     ) {
@@ -65,7 +64,6 @@ final class ProfileService: ObservableObject {
             engineOverride: engineOverride,
             cloudModelOverride: cloudModelOverride,
             promptActionId: promptActionId,
-            autoSubmitEnabled: autoSubmitEnabled,
             hotkeyData: hotkeyData
         )
         modelContext.insert(profile)

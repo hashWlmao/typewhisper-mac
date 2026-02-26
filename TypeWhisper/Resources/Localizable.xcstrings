@@ -1311,6 +1311,7 @@
       }
     },
     "Default Prompt" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4514,6 +4515,7 @@
       }
     },
     "When set, all dictations will be processed by this prompt. Profile-specific prompts take priority. Replaces translation when active." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
