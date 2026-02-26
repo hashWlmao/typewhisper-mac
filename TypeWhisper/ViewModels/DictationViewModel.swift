@@ -74,8 +74,6 @@ final class DictationViewModel: ObservableObject {
         case indicator
         case timer
         case waveform
-        case clock
-        case battery
         case profile
         case none
     }

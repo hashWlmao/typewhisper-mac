@@ -1,5 +1,4 @@
 import SwiftUI
-import IOKit.ps
 
 /// Notch-extending indicator that visually expands the MacBook notch area.
 /// Three-zone layout: left ear | center (notch spacer) | right ear.
@@ -221,14 +220,6 @@ struct NotchIndicatorView: View {
                 isSetup: viewModel.recordingDuration < 0.5 && viewModel.audioLevel < 0.05,
                 compact: true
             )
-        case .clock:
-            TimelineView(.periodic(from: .now, by: 1)) { context in
-                Text(context.date, format: .dateTime.hour().minute())
-                    .font(.system(size: 10, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.6))
-            }
-        case .battery:
-            batteryView
         case .profile:
             if let name = viewModel.activeProfileName {
                 Text(name)
@@ -242,45 +233,6 @@ struct NotchIndicatorView: View {
             }
         case .none:
             Color.clear
-        }
-    }
-
-    // MARK: - Battery
-
-    @ViewBuilder
-    private var batteryView: some View {
-        TimelineView(.periodic(from: .now, by: 60)) { _ in
-            if let level = Self.readBatteryLevel() {
-                HStack(spacing: 3) {
-                    Image(systemName: Self.batteryIconName(level: level))
-                        .font(.system(size: 10))
-                    Text("\(level)%")
-                        .font(.system(size: 10, weight: .medium).monospacedDigit())
-                }
-                .foregroundStyle(.white.opacity(0.6))
-            }
-        }
-    }
-
-    nonisolated private static func readBatteryLevel() -> Int? {
-        let snapshot = IOPSCopyPowerSourcesInfo().takeRetainedValue()
-        let sources = IOPSCopyPowerSourcesList(snapshot).takeRetainedValue() as Array
-        for source in sources {
-            if let info = IOPSGetPowerSourceDescription(snapshot, source)?.takeUnretainedValue() as? [String: Any],
-               let capacity = info[kIOPSCurrentCapacityKey] as? Int {
-                return capacity
-            }
-        }
-        return nil
-    }
-
-    nonisolated private static func batteryIconName(level: Int) -> String {
-        switch level {
-        case 0..<13: return "battery.0percent"
-        case 13..<38: return "battery.25percent"
-        case 38..<63: return "battery.50percent"
-        case 63..<88: return "battery.75percent"
-        default: return "battery.100percent"
         }
     }
 
