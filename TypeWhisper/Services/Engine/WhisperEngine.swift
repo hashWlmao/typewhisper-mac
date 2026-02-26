@@ -63,6 +63,7 @@ final class WhisperEngine: TranscriptionEngine, @unchecked Sendable {
             // Step 2: Create WhisperKit without auto-load, then load manually with phase reporting
             progress(0.80, nil)
             let config = WhisperKitConfig(
+                downloadBase: Self.downloadBase,
                 modelFolder: modelFolder.path,
                 verbose: false,
                 logLevel: .error,
