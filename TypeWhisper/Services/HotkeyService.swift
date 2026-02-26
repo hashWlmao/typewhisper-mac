@@ -98,7 +98,6 @@ final class HotkeyService: ObservableObject {
     ]
 
     func setup() {
-        migrateIfNeeded()
         loadHotkeys()
         setupMonitor()
     }
@@ -160,68 +159,6 @@ final class HotkeyService: ObservableObject {
         return nil
     }
 
-    // MARK: - Migration
-
-    private func migrateIfNeeded() {
-        let defaults = UserDefaults.standard
-
-        // Migration from v1 (3 separate keys) to v2 (JSON-encoded per slot)
-        if defaults.object(forKey: "hotkeyKeyCode") != nil,
-           defaults.data(forKey: UserDefaultsKeys.hybridHotkey) == nil {
-            let code = UInt16(defaults.integer(forKey: "hotkeyKeyCode"))
-            let flags = UInt(defaults.integer(forKey: "hotkeyModifierFlags"))
-            let isFn = defaults.bool(forKey: "hotkeyIsFn")
-            let hotkey = UnifiedHotkey(keyCode: code, modifierFlags: flags, isFn: isFn)
-            defaults.set(try? JSONEncoder().encode(hotkey), forKey: UserDefaultsKeys.hybridHotkey)
-            defaults.removeObject(forKey: "hotkeyKeyCode")
-            defaults.removeObject(forKey: "hotkeyModifierFlags")
-            defaults.removeObject(forKey: "hotkeyIsFn")
-            cleanupLegacyKeys()
-            return
-        }
-
-        // Migration from v0 (legacy keys) to v2
-        if defaults.data(forKey: UserDefaultsKeys.hybridHotkey) != nil {
-            cleanupLegacyKeys()
-            return
-        }
-
-        let useSingleKey = defaults.bool(forKey: "hotkeyUseSingleKey")
-
-        if useSingleKey {
-            let code = UInt16(defaults.integer(forKey: "singleKeyCode"))
-            let isFn = defaults.bool(forKey: "singleKeyIsFn")
-            let hotkey = UnifiedHotkey(keyCode: code, modifierFlags: 0, isFn: isFn)
-            defaults.set(try? JSONEncoder().encode(hotkey), forKey: UserDefaultsKeys.hybridHotkey)
-        } else {
-            if let data = defaults.data(forKey: "KeyboardShortcuts_toggleDictation"),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let carbonKeyCode = json["carbonKeyCode"] as? Int,
-               let carbonModifiers = json["carbonModifiers"] as? Int {
-
-                var cocoaFlags: UInt = 0
-                if carbonModifiers & 0x100 != 0 { cocoaFlags |= NSEvent.ModifierFlags.command.rawValue }
-                if carbonModifiers & 0x200 != 0 { cocoaFlags |= NSEvent.ModifierFlags.shift.rawValue }
-                if carbonModifiers & 0x800 != 0 { cocoaFlags |= NSEvent.ModifierFlags.option.rawValue }
-                if carbonModifiers & 0x1000 != 0 { cocoaFlags |= NSEvent.ModifierFlags.control.rawValue }
-
-                let hotkey = UnifiedHotkey(keyCode: UInt16(carbonKeyCode), modifierFlags: cocoaFlags, isFn: false)
-                defaults.set(try? JSONEncoder().encode(hotkey), forKey: UserDefaultsKeys.hybridHotkey)
-            }
-        }
-
-        cleanupLegacyKeys()
-    }
-
-    private func cleanupLegacyKeys() {
-        let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: "hotkeyUseSingleKey")
-        defaults.removeObject(forKey: "singleKeyCode")
-        defaults.removeObject(forKey: "singleKeyIsFn")
-        defaults.removeObject(forKey: "singleKeyIsModifier")
-        defaults.removeObject(forKey: "KeyboardShortcuts_toggleDictation")
-    }
-
     private func loadHotkeys() {
         let defaults = UserDefaults.standard
         for slotType in HotkeySlotType.allCases {
@@ -274,51 +211,46 @@ final class HotkeyService: ObservableObject {
         // Global slots
         for slotType in HotkeySlotType.allCases {
             guard var state = slots[slotType], let hotkey = state.hotkey else { continue }
-            let (keyDown, keyUp) = detectKeyEvent(
-                event, hotkey: hotkey,
-                fnWasDown: state.fnWasDown,
-                modifierWasDown: state.modifierWasDown,
-                keyWasDown: state.keyWasDown
-            )
-            if keyDown {
-                if hotkey.isFn { state.fnWasDown = true }
-                if hotkey.isModifierOnly { state.modifierWasDown = true }
-                if !hotkey.isFn && !hotkey.isModifierOnly { state.keyWasDown = true }
-                slots[slotType] = state
-                handleKeyDown(slotType: slotType)
-            } else if keyUp {
-                if hotkey.isFn { state.fnWasDown = false }
-                if hotkey.isModifierOnly { state.modifierWasDown = false }
-                if !hotkey.isFn && !hotkey.isModifierOnly { state.keyWasDown = false }
-                slots[slotType] = state
-                handleKeyUp(slotType: slotType)
-            }
+            let (keyDown, keyUp) = processKeyEvent(event, hotkey: hotkey, state: &state)
+            slots[slotType] = state
+            if keyDown { handleKeyDown(slotType: slotType) }
+            else if keyUp { handleKeyUp(slotType: slotType) }
         }
 
         // Profile slots
-        let profileIds = Array(profileSlots.keys)
-        for profileId in profileIds {
-            guard var state = profileSlots[profileId] else { continue }
-            let (keyDown, keyUp) = detectKeyEvent(
-                event, hotkey: state.hotkey,
-                fnWasDown: state.fnWasDown,
-                modifierWasDown: state.modifierWasDown,
-                keyWasDown: state.keyWasDown
-            )
-            if keyDown {
-                if state.hotkey.isFn { state.fnWasDown = true }
-                if state.hotkey.isModifierOnly { state.modifierWasDown = true }
-                if !state.hotkey.isFn && !state.hotkey.isModifierOnly { state.keyWasDown = true }
-                profileSlots[profileId] = state
-                handleProfileKeyDown(profileId: profileId)
-            } else if keyUp {
-                if state.hotkey.isFn { state.fnWasDown = false }
-                if state.hotkey.isModifierOnly { state.modifierWasDown = false }
-                if !state.hotkey.isFn && !state.hotkey.isModifierOnly { state.keyWasDown = false }
-                profileSlots[profileId] = state
-                handleProfileKeyUp(profileId: profileId)
-            }
+        for profileId in Array(profileSlots.keys) {
+            guard var pState = profileSlots[profileId] else { continue }
+            var state = SlotState(hotkey: pState.hotkey, fnWasDown: pState.fnWasDown,
+                                  modifierWasDown: pState.modifierWasDown, keyWasDown: pState.keyWasDown)
+            let (keyDown, keyUp) = processKeyEvent(event, hotkey: pState.hotkey, state: &state)
+            pState.fnWasDown = state.fnWasDown
+            pState.modifierWasDown = state.modifierWasDown
+            pState.keyWasDown = state.keyWasDown
+            profileSlots[profileId] = pState
+            if keyDown { handleProfileKeyDown(profileId: profileId) }
+            else if keyUp { handleProfileKeyUp(profileId: profileId) }
         }
+    }
+
+    /// Processes a key event against a hotkey, updating state booleans.
+    /// Returns (keyDown, keyUp) flags.
+    private func processKeyEvent(_ event: NSEvent, hotkey: UnifiedHotkey, state: inout SlotState) -> (keyDown: Bool, keyUp: Bool) {
+        let (keyDown, keyUp) = detectKeyEvent(
+            event, hotkey: hotkey,
+            fnWasDown: state.fnWasDown,
+            modifierWasDown: state.modifierWasDown,
+            keyWasDown: state.keyWasDown
+        )
+        if keyDown {
+            if hotkey.isFn { state.fnWasDown = true }
+            if hotkey.isModifierOnly { state.modifierWasDown = true }
+            if !hotkey.isFn && !hotkey.isModifierOnly { state.keyWasDown = true }
+        } else if keyUp {
+            if hotkey.isFn { state.fnWasDown = false }
+            if hotkey.isModifierOnly { state.modifierWasDown = false }
+            if !hotkey.isFn && !hotkey.isModifierOnly { state.keyWasDown = false }
+        }
+        return (keyDown, keyUp)
     }
 
     /// Generic key event detection: returns (isKeyDown, isKeyUp) for a given hotkey configuration.
