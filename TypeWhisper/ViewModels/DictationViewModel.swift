@@ -392,9 +392,6 @@ final class DictationViewModel: ObservableObject {
         if let actionId = matchedProfile?.promptActionId {
             return promptActionService.action(byId: actionId)
         }
-        if let globalId = settingsViewModel.defaultPromptActionId {
-            return promptActionService.action(byId: globalId)
-        }
         return nil
     }
 

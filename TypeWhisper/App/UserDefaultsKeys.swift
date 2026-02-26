@@ -25,7 +25,6 @@ enum UserDefaultsKeys {
     static let selectedTask = "selectedTask"
     static let translationEnabled = "translationEnabled"
     static let translationTargetLanguage = "translationTargetLanguage"
-    static let defaultPromptActionId = "defaultPromptActionId"
     static let preferredAppLanguage = "preferredAppLanguage"
 
     // MARK: - API Server

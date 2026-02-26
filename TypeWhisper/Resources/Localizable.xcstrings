@@ -805,6 +805,7 @@
       }
     },
     "Boosts microphone gain for quiet speech. Useful when you can't speak loudly." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4523,6 +4524,7 @@
       }
     },
     "Whisper Mode" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
