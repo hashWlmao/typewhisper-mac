@@ -84,6 +84,7 @@ struct DictationSettingsView: View {
                 HotkeyRecorderView(
                     label: dictation.hybridHotkeyLabel,
                     title: String(localized: "Hybrid"),
+                    subtitle: String(localized: "Short press to toggle, hold to push-to-talk."),
                     onRecord: { hotkey in
                         if let conflict = dictation.isHotkeyAssigned(hotkey, excluding: .hybrid) {
                             dictation.clearHotkey(for: conflict)
@@ -92,13 +93,11 @@ struct DictationSettingsView: View {
                     },
                     onClear: { dictation.clearHotkey(for: .hybrid) }
                 )
-                Text(String(localized: "Short press to toggle, hold to push-to-talk."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
 
                 HotkeyRecorderView(
                     label: dictation.pttHotkeyLabel,
                     title: String(localized: "Push-to-Talk"),
+                    subtitle: String(localized: "Hold to record, release to stop."),
                     onRecord: { hotkey in
                         if let conflict = dictation.isHotkeyAssigned(hotkey, excluding: .pushToTalk) {
                             dictation.clearHotkey(for: conflict)
@@ -107,13 +106,11 @@ struct DictationSettingsView: View {
                     },
                     onClear: { dictation.clearHotkey(for: .pushToTalk) }
                 )
-                Text(String(localized: "Hold to record, release to stop."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
 
                 HotkeyRecorderView(
                     label: dictation.toggleHotkeyLabel,
                     title: String(localized: "Toggle"),
+                    subtitle: String(localized: "Press to start, press again to stop."),
                     onRecord: { hotkey in
                         if let conflict = dictation.isHotkeyAssigned(hotkey, excluding: .toggle) {
                             dictation.clearHotkey(for: conflict)
@@ -122,9 +119,6 @@ struct DictationSettingsView: View {
                     },
                     onClear: { dictation.clearHotkey(for: .toggle) }
                 )
-                Text(String(localized: "Press to start, press again to stop."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
 
             Section(String(localized: "Prompt Palette")) {
@@ -217,6 +211,7 @@ struct DictationSettingsView: View {
 struct HotkeyRecorderView: View {
     let label: String
     var title: String = String(localized: "Dictation shortcut")
+    var subtitle: String? = nil
     let onRecord: (UnifiedHotkey) -> Void
     let onClear: () -> Void
 
@@ -228,7 +223,14 @@ struct HotkeyRecorderView: View {
 
     var body: some View {
         HStack {
-            Text(title)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             Spacer()
             if isRecording {
                 Button {
