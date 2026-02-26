@@ -268,9 +268,6 @@
         }
       }
     },
-    "%llds" : {
-
-    },
     "30 days" : {
       "localizations" : {
         "de" : {
@@ -329,6 +326,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bedienungshilfen"
+          }
+        }
+      }
+    },
+    "Accessibility access required" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bedienungshilfen-Zugriff erforderlich"
           }
         }
       }
@@ -796,6 +803,7 @@
       }
     },
     "Behavior" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1416,6 +1424,7 @@
       }
     },
     "Dictation" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -1459,6 +1468,7 @@
       }
     },
     "Display duration" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2277,6 +2287,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mikrofon"
+          }
+        }
+      }
+    },
+    "Microphone access required" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mikrofonzugriff erforderlich"
           }
         }
       }
@@ -3297,7 +3317,6 @@
       }
     },
     "Recording" : {
-      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -4235,6 +4254,7 @@
       }
     },
     "Transcribed text is automatically pasted into the active application using the clipboard. The previous clipboard content is restored after pasting." : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

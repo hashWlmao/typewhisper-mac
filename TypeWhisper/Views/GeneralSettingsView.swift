@@ -10,10 +10,8 @@ struct GeneralSettingsView: View {
         return Locale.preferredLanguages.first?.hasPrefix("de") == true ? "de" : "en"
     }()
     @State private var showRestartAlert = false
-    @ObservedObject private var dictation = DictationViewModel.shared
     @ObservedObject private var modelManager = ModelManagerViewModel.shared
     @ObservedObject private var settings = SettingsViewModel.shared
-    @ObservedObject private var audioDevice = ServiceContainer.shared.audioDeviceService
 
     var body: some View {
         Form {
@@ -102,115 +100,6 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Section(String(localized: "Notch Indicator")) {
-                Picker(String(localized: "Visibility"), selection: $dictation.notchIndicatorVisibility) {
-                    Text(String(localized: "Always visible")).tag(DictationViewModel.NotchIndicatorVisibility.always)
-                    Text(String(localized: "Only during activity")).tag(DictationViewModel.NotchIndicatorVisibility.duringActivity)
-                    Text(String(localized: "Never")).tag(DictationViewModel.NotchIndicatorVisibility.never)
-                }
-
-                Picker(String(localized: "Left Side"), selection: $dictation.notchIndicatorLeftContent) {
-                    notchContentPickerOptions
-                }
-
-                Picker(String(localized: "Right Side"), selection: $dictation.notchIndicatorRightContent) {
-                    notchContentPickerOptions
-                }
-
-                Text(String(localized: "The notch indicator extends the MacBook notch area to show recording status."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section(String(localized: "Microphone")) {
-                Picker(String(localized: "Input Device"), selection: $audioDevice.selectedDeviceUID) {
-                    Text(String(localized: "System Default")).tag(nil as String?)
-                    Divider()
-                    ForEach(audioDevice.inputDevices) { device in
-                        Text(device.name).tag(device.uid as String?)
-                    }
-                }
-
-                if audioDevice.isPreviewActive {
-                    HStack(spacing: 8) {
-                        Image(systemName: "mic.fill")
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-
-                        GeometryReader { geo in
-                            let maxRms: Float = 0.15
-                            let levelWidth = max(0, geo.size.width * CGFloat(min(audioDevice.previewRawLevel, maxRms) / maxRms))
-
-                            ZStack(alignment: .leading) {
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(.quaternary)
-
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(Color.green.gradient)
-                                    .frame(width: levelWidth)
-                                    .animation(.easeOut(duration: 0.08), value: audioDevice.previewRawLevel)
-                            }
-                        }
-                        .frame(height: 6)
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                Button(audioDevice.isPreviewActive
-                    ? String(localized: "Stop Preview")
-                    : String(localized: "Test Microphone")
-                ) {
-                    if audioDevice.isPreviewActive {
-                        audioDevice.stopPreview()
-                    } else {
-                        audioDevice.startPreview()
-                    }
-                }
-                .disabled(!audioDevice.isPreviewActive && dictation.needsMicPermission)
-
-                if let name = audioDevice.disconnectedDeviceName {
-                    Label(
-                        String(localized: "Microphone disconnected. Falling back to system default."),
-                        systemImage: "exclamationmark.triangle"
-                    )
-                    .foregroundStyle(.orange)
-                    .font(.caption)
-                    .onAppear {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                            if audioDevice.disconnectedDeviceName == name {
-                                audioDevice.disconnectedDeviceName = nil
-                            }
-                        }
-                    }
-                }
-            }
-
-            Section(String(localized: "Sound")) {
-                Toggle(String(localized: "Play sound feedback"), isOn: $dictation.soundFeedbackEnabled)
-
-                Text(String(localized: "Plays a sound when recording starts and when transcription completes."))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section(String(localized: "Audio Ducking")) {
-                Toggle(String(localized: "Reduce system volume during recording"), isOn: $dictation.audioDuckingEnabled)
-
-                if dictation.audioDuckingEnabled {
-                    HStack {
-                        Image(systemName: "speaker.slash")
-                            .foregroundStyle(.secondary)
-                        Slider(value: $dictation.audioDuckingLevel, in: 0...0.5, step: 0.05)
-                        Image(systemName: "speaker.wave.2")
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Text(String(localized: "Percentage of your current volume to use during recording. 0% mutes completely."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
             #if !APPSTORE
             Section(String(localized: "Updates")) {
                 HStack {
@@ -240,15 +129,6 @@ struct GeneralSettingsView: View {
         } message: {
             Text(String(localized: "The language change will take effect after restarting TypeWhisper."))
         }
-    }
-
-    @ViewBuilder
-    private var notchContentPickerOptions: some View {
-        Text(String(localized: "Recording Indicator")).tag(DictationViewModel.NotchIndicatorContent.indicator)
-        Text(String(localized: "Timer")).tag(DictationViewModel.NotchIndicatorContent.timer)
-        Text(String(localized: "Waveform")).tag(DictationViewModel.NotchIndicatorContent.waveform)
-        Text(String(localized: "Profile")).tag(DictationViewModel.NotchIndicatorContent.profile)
-        Text(String(localized: "None")).tag(DictationViewModel.NotchIndicatorContent.none)
     }
 
     private func restartApp() {
