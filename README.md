@@ -60,9 +60,6 @@ Speech-to-text and AI text processing for macOS. Transcribe audio using on-devic
 
 - **System-wide** - Push-to-talk, toggle, or hybrid mode via global hotkey, auto-pastes into any app
 - **Modifier-key hotkeys** - Use a single modifier key (Command, Shift, Option, Control) as your hotkey
-- **Silence-pause mode** - Continuous dictation that automatically pauses when silence is detected
-- **Global default prompt** - Set a default LLM prompt that is applied to all transcriptions automatically
-- **Whisper mode** - Boosted microphone gain for quiet speech
 - **Sound feedback** - Audio cues for recording start, transcription success, and errors
 - **Microphone selection** - Choose a specific input device with live preview
 
@@ -74,7 +71,7 @@ Speech-to-text and AI text processing for macOS. Transcribe audio using on-devic
 
 ### Personalization
 
-- **Profiles** - Per-app and per-website overrides for language, task, engine, whisper mode, prompt, hotkey, and auto-submit. Match by app (bundle ID) and/or domain with subdomain support
+- **Profiles** - Per-app and per-website overrides for language, task, engine, prompt, hotkey, and auto-submit. Match by app (bundle ID) and/or domain with subdomain support
 - **Dictionary** - Terms improve cloud recognition accuracy. Corrections fix common transcription mistakes automatically. Auto-learns from manual corrections. Includes importable term packs
 - **Snippets** - Text shortcuts with trigger/replacement. Supports placeholders like `{{DATE}}`, `{{TIME}}`, and `{{CLIPBOARD}}`
 - **History** - Searchable transcription history with inline editing, correction detection, app context tracking, timeline grouping, filters, bulk delete, multi-select export, auto-retention, and a standalone window accessible from the tray menu
@@ -266,7 +263,7 @@ Profiles let you configure transcription settings per application or website. Fo
 
 - **Mail** - German language, Whisper Large v3
 - **Slack** - English language, Parakeet TDT v3
-- **Terminal** - Whisper mode always on
+- **Terminal** - English language, auto-submit enabled
 - **github.com** - English language (matches in any browser)
 - **docs.google.com** - German language, translate to English
 
@@ -277,7 +274,7 @@ When you start dictating, TypeWhisper matches the active app and browser URL aga
 2. **URL-only match** - cross-browser profiles (e.g. github.com in any browser)
 3. **App-only match** - generic app profiles (e.g. all of Chrome)
 
-The active profile name is shown as a badge in the recording overlay.
+The active profile name is shown as a badge in the notch indicator.
 
 Multiple engines can be loaded simultaneously for instant switching between profiles. Note that loading multiple local models increases memory usage. Cloud engines (Groq, OpenAI) have negligible memory overhead.
 
@@ -300,8 +297,8 @@ TypeWhisper/
 ├── Models/                 # Data models (ModelInfo, TranscriptionResult, EngineType, Profile, etc.)
 ├── Services/
 │   ├── Engine/             # WhisperEngine, ParakeetEngine, SpeechAnalyzerEngine, TranscriptionEngine protocol
-│   ├── Cloud/              # CloudTranscriptionEngine, GroqEngine, OpenAIEngine
-│   ├── LLM/               # LLM providers (Apple Intelligence, Groq, OpenAI) for custom prompts
+│   ├── Cloud/              # KeychainService, WavEncoder (shared cloud utilities)
+│   ├── LLM/               # Apple Intelligence provider (cloud LLM providers are plugins)
 │   ├── HTTPServer/         # Local REST API (HTTPServer, APIRouter, APIHandlers)
 │   ├── SubtitleExporter    # SRT/VTT export
 │   ├── ModelManagerService # Model download, loading, transcription dispatch
