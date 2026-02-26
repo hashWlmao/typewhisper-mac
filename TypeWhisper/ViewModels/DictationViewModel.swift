@@ -46,10 +46,11 @@ final class DictationViewModel: ObservableObject {
     @Published var soundFeedbackEnabled: Bool {
         didSet { UserDefaults.standard.set(soundFeedbackEnabled, forKey: UserDefaultsKeys.soundFeedbackEnabled) }
     }
-    @Published var hybridHotkeyLabel: String
-    @Published var pttHotkeyLabel: String
-    @Published var toggleHotkeyLabel: String
-    @Published var promptPaletteHotkeyLabel: String
+    @Published var hotkeyLabelsVersion = 0
+    var hybridHotkeyLabel: String { Self.loadHotkeyLabel(for: .hybrid) }
+    var pttHotkeyLabel: String { Self.loadHotkeyLabel(for: .pushToTalk) }
+    var toggleHotkeyLabel: String { Self.loadHotkeyLabel(for: .toggle) }
+    var promptPaletteHotkeyLabel: String { Self.loadHotkeyLabel(for: .promptPalette) }
     @Published var activeProfileName: String?
     @Published var actionFeedbackMessage: String?
     @Published var actionFeedbackIcon: String?
@@ -165,10 +166,6 @@ final class DictationViewModel: ObservableObject {
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: UserDefaultsKeys.audioDuckingLevel) as? Double ?? 0.2
         self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: UserDefaultsKeys.soundFeedbackEnabled) as? Bool ?? true
         self.promptDisplayDuration = UserDefaults.standard.object(forKey: UserDefaultsKeys.promptDisplayDuration) as? Double ?? 8.0
-        self.hybridHotkeyLabel = Self.loadHotkeyLabel(for: .hybrid)
-        self.pttHotkeyLabel = Self.loadHotkeyLabel(for: .pushToTalk)
-        self.toggleHotkeyLabel = Self.loadHotkeyLabel(for: .toggle)
-        self.promptPaletteHotkeyLabel = Self.loadHotkeyLabel(for: .promptPalette)
         self.overlayPosition = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayPosition)
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
         self.notchIndicatorVisibility = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorVisibility)
@@ -475,48 +472,11 @@ final class DictationViewModel: ObservableObject {
                     return
                 }
 
-                // Build LLM/translation handler for pipeline
-                let llmHandler: ((String) async throws -> String)?
-                if let promptAction = self.effectivePromptAction {
-                    let pps = self.promptProcessingService
-                    let providerOverride = promptAction.providerType
-                    let modelOverride = promptAction.cloudModel
-                    let prompt = promptAction.prompt
-                    llmHandler = { text in
-                        try await pps.process(
-                            prompt: prompt, text: text,
-                            providerOverride: providerOverride,
-                            cloudModelOverride: modelOverride
-                        )
-                    }
-                } else if let targetCode = translationTarget {
-                    let ts = self.translationService
-                    let sourceRaw = result.detectedLanguage ?? language
-                    let sourceNormalized = TranslationService.normalizedLanguageIdentifier(from: sourceRaw)
-                    if let sourceRaw {
-                        if let sourceNormalized {
-                            if sourceRaw.caseInsensitiveCompare(sourceNormalized) != .orderedSame {
-                                logger.info("Translation source normalized \(sourceRaw, privacy: .public) -> \(sourceNormalized, privacy: .public)")
-                            }
-                        } else {
-                            logger.warning("Translation source language \(sourceRaw, privacy: .public) invalid, using auto source")
-                        }
-                    }
-                    let sourceLanguage = sourceNormalized.map { Locale.Language(identifier: $0) }
-                    llmHandler = { text in
-                        guard let targetNormalized = TranslationService.normalizedLanguageIdentifier(from: targetCode) else {
-                            logger.error("Translation target language invalid: \(targetCode, privacy: .public)")
-                            return text
-                        }
-                        if targetCode.caseInsensitiveCompare(targetNormalized) != .orderedSame {
-                            logger.info("Translation target normalized \(targetCode, privacy: .public) -> \(targetNormalized, privacy: .public)")
-                        }
-                        let target = Locale.Language(identifier: targetNormalized)
-                        return try await ts.translate(text: text, to: target, source: sourceLanguage)
-                    }
-                } else {
-                    llmHandler = nil
-                }
+                let llmHandler = buildLLMHandler(
+                    translationTarget: translationTarget,
+                    detectedLanguage: result.detectedLanguage,
+                    configuredLanguage: language
+                )
 
                 guard !Task.isCancelled else { return }
 
@@ -536,33 +496,11 @@ final class DictationViewModel: ObservableObject {
                 // Route to action plugin or insert text
                 if let actionPluginId = self.effectivePromptAction?.targetActionPluginId,
                    let actionPlugin = PluginManager.shared.actionPlugin(for: actionPluginId) {
-                    let actionContext = ActionContext(
-                        appName: activeApp.name,
-                        bundleIdentifier: activeApp.bundleId,
-                        url: activeApp.url,
-                        language: language,
-                        originalText: result.text
+                    try await executeActionPlugin(
+                        actionPlugin, pluginId: actionPluginId, text: text,
+                        activeApp: activeApp, language: language, originalText: result.text
                     )
-                    let actionResult = try await actionPlugin.execute(input: text, context: actionContext)
-
-                    if actionResult.success {
-                        if let url = actionResult.url {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(url, forType: .string)
-                        }
-                        self.actionFeedbackMessage = actionResult.message
-                        self.actionFeedbackIcon = actionResult.icon ?? "checkmark.circle.fill"
-                        self.actionDisplayDuration = actionResult.displayDuration ?? 3.5
-                        EventBus.shared.emit(.actionCompleted(ActionCompletedPayload(
-                            actionId: actionPluginId, success: true, message: actionResult.message,
-                            url: actionResult.url, appName: activeApp.name, bundleIdentifier: activeApp.bundleId
-                        )))
-                    } else {
-                        throw NSError(domain: "ActionPlugin", code: -1,
-                                      userInfo: [NSLocalizedDescriptionKey: actionResult.message])
-                    }
                 } else {
-                    // Default flow: always insert text (clipboard + Cmd+V)
                     _ = try await textInsertionService.insertText(text, autoSubmit: effectiveAutoSubmit)
                     EventBus.shared.emit(.textInserted(TextInsertedPayload(
                         text: text,
@@ -644,24 +582,13 @@ final class DictationViewModel: ObservableObject {
     }
 
     func setHotkey(_ hotkey: UnifiedHotkey, for slot: HotkeySlotType) {
-        let label = HotkeyService.displayName(for: hotkey)
-        switch slot {
-        case .hybrid: hybridHotkeyLabel = label
-        case .pushToTalk: pttHotkeyLabel = label
-        case .toggle: toggleHotkeyLabel = label
-        case .promptPalette: promptPaletteHotkeyLabel = label
-        }
         hotkeyService.updateHotkey(hotkey, for: slot)
+        hotkeyLabelsVersion += 1
     }
 
     func clearHotkey(for slot: HotkeySlotType) {
-        switch slot {
-        case .hybrid: hybridHotkeyLabel = ""
-        case .pushToTalk: pttHotkeyLabel = ""
-        case .toggle: toggleHotkeyLabel = ""
-        case .promptPalette: promptPaletteHotkeyLabel = ""
-        }
         hotkeyService.clearHotkey(for: slot)
+        hotkeyLabelsVersion += 1
     }
 
     func isHotkeyAssigned(_ hotkey: UnifiedHotkey, excluding: HotkeySlotType) -> HotkeySlotType? {
@@ -724,6 +651,95 @@ final class DictationViewModel: ObservableObject {
         actionFeedbackMessage = nil
         actionFeedbackIcon = nil
         actionDisplayDuration = 3.5
+    }
+
+    // MARK: - Shared Helpers
+
+    /// Builds an LLM handler for the post-processing pipeline.
+    /// Priority: prompt action > translation > nil.
+    private func buildLLMHandler(
+        translationTarget: String?,
+        detectedLanguage: String?,
+        configuredLanguage: String?
+    ) -> ((String) async throws -> String)? {
+        if let promptAction = effectivePromptAction {
+            let pps = promptProcessingService
+            let providerOverride = promptAction.providerType
+            let modelOverride = promptAction.cloudModel
+            let prompt = promptAction.prompt
+            return { text in
+                try await pps.process(
+                    prompt: prompt, text: text,
+                    providerOverride: providerOverride,
+                    cloudModelOverride: modelOverride
+                )
+            }
+        }
+
+        if let targetCode = translationTarget {
+            let ts = translationService
+            let sourceRaw = detectedLanguage ?? configuredLanguage
+            let sourceNormalized = TranslationService.normalizedLanguageIdentifier(from: sourceRaw)
+            if let sourceRaw {
+                if let sourceNormalized {
+                    if sourceRaw.caseInsensitiveCompare(sourceNormalized) != .orderedSame {
+                        logger.info("Translation source normalized \(sourceRaw, privacy: .public) -> \(sourceNormalized, privacy: .public)")
+                    }
+                } else {
+                    logger.warning("Translation source language \(sourceRaw, privacy: .public) invalid, using auto source")
+                }
+            }
+            let sourceLanguage = sourceNormalized.map { Locale.Language(identifier: $0) }
+            return { text in
+                guard let targetNormalized = TranslationService.normalizedLanguageIdentifier(from: targetCode) else {
+                    logger.error("Translation target language invalid: \(targetCode, privacy: .public)")
+                    return text
+                }
+                if targetCode.caseInsensitiveCompare(targetNormalized) != .orderedSame {
+                    logger.info("Translation target normalized \(targetCode, privacy: .public) -> \(targetNormalized, privacy: .public)")
+                }
+                let target = Locale.Language(identifier: targetNormalized)
+                return try await ts.translate(text: text, to: target, source: sourceLanguage)
+            }
+        }
+
+        return nil
+    }
+
+    /// Executes an action plugin and handles its result (feedback, clipboard URL, events).
+    private func executeActionPlugin(
+        _ plugin: any ActionPlugin,
+        pluginId: String,
+        text: String,
+        activeApp: (name: String?, bundleId: String?, url: String?),
+        language: String? = nil,
+        originalText: String? = nil
+    ) async throws {
+        let actionContext = ActionContext(
+            appName: activeApp.name,
+            bundleIdentifier: activeApp.bundleId,
+            url: activeApp.url,
+            language: language,
+            originalText: originalText ?? text
+        )
+        let actionResult = try await plugin.execute(input: text, context: actionContext)
+
+        guard actionResult.success else {
+            throw NSError(domain: "ActionPlugin", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: actionResult.message])
+        }
+
+        if let url = actionResult.url {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(url, forType: .string)
+        }
+        actionFeedbackMessage = actionResult.message
+        actionFeedbackIcon = actionResult.icon ?? "checkmark.circle.fill"
+        actionDisplayDuration = actionResult.displayDuration ?? 3.5
+        EventBus.shared.emit(.actionCompleted(ActionCompletedPayload(
+            actionId: pluginId, success: true, message: actionResult.message,
+            url: actionResult.url, appName: activeApp.name, bundleIdentifier: activeApp.bundleId
+        )))
     }
 
     // MARK: - Standalone Prompt Palette
@@ -819,28 +835,18 @@ final class DictationViewModel: ObservableObject {
                    let actionPlugin = PluginManager.shared.actionPlugin(for: actionPluginId) {
                     let browserInfo = await ctx.browserInfoTask?.value
                     let resolvedUrl = browserInfo?.url ?? ctx.activeApp.url
-                    let actionContext = ActionContext(
-                        appName: browserInfo?.title ?? ctx.activeApp.name,
-                        bundleIdentifier: ctx.activeApp.bundleId,
-                        url: resolvedUrl,
-                        originalText: ctx.text
+                    let resolvedApp = (name: browserInfo?.title ?? ctx.activeApp.name,
+                                       bundleId: ctx.activeApp.bundleId, url: resolvedUrl)
+                    try await executeActionPlugin(
+                        actionPlugin, pluginId: actionPluginId, text: result,
+                        activeApp: resolvedApp, originalText: ctx.text
                     )
-                    let actionResult = try await actionPlugin.execute(input: result, context: actionContext)
-                    if actionResult.success {
-                        if let url = actionResult.url {
-                            NSPasteboard.general.clearContents()
-                            NSPasteboard.general.setString(url, forType: .string)
-                        }
-                        soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
-                        showNotchFeedback(
-                            message: actionResult.message,
-                            icon: actionResult.icon ?? "checkmark.circle.fill",
-                            duration: actionResult.displayDuration ?? 4
-                        )
-                    } else {
-                        throw NSError(domain: "ActionPlugin", code: -1,
-                                      userInfo: [NSLocalizedDescriptionKey: actionResult.message])
-                    }
+                    soundService.play(.transcriptionSuccess, enabled: soundFeedbackEnabled)
+                    showNotchFeedback(
+                        message: actionFeedbackMessage ?? "Done",
+                        icon: actionFeedbackIcon ?? "checkmark.circle.fill",
+                        duration: actionDisplayDuration
+                    )
                     return
                 }
 
