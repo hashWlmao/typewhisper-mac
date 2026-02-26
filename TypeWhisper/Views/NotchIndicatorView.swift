@@ -33,32 +33,6 @@ struct NotchIndicatorView: View {
         return closedWidth
     }
 
-    // MARK: - Audio-reactive glow
-
-    private var glowColor: Color {
-        Color(red: 0.3, green: 0.5, blue: 1.0) // blue
-    }
-
-    private var glowOpacity: Double {
-        switch viewModel.state {
-        case .recording:
-            return max(0.4, min(Double(viewModel.audioLevel) * 3.5, 1.0))
-        default:
-            return 0
-        }
-    }
-
-    private var glowRadius: CGFloat {
-        switch viewModel.state {
-        case .recording:
-            return max(10, CGFloat(viewModel.audioLevel) * 40 + 6)
-        case .promptProcessing:
-            return 12
-        default:
-            return 0
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Three-zone status bar
@@ -115,8 +89,6 @@ struct NotchIndicatorView: View {
             topCornerRadius: isExpanded ? 19 : 6,
             bottomCornerRadius: isExpanded ? 24 : 14
         ))
-        // Blue glow that reacts to audio level
-        .shadow(color: glowColor.opacity(glowOpacity), radius: glowRadius)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
         .animation(.easeInOut(duration: 0.3), value: textExpanded)
