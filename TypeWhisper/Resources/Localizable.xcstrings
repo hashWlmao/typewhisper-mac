@@ -730,6 +730,7 @@
       }
     },
     "Auto-Submit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2714,6 +2715,7 @@
       }
     },
     "Off" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -2756,6 +2758,7 @@
       }
     },
     "On" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
