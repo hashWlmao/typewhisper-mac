@@ -34,9 +34,6 @@ final class DictationViewModel: ObservableObject {
     @Published var hotkeyMode: HotkeyService.HotkeyMode?
     @Published var partialText: String = ""
     @Published var isStreaming: Bool = false
-    @Published var whisperModeEnabled: Bool {
-        didSet { UserDefaults.standard.set(whisperModeEnabled, forKey: UserDefaultsKeys.whisperModeEnabled) }
-    }
     @Published var audioDuckingEnabled: Bool {
         didSet { UserDefaults.standard.set(audioDuckingEnabled, forKey: UserDefaultsKeys.audioDuckingEnabled) }
     }
@@ -159,7 +156,6 @@ final class DictationViewModel: ObservableObject {
             snippetService: snippetService,
             dictionaryService: dictionaryService
         )
-        self.whisperModeEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.whisperModeEnabled)
         self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.audioDuckingEnabled)
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: UserDefaultsKeys.audioDuckingLevel) as? Double ?? 0.2
         self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: UserDefaultsKeys.soundFeedbackEnabled) as? Bool ?? true
@@ -296,10 +292,6 @@ final class DictationViewModel: ObservableObject {
             activeProfileName = matchedProfile?.name
         }
 
-        // Apply gain boost: profile override ?? global setting
-        let effectiveWhisperMode = matchedProfile?.whisperModeOverride ?? whisperModeEnabled
-        audioRecordingService.gainMultiplier = effectiveWhisperMode ? 4.0 : 1.0
-
         // Resolve browser URL asynchronously to avoid blocking the main thread.
         // If a more specific URL profile matches, update the active profile on the fly.
         // Skip URL resolution when a forced profile is set (profile hotkey overrides app matching).
@@ -332,8 +324,6 @@ final class DictationViewModel: ObservableObject {
                 logger.info("URL resolution: matched profile '\(refinedProfile.name)'")
                 matchedProfile = refinedProfile
                 activeProfileName = refinedProfile.name
-                let refinedWhisperMode = refinedProfile.whisperModeOverride ?? whisperModeEnabled
-                audioRecordingService.gainMultiplier = refinedWhisperMode ? 4.0 : 1.0
             }
         }
 

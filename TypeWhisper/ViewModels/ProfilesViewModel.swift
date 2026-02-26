@@ -37,7 +37,6 @@ final class ProfilesViewModel: ObservableObject {
     @Published var editorInputLanguage: String?
     @Published var editorTranslationTargetLanguage: String?
     @Published var editorSelectedTask: String?
-    @Published var editorWhisperModeOverride: Bool?
     @Published var editorEngineOverride: String?
     @Published var editorCloudModelOverride: String?
     @Published var editorPromptActionId: String?
@@ -88,7 +87,6 @@ final class ProfilesViewModel: ObservableObject {
             inputLanguage: editorInputLanguage,
             translationTargetLanguage: editorTranslationTargetLanguage,
             selectedTask: editorSelectedTask,
-            whisperModeOverride: editorWhisperModeOverride,
             engineOverride: editorEngineOverride,
             cloudModelOverride: editorCloudModelOverride,
             promptActionId: editorPromptActionId,
@@ -106,7 +104,6 @@ final class ProfilesViewModel: ObservableObject {
             profile.inputLanguage = editorInputLanguage
             profile.translationTargetLanguage = editorTranslationTargetLanguage
             profile.selectedTask = editorSelectedTask
-            profile.whisperModeOverride = editorWhisperModeOverride
             profile.engineOverride = editorEngineOverride
             profile.cloudModelOverride = editorCloudModelOverride
             profile.promptActionId = editorPromptActionId
@@ -138,7 +135,6 @@ final class ProfilesViewModel: ObservableObject {
         editorInputLanguage = nil
         editorTranslationTargetLanguage = nil
         editorSelectedTask = nil
-        editorWhisperModeOverride = nil
         editorEngineOverride = nil
         editorCloudModelOverride = nil
         editorPromptActionId = nil
@@ -160,7 +156,6 @@ final class ProfilesViewModel: ObservableObject {
         editorInputLanguage = profile.inputLanguage
         editorTranslationTargetLanguage = profile.translationTargetLanguage
         editorSelectedTask = profile.selectedTask
-        editorWhisperModeOverride = profile.whisperModeOverride
         editorEngineOverride = profile.engineOverride
         // Validate cloudModelOverride against available plugin models
         if let modelOverride = profile.cloudModelOverride,

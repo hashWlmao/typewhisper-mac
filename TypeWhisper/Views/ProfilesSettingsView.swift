@@ -329,14 +329,6 @@ private struct ProfileEditorSheet: View {
                         }
                     }
 
-                    // Whisper mode override
-                    Picker(String(localized: "Whisper Mode"), selection: $viewModel.editorWhisperModeOverride) {
-                        Text(String(localized: "Global Setting")).tag(nil as Bool?)
-                        Divider()
-                        Text(String(localized: "On")).tag(true as Bool?)
-                        Text(String(localized: "Off")).tag(false as Bool?)
-                    }
-
                     // Prompt action override
                     Picker(String(localized: "Prompt"), selection: $viewModel.editorPromptActionId) {
                         Text(String(localized: "None")).tag(nil as String?)

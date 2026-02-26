@@ -12,7 +12,6 @@ final class Profile {
     var inputLanguage: String?
     var translationTargetLanguage: String?
     var selectedTask: String?
-    var whisperModeOverride: Bool?
     var engineOverride: String?
     var cloudModelOverride: String?
     var promptActionId: String?
@@ -41,7 +40,6 @@ final class Profile {
         inputLanguage: String? = nil,
         translationTargetLanguage: String? = nil,
         selectedTask: String? = nil,
-        whisperModeOverride: Bool? = nil,
         engineOverride: String? = nil,
         cloudModelOverride: String? = nil,
         promptActionId: String? = nil,
@@ -59,7 +57,6 @@ final class Profile {
         self.inputLanguage = inputLanguage
         self.translationTargetLanguage = translationTargetLanguage
         self.selectedTask = selectedTask
-        self.whisperModeOverride = whisperModeOverride
         self.engineOverride = engineOverride
         self.cloudModelOverride = cloudModelOverride
         self.promptActionId = promptActionId

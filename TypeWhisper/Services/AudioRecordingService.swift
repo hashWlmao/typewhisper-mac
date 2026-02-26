@@ -29,18 +29,12 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
     @Published private(set) var audioLevel: Float = 0
     @Published private(set) var rawAudioLevel: Float = 0
 
-    /// Gain multiplier applied to audio samples (1.0 = normal, 4.0 = whisper mode)
-    var gainMultiplier: Float {
-        get { configLock.withLock { _gainMultiplier } }
-        set { configLock.withLock { _gainMultiplier = newValue } }
-    }
     /// CoreAudio device ID to use for recording. nil = system default input.
     var selectedDeviceID: AudioDeviceID? {
         get { configLock.withLock { _selectedDeviceID } }
         set { configLock.withLock { _selectedDeviceID = newValue } }
     }
 
-    private var _gainMultiplier: Float = 1.0
     private var _selectedDeviceID: AudioDeviceID?
 
     private var audioEngine: AVAudioEngine?
@@ -221,19 +215,7 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
         }
     }
 
-    private func processConvertedSamples(_ rawSamples: [Float]) {
-        let rawRms = sqrt(rawSamples.reduce(0) { $0 + $1 * $1 } / Float(rawSamples.count))
-
-        var samples = rawSamples
-
-        // Apply gain boost (whisper mode)
-        if gainMultiplier != 1.0 {
-            for i in samples.indices {
-                samples[i] = max(-1.0, min(1.0, samples[i] * gainMultiplier))
-            }
-        }
-
-        // Calculate post-gain RMS for audio level display
+    private func processConvertedSamples(_ samples: [Float]) {
         let rms = sqrt(samples.reduce(0) { $0 + $1 * $1 } / Float(samples.count))
         let normalizedLevel = min(1.0, rms * 5) // Scale up for visibility
 
@@ -241,12 +223,10 @@ final class AudioRecordingService: ObservableObject, @unchecked Sendable {
         sampleBuffer.append(contentsOf: samples)
         bufferLock.unlock()
 
-        let capturedRawRms = rawRms
-
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.audioLevel = normalizedLevel
-            self.rawAudioLevel = capturedRawRms
+            self.rawAudioLevel = rms
         }
     }
 }
