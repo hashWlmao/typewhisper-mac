@@ -14,41 +14,26 @@ Speech-to-text and AI text processing for macOS. Transcribe audio using on-devic
 
 <p align="center">
   <a href=".github/screenshots/home.png"><img src=".github/screenshots/home.png" width="270" alt="Home Dashboard"></a>
-</p>
-
-<p align="center">
   <a href=".github/screenshots/models.png"><img src=".github/screenshots/models.png" width="270" alt="Model Manager"></a>
 </p>
 
 <p align="center">
   <a href=".github/screenshots/prompts.png"><img src=".github/screenshots/prompts.png" width="270" alt="Custom Prompts"></a>
-</p>
-
-<p align="center">
   <a href=".github/screenshots/recording.png"><img src=".github/screenshots/recording.png" width="270" alt="Hotkey Configuration"></a>
 </p>
 
 <p align="center">
   <a href=".github/screenshots/dictionary.png"><img src=".github/screenshots/dictionary.png" width="270" alt="Dictionary"></a>
-</p>
-
-<p align="center">
   <a href=".github/screenshots/snippets.png"><img src=".github/screenshots/snippets.png" width="270" alt="Snippets"></a>
 </p>
 
 <p align="center">
   <a href=".github/screenshots/general.png"><img src=".github/screenshots/general.png" width="270" alt="General Settings"></a>
-</p>
-
-<p align="center">
   <a href=".github/screenshots/history.png"><img src=".github/screenshots/history.png" width="270" alt="Transcription History"></a>
 </p>
 
 <p align="center">
   <a href=".github/screenshots/profiles.png"><img src=".github/screenshots/profiles.png" width="270" alt="Profiles with App & URL Matching"></a>
-</p>
-
-<p align="center">
   <a href=".github/screenshots/plugins.png"><img src=".github/screenshots/plugins.png" width="270" alt="Plugin Integrations"></a>
 </p>
 
