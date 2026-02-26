@@ -40,9 +40,6 @@ enum UserDefaultsKeys {
     // MARK: - Dictionary
     static let activatedTermPacks = "activatedTermPacks"
 
-    // MARK: - Prompt Palette
-    static let promptDisplayDuration = "promptDisplayDuration"
-
     // MARK: - History
     static let historyRetentionDays = "historyRetentionDays"
 

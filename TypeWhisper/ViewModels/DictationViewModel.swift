@@ -52,10 +52,6 @@ final class DictationViewModel: ObservableObject {
     @Published var actionFeedbackMessage: String?
     @Published var actionFeedbackIcon: String?
     private var actionDisplayDuration: TimeInterval = 3.5
-    @Published var promptDisplayDuration: Double {
-        didSet { UserDefaults.standard.set(promptDisplayDuration, forKey: UserDefaultsKeys.promptDisplayDuration) }
-    }
-
     enum OverlayPosition: String, CaseIterable {
         case top
         case bottom
@@ -159,7 +155,6 @@ final class DictationViewModel: ObservableObject {
         self.audioDuckingEnabled = UserDefaults.standard.bool(forKey: UserDefaultsKeys.audioDuckingEnabled)
         self.audioDuckingLevel = UserDefaults.standard.object(forKey: UserDefaultsKeys.audioDuckingLevel) as? Double ?? 0.2
         self.soundFeedbackEnabled = UserDefaults.standard.object(forKey: UserDefaultsKeys.soundFeedbackEnabled) as? Bool ?? true
-        self.promptDisplayDuration = UserDefaults.standard.object(forKey: UserDefaultsKeys.promptDisplayDuration) as? Double ?? 8.0
         self.overlayPosition = UserDefaults.standard.string(forKey: UserDefaultsKeys.overlayPosition)
             .flatMap { OverlayPosition(rawValue: $0) } ?? .top
         self.notchIndicatorVisibility = UserDefaults.standard.string(forKey: UserDefaultsKeys.notchIndicatorVisibility)
